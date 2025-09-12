@@ -1,0 +1,56 @@
+# Java/Spring Boot (Backend)
+target/
+.mvn/wrapper/maven-wrapper.jar
+!**/src/main/**/target/
+!**/src/test/**/target/
+*.jar
+*.war
+*.ear
+*.class
+
+# Angular/Node.js (Frontend)
+/node_modules
+/dist
+/tmp
+/out-tsc
+/bazel-out
+npm-debug.log
+yarn-error.log
+/.angular/cache
+.sass-cache/
+/connect.lock
+/coverage
+/libpeerconnection.log
+testem.log
+/typings
+
+# IDEs and Editors
+.idea/
+*.iws
+*.iml
+*.ipr
+.vscode/
+.project
+.classpath
+.factorypath
+.settings/
+.springBeans
+.sts4-cache
+.apt_generated
+.c9/
+*.launch
+*.sublime-workspace
+.history/
+
+# System Files
+.DS_Store
+Thumbs.db
+
+# Build directories
+build/
+!**/src/main/**/build/
+!**/src/test/**/build/
+/nbproject/private/
+/nbbuild/
+/nbdist/
+/.nb-gradle/

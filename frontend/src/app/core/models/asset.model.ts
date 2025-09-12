@@ -1,0 +1,45 @@
+export interface Asset {
+  id: number;
+  assetTag: string;
+  name: string;
+  category: string;
+  type: string;
+  model: string;
+  serialNumber: string;
+  purchaseDate: string;
+  warrantyExpiryDate: string;
+  cost: number;
+  usefulLifeYears?: number;
+  status: string;
+  imageUrl?: string;
+  vendor?: any;
+  allocatedTo?: { id: number; name: string; email: string };
+  // Software license specific fields
+  totalLicenses?: number;
+  usedLicenses?: number;
+  licenseExpiryDate?: string;
+  licenseKey?: string;
+  version?: string;
+}
+
+export interface AssetRequest {
+  assetTag: string;
+  name: string;
+  category: string;
+  type: string;
+  model: string;
+  serialNumber: string;
+  purchaseDate: string;
+  warrantyExpiryDate: string;
+  cost: number;
+  usefulLifeYears?: number;
+  status: string;
+  imageUrl?: string;
+  vendorId?: number;
+  // Software license specific fields
+  totalLicenses?: number;
+  usedLicenses?: number;
+  licenseExpiryDate?: string;
+  licenseKey?: string;
+  version?: string;
+}

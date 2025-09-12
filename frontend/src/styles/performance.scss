@@ -1,0 +1,35 @@
+// Performance Optimizations
+
+// GPU Acceleration for common transforms
+.gpu-accelerated {
+  transform: translate3d(0, 0, 0);
+  backface-visibility: hidden;
+  perspective: 1000px;
+}
+
+// Optimize animations
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+  }
+}
+
+// Contain layout shifts
+.contain-layout {
+  contain: layout style paint;
+}
+
+// Optimize repaints
+.optimize-repaint {
+  will-change: transform, opacity;
+}
+
+// Critical CSS inlining hint
+.above-fold {
+  contain: layout;
+}

@@ -1,0 +1,56 @@
+<main class="issues-list" role="main">
+  <header class="header">
+    <div class="header-content">
+      <p class="header-description">Manage and track support issues</p>
+    </div>
+    <div class="header-actions">
+      <button class="btn btn-primary" (click)="createIssue()" [attr.aria-label]="'Create new issue'">
+        <svg width="16" height="16" viewBox="0 0 20 20" fill="currentColor" aria-hidden="true">
+          <path fill-rule="evenodd" d="M10 3a1 1 0 011 1v5h5a1 1 0 110 2h-5v5a1 1 0 11-2 0v-5H4a1 1 0 110-2h5V4a1 1 0 011-1z"/>
+        </svg>
+        Report Issue
+      </button>
+    </div>
+  </header>
+
+  <section class="filters" aria-label="Filter options">
+    <div class="filters-header">
+      <h2>Filters</h2>
+    </div>
+    <div class="filters-content">
+      <div class="filter-group">
+        <label for="statusFilter" class="filter-label">Status</label>
+        <select id="statusFilter" class="filter-select" [(ngModel)]="statusFilter" (change)="onStatusFilterChange()" aria-label="Filter by status">
+          <option value="">All Issues</option>
+          <option value="OPEN">Open</option>
+          <option value="IN_PROGRESS">In Progress</option>
+          <option value="RESOLVED">Resolved</option>
+        </select>
+      </div>
+      
+      <div class="filter-group">
+        <label class="checkbox-label">
+          <input type="checkbox" [(ngModel)]="showClosedIssues" (change)="toggleClosedIssues()" aria-describedby="closedIssuesHelp">
+          Show Closed Issues
+        </label>
+        <span id="closedIssuesHelp" class="help-text">Include resolved and closed issues in the list</span>
+      </div>
+    </div>
+  </section>
+
+  <section class="issues-container" aria-label="Issues list">
+    <app-data-table
+      [data]="issues"
+      [columns]="columns"
+      [actions]="actions"
+      [pagination]="pagination"
+      [sortColumn]="sortColumn"
+      [sortDirection]="sortDirection"
+      [rowClickAction]="viewIssueDetails.bind(this)"
+      (pageChange)="onPageChange($event)"
+      (sort)="onSort($event)"
+      role="table"
+      [attr.aria-label]="'Issues table with ' + (pagination?.totalElements || 0) + ' total issues'">
+    </app-data-table>
+  </section>
+</main>

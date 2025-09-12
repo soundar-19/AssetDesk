@@ -1,0 +1,33 @@
+<main class="page-container" role="main">
+  <!-- Welcome Header -->
+  <header class="welcome-header">
+    <h1 class="page-title">Welcome back, {{ currentUser?.name }}!</h1>
+    <p class="page-description">{{ getDashboardDescription() }}</p>
+  </header>
+
+  <!-- Loading State -->
+  <div *ngIf="loading" class="loading-state" role="status" aria-live="polite">
+    <app-loading-spinner [size]="40" message="Loading dashboard..."></app-loading-spinner>
+  </div>
+
+  <!-- Role-specific Dashboards -->
+  <div *ngIf="!loading">
+    <!-- Employee Dashboard -->
+    <app-employee-dashboard 
+      *ngIf="roleService.isEmployee()" 
+      [dashboardStats]="dashboardStats">
+    </app-employee-dashboard>
+
+    <!-- IT Support Dashboard -->
+    <app-it-support-dashboard 
+      *ngIf="roleService.isITSupport()" 
+      [dashboardStats]="dashboardStats">
+    </app-it-support-dashboard>
+
+    <!-- Admin Dashboard -->
+    <app-admin-dashboard 
+      *ngIf="roleService.isAdmin()" 
+      [dashboardStats]="dashboardStats">
+    </app-admin-dashboard>
+  </div>
+</main>

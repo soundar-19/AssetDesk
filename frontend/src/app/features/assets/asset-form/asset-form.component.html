@@ -1,0 +1,228 @@
+<main class="page-container" role="main">
+  <header class="page-header">
+    <p class="page-description">{{ isEditMode ? 'Update asset information' : 'Create a new asset in the system' }}</p>
+  </header>
+
+  <section class="card" aria-label="Asset Form">
+    <form [formGroup]="assetForm" (ngSubmit)="onSubmit()" class="form" novalidate>
+    <fieldset class="field-group">
+      <legend class="field-group-title">Basic Information</legend>
+      <div class="form-row">
+        <div class="form-group">
+          <label for="assetTag" class="required">Asset Tag</label>
+        <input
+          id="assetTag"
+          type="text"
+          formControlName="assetTag"
+          class="form-control"
+          [class.error]="assetForm.get('assetTag')?.invalid && assetForm.get('assetTag')?.touched">
+        <div *ngIf="assetForm.get('assetTag')?.invalid && assetForm.get('assetTag')?.touched" class="error-message">
+          Asset tag is required
+        </div>
+      </div>
+
+        <div class="form-group">
+          <label for="name" class="required">Name</label>
+        <input
+          id="name"
+          type="text"
+          formControlName="name"
+          class="form-control"
+          [class.error]="assetForm.get('name')?.invalid && assetForm.get('name')?.touched">
+        <div *ngIf="assetForm.get('name')?.invalid && assetForm.get('name')?.touched" class="error-message">
+          Name is required
+        </div>
+      </div>
+      </div>
+
+      <div class="form-row">
+        <div class="form-group">
+          <label for="category" class="required">Category</label>
+        <select
+          id="category"
+          formControlName="category"
+          class="form-control">
+          <option value="">Select Category</option>
+          <option *ngFor="let category of categories" [value]="category">
+            {{ category }}
+          </option>
+        </select>
+      </div>
+
+        <div class="form-group">
+          <label for="type" class="required">Type</label>
+        <select
+          id="type"
+          formControlName="type"
+          class="form-control">
+          <option value="">Select Type</option>
+          <option *ngFor="let type of types" [value]="type">
+            {{ type }}
+          </option>
+        </select>
+      </div>
+      </div>
+    </fieldset>
+
+    <fieldset class="field-group conditional-field" *ngIf="isFieldVisible('model')">
+      <legend class="field-group-title">Hardware Details</legend>
+      <div class="form-row">
+        <div class="form-group">
+          <label for="model" class="required">Model</label>
+        <input
+          id="model"
+          type="text"
+          formControlName="model"
+          class="form-control"
+          [class.error]="assetForm.get('model')?.invalid && assetForm.get('model')?.touched">
+        <div *ngIf="assetForm.get('model')?.invalid && assetForm.get('model')?.touched" class="error-message">
+          Model is required
+        </div>
+      </div>
+
+        <div class="form-group">
+          <label for="serialNumber" class="required">Serial Number</label>
+        <input
+          id="serialNumber"
+          type="text"
+          formControlName="serialNumber"
+          class="form-control"
+          [class.error]="assetForm.get('serialNumber')?.invalid && assetForm.get('serialNumber')?.touched">
+        <div *ngIf="assetForm.get('serialNumber')?.invalid && assetForm.get('serialNumber')?.touched" class="error-message">
+          Serial number is required
+        </div>
+      </div>
+      </div>
+    </fieldset>
+
+    <!-- License specific fields -->
+    <fieldset class="field-group conditional-field" *ngIf="isFieldVisible('totalLicenses')">
+      <legend class="field-group-title">License Information</legend>
+      <div class="form-row">
+        <div class="form-group">
+          <label for="totalLicenses" class="required">Total Licenses</label>
+        <input
+          id="totalLicenses"
+          type="number"
+          formControlName="totalLicenses"
+          class="form-control"
+          min="1"
+          [class.error]="assetForm.get('totalLicenses')?.invalid && assetForm.get('totalLicenses')?.touched">
+        <div *ngIf="assetForm.get('totalLicenses')?.invalid && assetForm.get('totalLicenses')?.touched" class="error-message">
+          Total licenses is required and must be at least 1
+        </div>
+      </div>
+
+        <div class="form-group">
+          <label for="version" class="required">Version</label>
+        <input
+          id="version"
+          type="text"
+          formControlName="version"
+          class="form-control"
+          [class.error]="assetForm.get('version')?.invalid && assetForm.get('version')?.touched">
+        <div *ngIf="assetForm.get('version')?.invalid && assetForm.get('version')?.touched" class="error-message">
+          Version is required
+        </div>
+      </div>
+      </div>
+
+      <div class="form-row">
+        <div class="form-group">
+          <label for="licenseKey">License Key</label>
+        <input
+          id="licenseKey"
+          type="text"
+          formControlName="licenseKey"
+          class="form-control">
+      </div>
+
+        <div class="form-group">
+          <label for="licenseExpiryDate">License Expiry</label>
+        <input
+          id="licenseExpiryDate"
+          type="date"
+          formControlName="licenseExpiryDate"
+          class="form-control">
+      </div>
+      </div>
+    </fieldset>
+
+    <fieldset class="field-group">
+      <legend class="field-group-title">Purchase & Warranty</legend>
+      <div class="form-row">
+        <div class="form-group">
+          <label for="purchaseDate">Purchase Date</label>
+        <input
+          id="purchaseDate"
+          type="date"
+          formControlName="purchaseDate"
+          class="form-control">
+      </div>
+
+        <div class="form-group">
+          <label for="warrantyExpiryDate">Warranty Expiry</label>
+        <input
+          id="warrantyExpiryDate"
+          type="date"
+          formControlName="warrantyExpiryDate"
+          class="form-control">
+      </div>
+      </div>
+
+      <div class="form-row">
+        <div class="form-group">
+          <label for="cost">Cost</label>
+        <input
+          id="cost"
+          type="number"
+          formControlName="cost"
+          class="form-control"
+          min="0"
+          step="0.01">
+      </div>
+
+        <div class="form-group">
+          <label for="status" class="required">Status</label>
+        <select
+          id="status"
+          formControlName="status"
+          class="form-control">
+          <option *ngFor="let status of statuses" [value]="status">
+            {{ status }}
+          </option>
+        </select>
+      </div>
+      </div>
+
+      <div class="form-row">
+        <div class="form-group">
+          <label for="vendorId">Vendor</label>
+        <select
+          id="vendorId"
+          formControlName="vendorId"
+          class="form-control">
+          <option value="">Select Vendor</option>
+          <option *ngFor="let vendor of vendors" [value]="vendor.id">
+            {{ vendor.name }}
+          </option>
+        </select>
+      </div>
+      </div>
+    </fieldset>
+
+    <footer class="form-actions">
+      <button type="button" class="btn btn-outline" (click)="cancel()" [attr.aria-label]="'Cancel and return to assets list'">
+        Cancel
+      </button>
+      <button type="submit" 
+              class="btn btn-primary"
+              [disabled]="assetForm.invalid || loading"
+              [attr.aria-label]="loading ? 'Saving asset...' : (isEditMode ? 'Update asset' : 'Create new asset')">
+        <span *ngIf="loading" class="loading-spinner" aria-hidden="true"></span>
+        {{ loading ? 'Saving...' : (isEditMode ? 'Update Asset' : 'Create Asset') }}
+      </button>
+    </footer>
+    </form>
+  </section>
+</main>
