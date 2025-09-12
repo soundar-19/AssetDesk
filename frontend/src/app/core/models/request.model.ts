@@ -1,27 +1,59 @@
-export interface AssetRequestCreate {
-  requestType: 'NEW' | 'REPLACEMENT';
-  requestedCategory?: string;
-  requestedType?: string;
-  requestedModel?: string;
-  justification?: string;
-  requesterId?: number;
-}
-
-export interface AssetRequestResponse {
+export interface AssetRequest {
   id: number;
-  requesterId: number;
-  requesterName?: string;
-  requestType: 'NEW' | 'REPLACEMENT';
-  requestedCategory?: string;
-  requestedType?: string;
-  requestedModel?: string;
-  justification?: string;
-  status: 'PENDING' | 'APPROVED' | 'REJECTED';
-  createdAt: string;
-  decisionById?: number;
-  decisionByName?: string;
-  decisionAt?: string;
-  decisionRemarks?: string;
+  requestType: 'NEW_ASSET' | 'REPLACEMENT' | 'UPGRADE' | 'ADDITIONAL';
+  category: string;
+  assetType: string;
+  assetName: string;
+  preferredModel?: string;
+  estimatedCost?: number;
+  businessJustification: string;
+  priority: 'LOW' | 'MEDIUM' | 'HIGH' | 'URGENT';
+  requiredDate?: string;
+  specifications?: string;
+  additionalNotes?: string;
+  status: 'PENDING' | 'APPROVED' | 'REJECTED' | 'FULFILLED' | 'CANCELLED';
+  requestedBy?: {
+    id: number;
+    name: string;
+    email: string;
+    department?: string;
+  };
+  requestedDate: string;
+  approvedBy?: {
+    id: number;
+    name: string;
+  };
+  approvedDate?: string;
+  rejectedBy?: {
+    id: number;
+    name: string;
+  };
+  rejectedDate?: string;
+  rejectionReason?: string;
+  fulfilledBy?: {
+    id: number;
+    name: string;
+  };
+  fulfilledDate?: string;
+  allocatedAsset?: {
+    id: number;
+    assetTag: string;
+    name: string;
+  };
+  remarks?: string;
 }
 
-
+export interface AssetRequestCreate {
+  requestType: 'NEW_ASSET' | 'REPLACEMENT' | 'UPGRADE' | 'ADDITIONAL';
+  category: string;
+  assetType: string;
+  assetName: string;
+  preferredModel?: string;
+  estimatedCost?: number;
+  businessJustification: string;
+  priority: 'LOW' | 'MEDIUM' | 'HIGH' | 'URGENT';
+  requiredDate?: string;
+  specifications?: string;
+  additionalNotes?: string;
+  requestedBy: number;
+}

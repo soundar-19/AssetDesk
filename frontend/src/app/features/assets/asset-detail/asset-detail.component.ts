@@ -3,12 +3,14 @@ import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { ActivatedRoute, Router } from '@angular/router';
 import { AssetService } from '../../../core/services/asset.service';
-import { Asset, ServiceRecord } from '../../../core/models';
+import { Asset, ServiceRecord, User, UserRole } from '../../../core/models';
 import { AllocationService } from '../../../core/services/allocation.service';
 import { ServiceRecordService } from '../../../core/services/service-record.service';
 import { WarrantyHistoryService, WarrantyHistoryItem } from '../../../core/services/warranty-history.service';
 import { IssueService } from '../../../core/services/issue.service';
+import { AuthService } from '../../../core/services/auth.service';
 import { ToastService } from '../../../shared/components/toast/toast.service';
+import { ROLE_PERMISSIONS } from '../../../core/constants/role.constants';
 
 @Component({
   selector: 'app-asset-detail',
@@ -28,7 +30,7 @@ import { ToastService } from '../../../shared/components/toast/toast.service';
           <button class="btn btn-secondary" (click)="goBack()">
             <i class="icon-arrow-left"></i> Back
           </button>
-          <button class="btn btn-primary" (click)="editAsset()">
+          <button class="btn btn-primary" (click)="editAsset()" *ngIf="canManageAssets()">
             <i class="icon-edit"></i> Edit
           </button>
         </div>
@@ -62,11 +64,11 @@ import { ToastService } from '../../../shared/components/toast/toast.service';
                       <label>Model:</label>
                       <span>{{ asset.model || 'N/A' }}</span>
                     </div>
-                    <div class="info-item">
+                    <div class="info-item" *ngIf="shouldShowField('serialNumber')">
                       <label>Serial Number:</label>
                       <span class="serial">{{ asset.serialNumber || 'N/A' }}</span>
                     </div>
-                    <div class="info-item">
+                    <div class="info-item" *ngIf="shouldShowField('purchaseDate')">
                       <label>Purchase Date:</label>
                       <span>{{ formatDate(asset.purchaseDate) }}</span>
                     </div>
@@ -74,10 +76,14 @@ import { ToastService } from '../../../shared/components/toast/toast.service';
                       <label>Warranty Expiry:</label>
                       <span [class.expired]="isWarrantyExpired()">{{ formatDate(asset.warrantyExpiryDate) }}</span>
                     </div>
+                    <div class="info-item" *ngIf="asset.vendor && shouldShowField('vendor')">
+                      <label>Vendor:</label>
+                      <span>{{ asset.vendor.name }}</span>
+                    </div>
                   </div>
                 </div>
 
-                <div class="info-section">
+                <div class="info-section" *ngIf="shouldShowFinancialInfo()">
                   <h3><i class="icon-dollar"></i> Financial Information</h3>
                   <div class="info-grid">
                     <div class="info-item">
@@ -131,7 +137,7 @@ import { ToastService } from '../../../shared/components/toast/toast.service';
                       <label>License Expiry:</label>
                       <span [class.expired]="isLicenseExpired()">{{ formatDate(asset.licenseExpiryDate) }}</span>
                     </div>
-                    <div class="info-item full-width" *ngIf="asset.licenseKey">
+                    <div class="info-item full-width" *ngIf="asset.licenseKey && shouldShowField('licenseKey')">
                       <label>License Key:</label>
                       <div class="license-key-container">
                         <span class="license-key" [class.revealed]="showLicenseKey">{{ showLicenseKey ? asset.licenseKey : '••••••••••••••••' }}</span>
@@ -159,8 +165,9 @@ import { ToastService } from '../../../shared/components/toast/toast.service';
                   <h3><i class="icon-user"></i> Current Allocation</h3>
                   <div class="allocation-card">
                     <div class="user-info">
-                      <div class="user-name">{{ currentAllocation.user.name }}</div>
-                      <div class="user-details">{{ currentAllocation.user.email }}</div>
+                      <div class="user-name">{{ currentAllocation.user?.name }}</div>
+                      <div class="user-details">{{ currentAllocation.user?.email }}</div>
+                      <div class="user-department" *ngIf="currentAllocation.user?.department">{{ currentAllocation.user?.department }}</div>
                     </div>
                     <div class="allocation-details">
                       <div class="detail-item">
@@ -175,10 +182,10 @@ import { ToastService } from '../../../shared/components/toast/toast.service';
                   </div>
                 </div>
 
-                <div class="info-section" *ngIf="groupSummary">
+                <div class="info-section" *ngIf="groupSummary && shouldShowGroupSummary()">
                   <div class="section-title">
                     <h3><i class="icon-grid"></i> Model Summary</h3>
-                    <button class="btn btn-success btn-add-asset" (click)="addAssetToGroup()">
+                    <button class="btn btn-success btn-add-asset" (click)="addAssetToGroup()" *ngIf="canManageAssets()">
                       <i class="icon-plus"></i> Add Asset
                     </button>
                   </div>
@@ -210,7 +217,7 @@ import { ToastService } from '../../../shared/components/toast/toast.service';
                       </div>
                     </div>
                   </div>
-                  <div class="actions" *ngIf="groupSummary.available > 0">
+                  <div class="actions" *ngIf="groupSummary.available > 0 && canManageAssets()">
                     <button class="btn btn-primary" (click)="quickAllocate()">
                       <i class="icon-plus"></i> Allocate Available Asset
                     </button>
@@ -223,9 +230,14 @@ import { ToastService } from '../../../shared/components/toast/toast.service';
             <div *ngIf="activeTab === 'service'" class="tab-panel">
               <div class="section-header">
                 <h3><i class="icon-tool"></i> Service History Log</h3>
-                <div class="service-summary">
-                  <span class="summary-item">Total Services: {{ getFilteredServiceRecords().length }}</span>
-                  <span class="summary-item" *ngIf="getTotalServiceCost() > 0">Total Cost: \${{ getTotalServiceCost() | number:'1.2-2' }}</span>
+                <div class="service-actions">
+                  <div class="service-summary">
+                    <span class="summary-item">Total Services: {{ getFilteredServiceRecords().length }}</span>
+                    <span class="summary-item" *ngIf="getTotalServiceCost() > 0 && shouldShowFinancialInfo()">Total Cost: \${{ getTotalServiceCost() | number:'1.2-2' }}</span>
+                  </div>
+                  <button class="btn btn-primary" (click)="addServiceRecord()" *ngIf="canManageAssets()">
+                    <i class="icon-plus"></i> Add Service Record
+                  </button>
                 </div>
               </div>
               <div class="service-filters" *ngIf="serviceRecords.length > 0">
@@ -258,10 +270,18 @@ import { ToastService } from '../../../shared/components/toast/toast.service';
                 <div *ngFor="let record of getFilteredServiceRecords(); trackBy: trackByServiceId" class="service-record-card">
                   <div class="record-header">
                     <div class="service-info">
-                      <div class="service-type-badge" [class]="'type-' + record.serviceType.toLowerCase().replace(' ', '-')">{{ record.serviceType }}</div>
+                      <div class="service-type-badge" [class]="'type-' + (record.serviceType || 'general').toLowerCase().replace(' ', '-')">{{ record.serviceType || 'Service' }}</div>
                       <div class="service-date">{{ formatDate(record.serviceDate) }}</div>
                     </div>
-                    <div class="service-status" [class]="'status-' + record.status.toLowerCase()">{{ record.status }}</div>
+                    <div class="service-status" [class]="'status-' + (record.status || 'completed').toLowerCase()">{{ record.status || 'Completed' }}</div>
+                    <div class="record-actions" *ngIf="canManageAssets()">
+                      <button class="btn-icon" (click)="editServiceRecord(record)" title="Edit">
+                        <i class="icon-edit"></i>
+                      </button>
+                      <button class="btn-icon" (click)="viewServiceRecord(record)" title="View Details">
+                        <i class="icon-eye"></i>
+                      </button>
+                    </div>
                   </div>
                   <div class="record-body">
                     <div class="description" *ngIf="record.description">
@@ -269,9 +289,9 @@ import { ToastService } from '../../../shared/components/toast/toast.service';
                     </div>
                     <div class="service-details">
                       <div class="detail-row">
-                        <div class="detail-item">
+                        <div class="detail-item" *ngIf="shouldShowFinancialInfo()">
                           <label>Cost:</label>
-                          <span class="cost">\${{ record.cost | number:'1.2-2' }}</span>
+                          <span class="cost">\${{ (record.cost || 0) | number:'1.2-2' }}</span>
                         </div>
                         <div class="detail-item" *ngIf="record.vendor">
                           <label>Vendor:</label>
@@ -300,6 +320,9 @@ import { ToastService } from '../../../shared/components/toast/toast.service';
                   <i class="icon-tool"></i>
                   <h4>No Service Records</h4>
                   <p>No service history available for this asset. Service records are automatically logged when maintenance or repairs are performed.</p>
+                  <button class="btn btn-primary" (click)="addServiceRecord()" *ngIf="canManageAssets()">
+                    <i class="icon-plus"></i> Add First Service Record
+                  </button>
                 </div>
               </ng-template>
             </div>
@@ -308,7 +331,7 @@ import { ToastService } from '../../../shared/components/toast/toast.service';
             <div *ngIf="activeTab === 'issues'" class="tab-panel">
               <div class="section-header">
                 <h3><i class="icon-alert"></i> Issues</h3>
-                <button class="btn btn-primary" (click)="reportIssue()">
+                <button class="btn btn-primary" (click)="reportIssue()" *ngIf="canCreateIssues()">
                   <i class="icon-plus"></i> Report Issue
                 </button>
               </div>
@@ -329,7 +352,7 @@ import { ToastService } from '../../../shared/components/toast/toast.service';
                   <i class="icon-alert"></i>
                   <h4>No Issues</h4>
                   <p>No issues reported for this asset.</p>
-                  <button class="btn btn-primary" (click)="reportIssue()">
+                  <button class="btn btn-primary" (click)="reportIssue()" *ngIf="canCreateIssues()">
                     <i class="icon-plus"></i> Report First Issue
                   </button>
                 </div>
@@ -377,15 +400,20 @@ import { ToastService } from '../../../shared/components/toast/toast.service';
           
           <div class="quick-actions">
             <h4>Quick Actions</h4>
-            <button class="action-btn" (click)="editAsset()">
+            <button class="action-btn" (click)="editAsset()" *ngIf="canManageAssets()">
               <i class="icon-edit"></i> Edit Asset
             </button>
-            <button class="action-btn" (click)="reportIssue()">
+            <button class="action-btn" (click)="reportIssue()" *ngIf="canCreateIssues()">
               <i class="icon-alert"></i> Report Issue
             </button>
-
-            <button class="action-btn" *ngIf="!currentAllocation && asset.status === 'AVAILABLE'" (click)="allocateAsset()">
+            <button class="action-btn" *ngIf="!currentAllocation && asset.status === 'AVAILABLE' && canManageAssets()" (click)="allocateAsset()">
               <i class="icon-user"></i> Allocate
+            </button>
+            <button class="action-btn" *ngIf="currentAllocation && canManageAssets()" (click)="returnAsset()">
+              <i class="icon-return"></i> Return Asset
+            </button>
+            <button class="action-btn" (click)="viewAssetHistory()" *ngIf="canManageAssets()">
+              <i class="icon-history"></i> View History
             </button>
           </div>
 
@@ -399,12 +427,11 @@ import { ToastService } from '../../../shared/components/toast/toast.service';
               <label>Service Records:</label>
               <span>{{ getFilteredServiceRecords().length }}{{ hasActiveFilters() ? ' / ' + serviceRecords.length : '' }}</span>
             </div>
-            <div class="stat-item" *ngIf="depreciation">
+            <div class="stat-item" *ngIf="depreciation && shouldShowFinancialInfo()">
               <label>Age:</label>
               <span>{{ depreciation.yearsUsed }} years</span>
             </div>
           </div>
-
         </div>
       </div>
     </div>
@@ -683,6 +710,7 @@ import { ToastService } from '../../../shared/components/toast/toast.service';
     .allocation-card { display: flex; gap: 1.5rem; align-items: center; padding: 1rem; background: #f8f9fa; border-radius: 0.75rem; }
     .user-info .user-name { font-weight: 600; color: #1a1a1a; }
     .user-info .user-details { color: #666; font-size: 0.875rem; }
+    .user-info .user-department { color: #007bff; font-size: 0.75rem; font-weight: 500; text-transform: uppercase; margin-top: 0.25rem; }
     .allocation-details { flex: 1; }
     .detail-item { display: flex; justify-content: space-between; margin-bottom: 0.5rem; }
     .detail-item label { font-weight: 500; color: #666; }
@@ -703,8 +731,10 @@ import { ToastService } from '../../../shared/components/toast/toast.service';
     
     .section-header { display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 2rem; }
     .section-header h3 { margin: 0; display: flex; align-items: center; gap: 0.5rem; }
+    .service-actions { display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 1rem; }
     .service-summary { display: flex; gap: 2rem; color: #666; font-size: 0.875rem; }
     .summary-item { display: flex; align-items: center; gap: 0.5rem; }
+    .record-actions { display: flex; gap: 0.5rem; align-items: center; }
     
     .service-record-card, .issue-card { background: white; padding: 1.5rem; border-radius: 0.75rem; box-shadow: 0 2px 4px rgba(0,0,0,0.05); border: 1px solid #f0f0f0; margin-bottom: 1rem; }
     .record-header, .issue-header { display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 1rem; }
@@ -714,6 +744,7 @@ import { ToastService } from '../../../shared/components/toast/toast.service';
     .type-repair { background: #f8d7da; color: #721c24; }
     .type-upgrade { background: #d4edda; color: #155724; }
     .type-inspection { background: #cce5ff; color: #004085; }
+    .type-general { background: #e9ecef; color: #495057; }
     .service-date { color: #666; font-size: 0.875rem; }
     .service-status { padding: 0.25rem 0.5rem; border-radius: 0.25rem; font-size: 0.75rem; font-weight: 500; text-transform: uppercase; }
     .status-completed { background: #d4edda; color: #155724; }
@@ -804,6 +835,11 @@ import { ToastService } from '../../../shared/components/toast/toast.service';
     .empty-state { text-align: center; padding: 3rem; color: #666; }
     .empty-state i { font-size: 3rem; margin-bottom: 1rem; color: #ccc; }
     .empty-state h4 { margin: 0 0 0.5rem 0; color: #1a1a1a; }
+    .empty-state p { 
+      margin: 0 0 1rem 0;
+      font-size: 0.875rem;
+      line-height: 1.5;
+    }
     .service-filters { display: flex; gap: 1rem; align-items: flex-end; margin-bottom: 2rem; padding: 1rem; background: #f8f9fa; border-radius: 0.5rem; flex-wrap: wrap; }
     .filter-group { display: flex; flex-direction: column; min-width: 150px; }
     .filter-group label { font-size: 0.75rem; font-weight: 500; color: #666; margin-bottom: 0.25rem; text-transform: uppercase; letter-spacing: 0.5px; }
@@ -815,11 +851,6 @@ import { ToastService } from '../../../shared/components/toast/toast.service';
     .btn-add-asset { padding: 0.5rem 1rem; font-size: 0.875rem; }
     .btn-success { background: linear-gradient(135deg, #28a745, #20c997); color: white; }
     .btn-success:hover { transform: translateY(-1px); box-shadow: 0 4px 12px rgba(40,167,69,0.3); }
-    .empty-state p { 
-      margin: 0;
-      font-size: 0.875rem;
-      line-height: 1.5;
-    }
     
     @media (max-width: 1024px) {
       .content {
@@ -896,6 +927,9 @@ export class AssetDetailComponent implements OnInit {
   vendorFilter = '';
   serviceTypeFilter = '';
   filteredServiceRecords: ServiceRecord[] = [];
+  currentUser: User | null = null;
+  userRole: UserRole | null = null;
+  permissions: any = {};
 
   constructor(
     private route: ActivatedRoute,
@@ -905,10 +939,12 @@ export class AssetDetailComponent implements OnInit {
     private serviceRecordService: ServiceRecordService,
     private issueService: IssueService,
     private warrantyHistoryService: WarrantyHistoryService,
+    private authService: AuthService,
     private toastService: ToastService
   ) {}
 
   ngOnInit() {
+    this.initializeUserContext();
     const id = this.route.snapshot.paramMap.get('id');
     if (id && !isNaN(+id)) {
       this.loadAsset(+id);
@@ -916,6 +952,12 @@ export class AssetDetailComponent implements OnInit {
       this.toastService.error('Invalid asset ID');
       this.router.navigate(['/assets']);
     }
+  }
+
+  private initializeUserContext() {
+    this.currentUser = this.authService.getCurrentUser();
+    this.userRole = this.currentUser?.role || null;
+    this.permissions = this.userRole ? ROLE_PERMISSIONS[this.userRole] : {};
   }
 
   loadAsset(id: number) {
@@ -928,18 +970,34 @@ export class AssetDetailComponent implements OnInit {
     this.assetService.getAssetById(id).subscribe({
       next: (asset) => {
         this.asset = asset;
-        this.loadCurrentAllocation(id);
-        this.loadRecentIssues(id);
-        this.loadServiceRecords(id);
-        this.loadDepreciation(id);
-        this.loadWarrantyHistory(id);
-        this.loadGroupSummary();
+        this.loadAssetData(id);
       },
-      error: () => {
-        this.toastService.error('Asset not found');
+      error: (error) => {
+        console.error('Error loading asset:', error);
+        this.toastService.error('Asset not found or access denied');
         this.router.navigate(['/assets']);
       }
     });
+  }
+
+  private loadAssetData(id: number) {
+    // Load data based on user permissions
+    this.loadCurrentAllocation(id);
+    this.loadRecentIssues(id);
+    this.loadServiceRecords(id);
+    
+    // Only load financial data for authorized roles
+    if (this.permissions.canManageAssets || this.permissions.canManageSystem) {
+      this.loadDepreciation(id);
+    }
+    
+    // Load warranty history for all users
+    this.loadWarrantyHistory(id);
+    
+    // Load group summary for asset managers
+    if (this.permissions.canManageAssets) {
+      this.loadGroupSummary();
+    }
   }
 
   loadWarrantyHistory(assetId: number) {
@@ -951,8 +1009,13 @@ export class AssetDetailComponent implements OnInit {
   loadServiceRecords(assetId: number) {
     this.serviceRecordService.getServiceRecordsByAsset(assetId).subscribe({
       next: (response) => {
-        this.serviceRecords = response;
-        this.filteredServiceRecords = [...(this.serviceRecords || [])];
+        this.serviceRecords = response || [];
+        this.filteredServiceRecords = [...this.serviceRecords];
+      },
+      error: (error) => {
+        console.error('Error loading service records:', error);
+        this.serviceRecords = [];
+        this.filteredServiceRecords = [];
       }
     });
   }
@@ -979,7 +1042,11 @@ export class AssetDetailComponent implements OnInit {
   loadRecentIssues(assetId: number) {
     this.issueService.getIssuesByAsset(assetId, 0, 5).subscribe({
       next: (response) => {
-        this.recentIssues = response.content;
+        this.recentIssues = response?.content || [];
+      },
+      error: (error) => {
+        console.error('Error loading issues:', error);
+        this.recentIssues = [];
       }
     });
   }
@@ -992,6 +1059,10 @@ export class AssetDetailComponent implements OnInit {
   }
 
   editAsset() {
+    if (!this.canManageAssets()) {
+      this.toastService.error('Access denied');
+      return;
+    }
     this.router.navigate(['/assets', this.asset?.id, 'edit']);
   }
 
@@ -1049,11 +1120,11 @@ export class AssetDetailComponent implements OnInit {
   }
 
   reportIssue() {
+    if (!this.canCreateIssues()) {
+      this.toastService.error('Access denied');
+      return;
+    }
     this.router.navigate(['/issues/new'], { queryParams: { assetId: this.asset?.id } });
-  }
-
-  getTotalServiceCost(): number {
-    return (this.serviceRecords || []).reduce((total, record) => total + (record.cost || 0), 0);
   }
 
   isServiceOverdue(nextServiceDate: string | null | undefined): boolean {
@@ -1126,11 +1197,19 @@ export class AssetDetailComponent implements OnInit {
   }
 
   allocateAsset() {
-    // Navigate to allocation page or open allocation dialog
+    if (!this.canManageAssets()) {
+      this.toastService.error('Access denied');
+      return;
+    }
     this.router.navigate(['/allocations/new'], { queryParams: { assetId: this.asset?.id } });
   }
 
   quickAllocate() {
+    if (!this.canManageAssets()) {
+      this.toastService.error('Access denied');
+      return;
+    }
+    
     const userIdStr = prompt('Enter user ID to allocate an available asset from this model:');
     if (!userIdStr) return;
     const userId = Number(userIdStr);
@@ -1146,5 +1225,85 @@ export class AssetDetailComponent implements OnInit {
       },
       error: () => this.toastService.error('Allocation failed')
     });
+  }
+
+  // Role-based access control methods
+  shouldShowField(field: string): boolean {
+    switch (field) {
+      case 'serialNumber':
+      case 'purchaseDate':
+      case 'vendor':
+      case 'licenseKey':
+        return this.permissions.canManageAssets || this.permissions.canManageSystem;
+      default:
+        return true;
+    }
+  }
+
+  shouldShowFinancialInfo(): boolean {
+    return this.permissions.canManageAssets || this.permissions.canManageSystem;
+  }
+
+  shouldShowGroupSummary(): boolean {
+    return this.permissions.canManageAssets;
+  }
+
+  canManageAssets(): boolean {
+    return this.permissions.canManageAssets || false;
+  }
+
+  canCreateIssues(): boolean {
+    return this.permissions.canCreateIssues || false;
+  }
+
+  // Service record management methods
+  addServiceRecord() {
+    if (!this.canManageAssets()) {
+      this.toastService.error('Access denied');
+      return;
+    }
+    this.router.navigate(['/service-records/new'], { queryParams: { assetId: this.asset?.id } });
+  }
+
+  editServiceRecord(record: ServiceRecord) {
+    if (!this.canManageAssets()) {
+      this.toastService.error('Access denied');
+      return;
+    }
+    this.router.navigate(['/service-records', record.id, 'edit']);
+  }
+
+  viewServiceRecord(record: ServiceRecord) {
+    this.router.navigate(['/service-records', record.id]);
+  }
+
+  returnAsset() {
+    if (!this.canManageAssets() || !this.asset) {
+      this.toastService.error('Access denied');
+      return;
+    }
+    
+    const remarks = prompt('Enter return remarks (optional):');
+    this.assetService.returnAsset(this.asset.id, remarks || undefined).subscribe({
+      next: () => {
+        this.toastService.success('Asset returned successfully');
+        this.loadAsset(this.asset!.id);
+      },
+      error: () => this.toastService.error('Failed to return asset')
+    });
+  }
+
+  viewAssetHistory() {
+    if (!this.canManageAssets()) {
+      this.toastService.error('Access denied');
+      return;
+    }
+    // Navigate to asset history page or open modal
+    this.router.navigate(['/assets', this.asset?.id, 'history']);
+  }
+
+  getTotalServiceCost(): number {
+    if (!this.shouldShowFinancialInfo()) return 0;
+    return (this.serviceRecords || []).reduce((total, record) => total + (record.cost || 0), 0);
   }
 }

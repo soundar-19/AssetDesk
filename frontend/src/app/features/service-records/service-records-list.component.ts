@@ -3,154 +3,264 @@ import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { Router } from '@angular/router';
 import { ServiceRecordService } from '../../core/services/service-record.service';
+import { AssetService } from '../../core/services/asset.service';
 import { ServiceRecord } from '../../core/models';
-
+import { DataTableComponent, TableColumn, TableAction } from '../../shared/components/data-table/data-table.component';
 import { ToastService } from '../../shared/components/toast/toast.service';
-import { ConfirmDialogService } from '../../shared/components/confirm-dialog/confirm-dialog.service';
 import { RoleService } from '../../core/services/role.service';
 
 @Component({
   selector: 'app-service-records-list',
   standalone: true,
-  imports: [CommonModule, FormsModule],
-  template: `
-    <div class="service-records-container">
-      <div class="header">
-        <p class="subtitle">Complete log of asset maintenance and service activities</p>
-      </div>
-
-      <div class="filters-section" *ngIf="allServiceRecords.length > 0">
-        <div class="filters-header">
-          <h3 class="filters-title">Filter Records</h3>
-        </div>
-        
-        <div class="filters-grid">
-          <div class="filter-group">
-            <label class="filter-label">Performer</label>
-            <select class="filter-select" [(ngModel)]="performerFilter" (change)="applyFilters()">
-              <option value="">All Performers</option>
-              <option *ngFor="let performer of getUniquePerformers()" [value]="performer">{{ performer }}</option>
-            </select>
-          </div>
-          
-          <div class="filter-group">
-            <label class="filter-label">Vendor</label>
-            <select class="filter-select" [(ngModel)]="vendorFilter" (change)="applyFilters()">
-              <option value="">All Vendors</option>
-              <option *ngFor="let vendor of getUniqueVendors()" [value]="vendor">{{ vendor }}</option>
-            </select>
-          </div>
-          
-          <div class="filter-group">
-            <label class="filter-label">Service Type</label>
-            <select class="filter-select" [(ngModel)]="serviceTypeFilter" (change)="applyFilters()">
-              <option value="">All Types</option>
-              <option *ngFor="let type of getUniqueServiceTypes()" [value]="type">{{ type }}</option>
-            </select>
-          </div>
-        </div>
-        
-        <div class="filter-actions" *ngIf="hasActiveFilters()">
-          <button class="btn-clear" (click)="clearFilters()">
-            <svg width="16" height="16" viewBox="0 0 20 20" fill="currentColor">
-              <path fill-rule="evenodd" d="M4.293 4.293a1 1 0 011.414 0L10 8.586l4.293-4.293a1 1 0 111.414 1.414L11.414 10l4.293 4.293a1 1 0 01-1.414 1.414L10 11.414l-4.293 4.293a1 1 0 01-1.414-1.414L8.586 10 4.293 5.707a1 1 0 010-1.414z"/>
-            </svg>
-            Clear Filters
-          </button>
-        </div>
-      </div>
-
-      <div class="service-records-grid" *ngIf="serviceRecords.length > 0; else emptyState">
-        <div 
-          class="service-record-card" 
-          *ngFor="let record of serviceRecords; trackBy: trackByRecord"
-          (click)="viewRecord(record.id)">
-          
-          <div class="record-header">
-            <div class="asset-info">
-              <div class="asset-tag">{{ record.asset?.assetTag }}</div>
-              <div class="asset-name">{{ record.asset?.name }}</div>
-            </div>
-            <div class="service-date">{{ formatDate(record.serviceDate) }}</div>
-          </div>
-          
-          <div class="service-details">
-            <div class="service-description">{{ record.description }}</div>
-            <div class="service-cost" *ngIf="record.cost">
-              {{ record.cost | currency }}
-            </div>
-          </div>
-          
-          <div class="service-meta">
-            <div class="meta-item" *ngIf="record.performedBy">
-              <svg width="16" height="16" viewBox="0 0 20 20" fill="currentColor">
-                <path fill-rule="evenodd" d="M10 9a3 3 0 100-6 3 3 0 000 6zm-7 9a7 7 0 1114 0H3z"/>
-              </svg>
-              {{ record.performedBy }}
-            </div>
-            <div class="meta-item" *ngIf="record.vendor?.name">
-              <svg width="16" height="16" viewBox="0 0 20 20" fill="currentColor">
-                <path fill-rule="evenodd" d="M4 4a2 2 0 00-2 2v8a2 2 0 002 2h12a2 2 0 002-2V6a2 2 0 00-2-2H4zm0 2h12v8H4V6z"/>
-              </svg>
-              {{ record.vendor.name }}
-            </div>
-            <div class="meta-item">
-              <svg width="16" height="16" viewBox="0 0 20 20" fill="currentColor">
-                <path fill-rule="evenodd" d="M6 2a1 1 0 00-1 1v1H4a2 2 0 00-2 2v10a2 2 0 002 2h12a2 2 0 002-2V6a2 2 0 00-2-2h-1V3a1 1 0 10-2 0v1H7V3a1 1 0 00-1-1zm0 5a1 1 0 000 2h8a1 1 0 100-2H6z"/>
-              </svg>
-              {{ record.serviceType }}
-            </div>
-          </div>
-        </div>
-      </div>
-
-      <ng-template #emptyState>
-        <div class="empty-state">
-          <div class="empty-icon">🔧</div>
-          <h3>No service records found</h3>
-          <p>{{ hasActiveFilters() ? 'No records match your current filters.' : 'No service records have been logged yet.' }}</p>
-        </div>
-      </ng-template>
-    </div>
-  `,
+  imports: [CommonModule, FormsModule, DataTableComponent],
+  templateUrl: './service-records-list.component.html',
   styleUrls: ['./service-records-list.component.css']
 })
 export class ServiceRecordsListComponent implements OnInit {
   serviceRecords: ServiceRecord[] = [];
   allServiceRecords: ServiceRecord[] = [];
   pagination: any = null;
-  performerFilter = '';
-  vendorFilter = '';
-  serviceTypeFilter = '';
+  loading = true;
+  viewMode: 'overview' | 'records' | 'assets' | 'vendors' = 'overview';
   
+  // Filters
+  serviceTypeFilter = '';
+  statusFilter = '';
+  vendorFilter = '';
+  assetFilter = '';
+  dateRangeFilter = '';
+  searchTerm = '';
+  searchTimeout: any;
+  
+  // Analytics data
+  analytics = {
+    totalCost: 0,
+    monthlyTrend: 0,
+    avgCostPerService: 0,
+    topVendors: [] as any[],
+    servicesByType: {} as any,
+    upcomingMaintenance: [] as any[],
+    overdueMaintenance: [] as any[],
+    costByMonth: {} as any
+  };
 
+  // Table configuration
+  columns: TableColumn[] = [
+    { key: 'serviceDate', label: 'Date', pipe: 'date', sortable: true },
+    { key: 'asset', label: 'Asset', render: (record: ServiceRecord) => `${record.asset?.assetTag} - ${record.asset?.name}` },
+    { key: 'serviceType', label: 'Type', sortable: true },
+    { key: 'description', label: 'Description' },
+    { key: 'performedBy', label: 'Performed By' },
+    { key: 'vendor', label: 'Vendor', render: (record: ServiceRecord) => record.vendor?.name || 'Internal' },
+    { key: 'cost', label: 'Cost', pipe: 'currency' },
+    { key: 'status', label: 'Status', render: (record: ServiceRecord) => record.status || 'COMPLETED' }
+  ];
+
+  actions: TableAction[] = [
+    { label: 'View', icon: '👁', action: (record) => this.viewRecord(record.id) },
+    { label: 'View Asset', icon: '📦', action: (record) => this.viewAsset(record.asset?.id), condition: (record) => !!record.asset?.id },
+    { label: 'Edit', icon: '✏', action: (record) => this.editRecord(record.id), condition: () => this.roleService.canManageAssets() },
+    { label: 'Print', icon: '🖨', action: (record) => this.printServiceRecord(record) },
+    { label: 'Mark Complete', icon: '✅', action: (record) => this.markServiceComplete(record.id), condition: (record) => record.status === 'PENDING' && this.roleService.canManageAssets() }
+  ];
 
   constructor(
     private serviceRecordService: ServiceRecordService,
+    private assetService: AssetService,
     private router: Router,
     private toastService: ToastService,
-    private confirmDialog: ConfirmDialogService,
     public roleService: RoleService
   ) {}
 
   ngOnInit() {
     this.loadServiceRecords();
+    this.calculateAnalytics();
   }
 
   loadServiceRecords(page: number = 0) {
+    this.loading = true;
     this.serviceRecordService.getServiceRecords(page, 100).subscribe({
       next: (response) => {
-        this.allServiceRecords = response.content;
+        this.allServiceRecords = response.content || [];
         this.applyFilters();
+        this.calculateAnalytics();
         this.pagination = {
           page: response.number || 0,
           totalPages: response.totalPages || 0,
           totalElements: response.totalElements || 0
         };
+        this.loading = false;
       },
       error: () => {
         this.toastService.error('Failed to load service records');
+        this.loading = false;
       }
+    });
+  }
+
+  calculateAnalytics() {
+    const records = this.allServiceRecords;
+    
+    // Total cost
+    this.analytics.totalCost = records.reduce((sum, r) => sum + (r.cost || 0), 0);
+    
+    // Average cost per service
+    this.analytics.avgCostPerService = records.length > 0 ? this.analytics.totalCost / records.length : 0;
+    
+    // Monthly trend (comparing last 2 months)
+    const now = new Date();
+    const lastMonth = new Date(now.getFullYear(), now.getMonth() - 1, 1);
+    const twoMonthsAgo = new Date(now.getFullYear(), now.getMonth() - 2, 1);
+    
+    const lastMonthRecords = records.filter(r => {
+      const date = new Date(r.serviceDate);
+      return date >= lastMonth && date < now;
+    });
+    
+    const twoMonthsAgoRecords = records.filter(r => {
+      const date = new Date(r.serviceDate);
+      return date >= twoMonthsAgo && date < lastMonth;
+    });
+    
+    const lastMonthCost = lastMonthRecords.reduce((sum, r) => sum + (r.cost || 0), 0);
+    const twoMonthsAgoCost = twoMonthsAgoRecords.reduce((sum, r) => sum + (r.cost || 0), 0);
+    
+    this.analytics.monthlyTrend = twoMonthsAgoCost > 0 ? 
+      ((lastMonthCost - twoMonthsAgoCost) / twoMonthsAgoCost) * 100 : 0;
+    
+    // Top vendors by cost
+    const vendorCosts: { [key: string]: number } = {};
+    records.forEach(r => {
+      const vendor = r.vendor?.name || 'Internal';
+      vendorCosts[vendor] = (vendorCosts[vendor] || 0) + (r.cost || 0);
+    });
+    
+    this.analytics.topVendors = Object.entries(vendorCosts)
+      .map(([name, cost]) => ({ name, cost }))
+      .sort((a, b) => b.cost - a.cost)
+      .slice(0, 5);
+    
+    // Services by type
+    const serviceTypes: { [key: string]: number } = {};
+    records.forEach(r => {
+      serviceTypes[r.serviceType] = (serviceTypes[r.serviceType] || 0) + 1;
+    });
+    this.analytics.servicesByType = serviceTypes;
+    
+    // Cost by month (last 6 months)
+    const costByMonth: { [key: string]: number } = {};
+    for (let i = 5; i >= 0; i--) {
+      const date = new Date(now.getFullYear(), now.getMonth() - i, 1);
+      const monthKey = date.toLocaleDateString('en-US', { year: 'numeric', month: 'short' });
+      costByMonth[monthKey] = 0;
+    }
+    
+    records.forEach(r => {
+      const date = new Date(r.serviceDate);
+      const monthKey = date.toLocaleDateString('en-US', { year: 'numeric', month: 'short' });
+      if (costByMonth.hasOwnProperty(monthKey)) {
+        costByMonth[monthKey] += (r.cost || 0);
+      }
+    });
+    this.analytics.costByMonth = costByMonth;
+  }
+
+  applyFilters() {
+    this.serviceRecords = this.allServiceRecords.filter(record => {
+      const typeMatch = !this.serviceTypeFilter || record.serviceType === this.serviceTypeFilter;
+      const statusMatch = !this.statusFilter || (record.status || 'COMPLETED') === this.statusFilter;
+      const vendorMatch = !this.vendorFilter || record.vendor?.name === this.vendorFilter;
+      const assetMatch = !this.assetFilter || record.asset?.assetTag?.includes(this.assetFilter) || record.asset?.name?.includes(this.assetFilter);
+      
+      let dateMatch = true;
+      if (this.dateRangeFilter) {
+        const recordDate = new Date(record.serviceDate);
+        const now = new Date();
+        switch (this.dateRangeFilter) {
+          case 'week':
+            dateMatch = recordDate >= new Date(now.getTime() - 7 * 24 * 60 * 60 * 1000);
+            break;
+          case 'month':
+            dateMatch = recordDate >= new Date(now.getFullYear(), now.getMonth(), 1);
+            break;
+          case 'quarter':
+            dateMatch = recordDate >= new Date(now.getFullYear(), now.getMonth() - 3, 1);
+            break;
+          case 'year':
+            dateMatch = recordDate >= new Date(now.getFullYear(), 0, 1);
+            break;
+        }
+      }
+      
+      let searchMatch = true;
+      if (this.searchTerm) {
+        const searchLower = this.searchTerm.toLowerCase();
+        searchMatch = record.description?.toLowerCase().includes(searchLower) ||
+                     record.asset?.name?.toLowerCase().includes(searchLower) ||
+                     record.asset?.assetTag?.toLowerCase().includes(searchLower) ||
+                     record.performedBy?.toLowerCase().includes(searchLower) || false;
+      }
+      
+      return typeMatch && statusMatch && vendorMatch && assetMatch && dateMatch && searchMatch;
+    });
+  }
+
+  onSearchChange() {
+    clearTimeout(this.searchTimeout);
+    this.searchTimeout = setTimeout(() => {
+      this.applyFilters();
+    }, 300);
+  }
+
+  setViewMode(mode: 'overview' | 'records' | 'assets' | 'vendors') {
+    this.viewMode = mode;
+  }
+
+  getUniqueServiceTypes(): string[] {
+    return [...new Set(this.allServiceRecords.map(r => r.serviceType))];
+  }
+
+  getUniqueVendors(): string[] {
+    return [...new Set(this.allServiceRecords.filter(r => r.vendor?.name).map(r => r.vendor!.name))];
+  }
+
+  getTotalCost(): number {
+    return this.serviceRecords.reduce((total, record) => total + (record.cost || 0), 0);
+  }
+
+  getRecentRecords(): number {
+    const oneMonthAgo = new Date();
+    oneMonthAgo.setMonth(oneMonthAgo.getMonth() - 1);
+    return this.serviceRecords.filter(record => 
+      new Date(record.serviceDate) >= oneMonthAgo
+    ).length;
+  }
+
+  getPendingServices(): number {
+    return this.serviceRecords.filter(record => 
+      record.status === 'PENDING'
+    ).length;
+  }
+
+  getOverdueServices(): number {
+    const today = new Date();
+    return this.allServiceRecords.filter(record => 
+      record.nextServiceDate && new Date(record.nextServiceDate) < today
+    ).length;
+  }
+
+  formatCurrency(amount: number): string {
+    return new Intl.NumberFormat('en-US', {
+      style: 'currency',
+      currency: 'USD'
+    }).format(amount);
+  }
+
+  formatDate(dateString: string): string {
+    return new Date(dateString).toLocaleDateString('en-US', {
+      year: 'numeric',
+      month: 'short',
+      day: 'numeric'
     });
   }
 
@@ -162,47 +272,431 @@ export class ServiceRecordsListComponent implements OnInit {
     this.router.navigate(['/service-records', id]);
   }
 
-  getUniquePerformers(): string[] {
-    return [...new Set(this.allServiceRecords.filter(r => r.performedBy).map(r => r.performedBy!))];
+  editRecord(id: number) {
+    this.router.navigate(['/service-records', id, 'edit']);
   }
 
-  getUniqueVendors(): string[] {
-    return [...new Set(this.allServiceRecords.filter(r => r.vendor?.name).map(r => r.vendor!.name))];
+  viewAsset(assetId?: number) {
+    if (assetId) {
+      this.router.navigate(['/assets', assetId]);
+    }
   }
 
-  getUniqueServiceTypes(): string[] {
-    return [...new Set(this.allServiceRecords.map(r => r.serviceType))];
+  createRecord() {
+    this.router.navigate(['/service-records/new']);
   }
 
-  applyFilters() {
-    this.serviceRecords = this.allServiceRecords.filter(record => {
-      const performerMatch = !this.performerFilter || record.performedBy === this.performerFilter;
-      const vendorMatch = !this.vendorFilter || record.vendor?.name === this.vendorFilter;
-      const typeMatch = !this.serviceTypeFilter || record.serviceType === this.serviceTypeFilter;
-      return performerMatch && vendorMatch && typeMatch;
+  exportRecords() {
+    const csvData = this.serviceRecords.map(record => ({
+      Date: this.formatDate(record.serviceDate),
+      Asset: `${record.asset?.assetTag} - ${record.asset?.name}`,
+      Type: record.serviceType,
+      Description: record.description,
+      Performer: record.performedBy || '',
+      Vendor: record.vendor?.name || 'Internal',
+      Cost: record.cost || 0,
+      Status: record.status || 'COMPLETED'
+    }));
+    
+    this.downloadCSV(csvData, 'service-records.csv');
+    this.toastService.success('Service records exported');
+  }
+
+  private downloadCSV(data: any[], filename: string) {
+    const csvContent = this.convertToCSV(data);
+    const blob = new Blob([csvContent], { type: 'text/csv' });
+    const url = window.URL.createObjectURL(blob);
+    const link = document.createElement('a');
+    link.href = url;
+    link.download = filename;
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+    window.URL.revokeObjectURL(url);
+  }
+
+  private convertToCSV(data: any[]): string {
+    if (data.length === 0) return '';
+    
+    const headers = Object.keys(data[0]);
+    const csvRows = [
+      headers.join(','),
+      ...data.map(row => 
+        headers.map(header => {
+          const value = row[header];
+          return typeof value === 'string' && value.includes(',') ? `"${value}"` : value;
+        }).join(',')
+      )
+    ];
+    
+    return csvRows.join('\n');
+  }
+
+  getVendorServiceCount(vendorName: string): number {
+    return this.allServiceRecords.filter(r => r.vendor?.name === vendorName).length;
+  }
+
+  getVendorAvgCost(vendorName: string, totalCost: number): number {
+    const count = this.getVendorServiceCount(vendorName);
+    return count > 0 ? totalCost / count : 0;
+  }
+
+  getCostByMonthArray(): { key: string, value: number }[] {
+    return Object.entries(this.analytics.costByMonth).map(([key, value]) => ({ key, value: value as number }));
+  }
+
+  getServiceTypeArray(): { key: string, value: number }[] {
+    return Object.entries(this.analytics.servicesByType).map(([key, value]) => ({ key, value: value as number }));
+  }
+
+  getAssetServiceSummary(): any[] {
+    const assetMap = new Map();
+    this.allServiceRecords.forEach(record => {
+      if (record.asset) {
+        const key = record.asset.id;
+        if (!assetMap.has(key)) {
+          assetMap.set(key, {
+            asset: record.asset,
+            serviceCount: 0,
+            totalCost: 0,
+            lastService: null,
+            nextService: null
+          });
+        }
+        const summary = assetMap.get(key);
+        summary.serviceCount++;
+        summary.totalCost += (record.cost || 0);
+        if (!summary.lastService || new Date(record.serviceDate) > new Date(summary.lastService)) {
+          summary.lastService = record.serviceDate;
+        }
+        if (record.nextServiceDate && (!summary.nextService || new Date(record.nextServiceDate) < new Date(summary.nextService))) {
+          summary.nextService = record.nextServiceDate;
+        }
+      }
     });
+    return Array.from(assetMap.values()).sort((a, b) => b.totalCost - a.totalCost);
+  }
+
+  getUpcomingServices(): any[] {
+    const today = new Date();
+    const thirtyDaysFromNow = new Date(today.getTime() + 30 * 24 * 60 * 60 * 1000);
+    return this.allServiceRecords
+      .filter(record => record.nextServiceDate && 
+        new Date(record.nextServiceDate) >= today && 
+        new Date(record.nextServiceDate) <= thirtyDaysFromNow)
+      .sort((a, b) => new Date(a.nextServiceDate!).getTime() - new Date(b.nextServiceDate!).getTime());
+  }
+
+  getOverdueServicesList(): any[] {
+    const today = new Date();
+    return this.allServiceRecords
+      .filter(record => record.nextServiceDate && new Date(record.nextServiceDate) < today)
+      .sort((a, b) => new Date(a.nextServiceDate!).getTime() - new Date(b.nextServiceDate!).getTime());
+  }
+
+  getVendorAnalytics(): any[] {
+    const vendorMap = new Map();
+    this.allServiceRecords.forEach(record => {
+      const vendorName = record.vendor?.name || 'Internal';
+      if (!vendorMap.has(vendorName)) {
+        vendorMap.set(vendorName, {
+          name: vendorName,
+          totalCost: 0,
+          serviceCount: 0,
+          avgCost: 0,
+          lastService: null,
+          assets: new Set(),
+          serviceTypes: new Set(),
+          completedServices: 0,
+          pendingServices: 0,
+          rating: 0
+        });
+      }
+      const vendor = vendorMap.get(vendorName);
+      vendor.totalCost += (record.cost || 0);
+      vendor.serviceCount++;
+      vendor.assets.add(record.asset?.id);
+      vendor.serviceTypes.add(record.serviceType);
+      
+      if (record.status === 'COMPLETED') vendor.completedServices++;
+      if (record.status === 'PENDING') vendor.pendingServices++;
+      
+      if (!vendor.lastService || new Date(record.serviceDate) > new Date(vendor.lastService)) {
+        vendor.lastService = record.serviceDate;
+      }
+    });
+    
+    return Array.from(vendorMap.values()).map(vendor => ({
+      ...vendor,
+      avgCost: vendor.serviceCount > 0 ? vendor.totalCost / vendor.serviceCount : 0,
+      assetCount: vendor.assets.size,
+      serviceTypeCount: vendor.serviceTypes.size,
+      completionRate: vendor.serviceCount > 0 ? (vendor.completedServices / vendor.serviceCount) * 100 : 0,
+      rating: this.calculateVendorRating(vendor)
+    })).sort((a, b) => b.totalCost - a.totalCost);
+  }
+
+  calculateVendorRating(vendor: any): number {
+    let rating = 3; // Base rating
+    
+    // Completion rate factor
+    if (vendor.completionRate >= 95) rating += 1.5;
+    else if (vendor.completionRate >= 85) rating += 1;
+    else if (vendor.completionRate < 70) rating -= 1;
+    
+    // Cost efficiency factor
+    const avgMarketCost = this.analytics.avgCostPerService;
+    if (vendor.avgCost < avgMarketCost * 0.8) rating += 0.5;
+    else if (vendor.avgCost > avgMarketCost * 1.2) rating -= 0.5;
+    
+    // Service volume factor
+    if (vendor.serviceCount >= 10) rating += 0.5;
+    
+    return Math.min(5, Math.max(1, rating));
+  }
+
+  getServicesByAsset(): any[] {
+    return this.getAssetServiceSummary().map(summary => ({
+      ...summary,
+      avgCostPerService: summary.serviceCount > 0 ? summary.totalCost / summary.serviceCount : 0,
+      daysSinceLastService: summary.lastService ? 
+        Math.floor((new Date().getTime() - new Date(summary.lastService).getTime()) / (1000 * 60 * 60 * 24)) : null,
+      isOverdue: summary.nextService ? new Date(summary.nextService) < new Date() : false,
+      maintenanceFrequency: this.calculateMaintenanceFrequency(summary.asset.id),
+      riskLevel: this.calculateAssetRiskLevel(summary)
+    }));
+  }
+
+  calculateMaintenanceFrequency(assetId: number): string {
+    const assetRecords = this.allServiceRecords
+      .filter(r => r.asset?.id === assetId)
+      .sort((a, b) => new Date(a.serviceDate).getTime() - new Date(b.serviceDate).getTime());
+    
+    if (assetRecords.length < 2) return 'Insufficient data';
+    
+    const intervals = [];
+    for (let i = 1; i < assetRecords.length; i++) {
+      const days = Math.floor((new Date(assetRecords[i].serviceDate).getTime() - 
+        new Date(assetRecords[i-1].serviceDate).getTime()) / (1000 * 60 * 60 * 24));
+      intervals.push(days);
+    }
+    
+    const avgInterval = intervals.reduce((sum, interval) => sum + interval, 0) / intervals.length;
+    
+    if (avgInterval <= 30) return 'Monthly';
+    if (avgInterval <= 90) return 'Quarterly';
+    if (avgInterval <= 180) return 'Semi-annual';
+    if (avgInterval <= 365) return 'Annual';
+    return 'Irregular';
+  }
+
+  calculateAssetRiskLevel(summary: any): string {
+    let riskScore = 0;
+    
+    // Age factor
+    if (summary.daysSinceLastService > 365) riskScore += 3;
+    else if (summary.daysSinceLastService > 180) riskScore += 2;
+    else if (summary.daysSinceLastService > 90) riskScore += 1;
+    
+    // Cost factor
+    if (summary.totalCost > this.analytics.avgCostPerService * 3) riskScore += 2;
+    else if (summary.totalCost > this.analytics.avgCostPerService * 2) riskScore += 1;
+    
+    // Overdue factor
+    if (summary.isOverdue) riskScore += 2;
+    
+    // Service frequency factor
+    if (summary.serviceCount > 5) riskScore += 1;
+    
+    if (riskScore >= 5) return 'High';
+    if (riskScore >= 3) return 'Medium';
+    return 'Low';
+  }
+
+  getDaysUntil(date: string): number {
+    return Math.floor((new Date(date).getTime() - new Date().getTime()) / (1000 * 60 * 60 * 24));
+  }
+
+  getDaysOverdue(date: string): number {
+    return Math.floor((new Date().getTime() - new Date(date).getTime()) / (1000 * 60 * 60 * 24));
+  }
+
+  getServiceTypeStats(): any[] {
+    const typeMap = new Map();
+    this.allServiceRecords.forEach(record => {
+      if (!typeMap.has(record.serviceType)) {
+        typeMap.set(record.serviceType, {
+          type: record.serviceType,
+          count: 0,
+          totalCost: 0,
+          avgCost: 0,
+          completedCount: 0,
+          pendingCount: 0
+        });
+      }
+      const stat = typeMap.get(record.serviceType);
+      stat.count++;
+      stat.totalCost += (record.cost || 0);
+      if (record.status === 'COMPLETED') stat.completedCount++;
+      if (record.status === 'PENDING') stat.pendingCount++;
+    });
+    
+    return Array.from(typeMap.values()).map(stat => ({
+      ...stat,
+      avgCost: stat.count > 0 ? stat.totalCost / stat.count : 0,
+      completionRate: stat.count > 0 ? (stat.completedCount / stat.count) * 100 : 0
+    })).sort((a, b) => b.totalCost - a.totalCost);
+  }
+
+  markServiceComplete(serviceId: number) {
+    // Implementation would update service status
+    this.toastService.success('Service marked as complete');
+    this.loadServiceRecords();
+  }
+
+  generateMaintenanceReport() {
+    const report = {
+      totalAssets: this.getAssetServiceSummary().length,
+      totalServices: this.allServiceRecords.length,
+      totalCost: this.analytics.totalCost,
+      overdueServices: this.getOverdueServicesList().length,
+      upcomingServices: this.getUpcomingServices().length,
+      topVendors: this.analytics.topVendors.slice(0, 3),
+      riskAssets: this.getServicesByAsset().filter(a => a.riskLevel === 'High').length,
+      avgServiceCost: this.analytics.avgCostPerService,
+      serviceTypes: this.getServiceTypeStats()
+    };
+    
+    this.downloadJSON(report, 'maintenance-report.json');
+    this.toastService.success('Maintenance report generated');
+  }
+
+  private downloadJSON(data: any, filename: string) {
+    const blob = new Blob([JSON.stringify(data, null, 2)], { type: 'application/json' });
+    const url = window.URL.createObjectURL(blob);
+    const link = document.createElement('a');
+    link.href = url;
+    link.download = filename;
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+    window.URL.revokeObjectURL(url);
+  }
+
+  // Asset filtering properties
+  assetRiskFilter = '';
+  assetFrequencyFilter = '';
+  filteredAssets: any[] = [];
+
+  getFilteredAssets(): any[] {
+    let assets = this.getServicesByAsset();
+    
+    if (this.assetRiskFilter) {
+      assets = assets.filter(asset => asset.riskLevel === this.assetRiskFilter);
+    }
+    
+    if (this.assetFrequencyFilter) {
+      assets = assets.filter(asset => asset.maintenanceFrequency === this.assetFrequencyFilter);
+    }
+    
+    return assets;
+  }
+
+  applyAssetFilters() {
+    this.filteredAssets = this.getFilteredAssets();
+  }
+
+  getAvgCompletionRate(): number {
+    const vendors = this.getVendorAnalytics();
+    return vendors.length > 0 ? vendors.reduce((sum, v) => sum + v.completionRate, 0) / vendors.length : 0;
+  }
+
+  getAvgVendorRating(): number {
+    const vendors = this.getVendorAnalytics();
+    return vendors.length > 0 ? vendors.reduce((sum, v) => sum + v.rating, 0) / vendors.length : 0;
+  }
+
+  getTotalVendorCosts(): number {
+    return this.getVendorAnalytics().reduce((sum, v) => sum + v.totalCost, 0);
   }
 
   clearFilters() {
-    this.performerFilter = '';
-    this.vendorFilter = '';
     this.serviceTypeFilter = '';
+    this.statusFilter = '';
+    this.vendorFilter = '';
+    this.assetFilter = '';
+    this.dateRangeFilter = '';
+    this.searchTerm = '';
     this.applyFilters();
   }
 
   hasActiveFilters(): boolean {
-    return !!(this.performerFilter || this.vendorFilter || this.serviceTypeFilter);
+    return !!(this.serviceTypeFilter || this.statusFilter || this.vendorFilter || 
+             this.assetFilter || this.dateRangeFilter || this.searchTerm);
   }
 
-  trackByRecord(index: number, record: ServiceRecord): number {
-    return record.id;
+  printServiceRecord(record: ServiceRecord) {
+    const printWindow = window.open('', '_blank');
+    if (printWindow) {
+      printWindow.document.write(`
+        <html>
+          <head>
+            <title>Service Record - ${record.asset?.assetTag}</title>
+            <style>
+              body { font-family: Arial, sans-serif; margin: 20px; }
+              .header { border-bottom: 2px solid #333; padding-bottom: 10px; margin-bottom: 20px; }
+              .section { margin-bottom: 15px; }
+              .label { font-weight: bold; }
+            </style>
+          </head>
+          <body>
+            <div class="header">
+              <h1>Service Record</h1>
+              <p>Generated on ${new Date().toLocaleDateString()}</p>
+            </div>
+            <div class="section">
+              <div class="label">Asset:</div>
+              <div>${record.asset?.assetTag} - ${record.asset?.name}</div>
+            </div>
+            <div class="section">
+              <div class="label">Service Date:</div>
+              <div>${this.formatDate(record.serviceDate)}</div>
+            </div>
+            <div class="section">
+              <div class="label">Service Type:</div>
+              <div>${record.serviceType}</div>
+            </div>
+            <div class="section">
+              <div class="label">Description:</div>
+              <div>${record.description}</div>
+            </div>
+            <div class="section">
+              <div class="label">Performed By:</div>
+              <div>${record.performedBy || 'Not specified'}</div>
+            </div>
+            <div class="section">
+              <div class="label">Vendor:</div>
+              <div>${record.vendor?.name || 'Internal'}</div>
+            </div>
+            <div class="section">
+              <div class="label">Cost:</div>
+              <div>${record.cost ? this.formatCurrency(record.cost) : 'No cost recorded'}</div>
+            </div>
+            ${record.notes ? `
+            <div class="section">
+              <div class="label">Notes:</div>
+              <div>${record.notes}</div>
+            </div>` : ''}
+          </body>
+        </html>
+      `);
+      printWindow.document.close();
+      printWindow.print();
+    }
   }
 
-  formatDate(dateString: string): string {
-    return new Date(dateString).toLocaleDateString('en-US', {
-      year: 'numeric',
-      month: 'short',
-      day: 'numeric'
-    });
+  refreshRecords() {
+    this.loadServiceRecords();
+    this.toastService.success('Service records refreshed');
   }
 }

@@ -1,7 +1,7 @@
 import { Injectable } from '@angular/core';
 import { Observable } from 'rxjs';
 import { ApiService } from './api.service';
-import { Asset, AssetRequest, PageResponse } from '../models';
+import { Asset, AssetCreateRequest, PageResponse } from '../models';
 
 @Injectable({
   providedIn: 'root'
@@ -49,11 +49,11 @@ export class AssetService {
     return this.api.getPagedData<Asset>(`${this.endpoint}/user/${userId}`, page, size);
   }
 
-  createAsset(asset: AssetRequest): Observable<Asset> {
+  createAsset(asset: AssetCreateRequest): Observable<Asset> {
     return this.api.post<Asset>(this.endpoint, asset);
   }
 
-  updateAsset(id: number, asset: AssetRequest): Observable<Asset> {
+  updateAsset(id: number, asset: AssetCreateRequest): Observable<Asset> {
     return this.api.put<Asset>(`${this.endpoint}/${id}`, asset);
   }
 

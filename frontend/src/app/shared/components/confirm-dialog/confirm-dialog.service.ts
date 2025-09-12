@@ -9,33 +9,19 @@ import { ConfirmDialogComponent, ConfirmDialogData } from './confirm-dialog.comp
 export class ConfirmDialogService {
   constructor(private dialog: MatDialog) {}
 
-  confirm(data: ConfirmDialogData): Observable<boolean> {
-    const dialogRef = this.dialog.open(ConfirmDialogComponent, {
-      width: '400px',
-      data,
-      disableClose: true
+  confirm(title: string, message: string): Observable<boolean> {
+    return new Observable(observer => {
+      const result = window.confirm(`${title}\n\n${message}`);
+      observer.next(result);
+      observer.complete();
     });
-
-    return dialogRef.afterClosed();
   }
 
   confirmDelete(itemName: string = 'item'): Observable<boolean> {
-    return this.confirm({
-      title: 'Confirm Delete',
-      message: `Are you sure you want to delete this ${itemName}? This action cannot be undone.`,
-      confirmText: 'Delete',
-      cancelText: 'Cancel',
-      type: 'danger'
-    });
+    return this.confirm('Confirm Delete', `Are you sure you want to delete this ${itemName}? This action cannot be undone.`);
   }
 
   confirmAction(title: string, message: string, confirmText: string = 'Confirm'): Observable<boolean> {
-    return this.confirm({
-      title,
-      message,
-      confirmText,
-      cancelText: 'Cancel',
-      type: 'warning'
-    });
+    return this.confirm(title, message);
   }
 }

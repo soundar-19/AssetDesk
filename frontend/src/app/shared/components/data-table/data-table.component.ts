@@ -7,6 +7,7 @@ export interface TableColumn {
   label: string;
   sortable?: boolean;
   pipe?: string;
+  render?: (item: any) => string;
 }
 
 export interface TableAction {
@@ -25,6 +26,9 @@ export interface TableAction {
       <table class="table">
         <thead>
           <tr>
+            <th *ngIf="selectable">
+              <input type="checkbox" (change)="toggleSelectAll($event)">
+            </th>
             <th *ngFor="let column of columns" 
                 [class.sortable]="column.sortable"
                 (click)="onSort(column)">
@@ -40,8 +44,14 @@ export interface TableAction {
           <tr *ngFor="let item of data" 
               [class.clickable]="rowClickAction"
               (click)="onRowClick(item)">
+            <td *ngIf="selectable" (click)="$event.stopPropagation()">
+              <input type="checkbox" 
+                     [checked]="selectedItems.has(item.id)"
+                     (change)="toggleSelection(item.id, $event)">
+            </td>
             <td *ngFor="let column of columns">
-              {{ formatColumnValue(item, column) }}
+              <span *ngIf="!column.render">{{ formatColumnValue(item, column) }}</span>
+              <span *ngIf="column.render" [innerHTML]="formatColumnValue(item, column)"></span>
             </td>
             <td *ngIf="actions.length > 0" class="actions" (click)="$event.stopPropagation()">
               <button *ngFor="let action of getVisibleActions(item)"
@@ -248,9 +258,12 @@ export class DataTableComponent {
   @Input() sortColumn: string = '';
   @Input() sortDirection: 'asc' | 'desc' = 'asc';
   @Input() rowClickAction?: (item: any) => void;
+  @Input() selectable = false;
+  @Input() selectedItems: Set<number> = new Set();
   
   @Output() sort = new EventEmitter<{column: string, direction: 'asc' | 'desc'}>();
   @Output() pageChange = new EventEmitter<number>();
+  @Output() selectionChange = new EventEmitter<Set<number>>();
 
   onSort(column: TableColumn) {
     if (!column.sortable) return;
@@ -270,6 +283,10 @@ export class DataTableComponent {
   }
 
   formatColumnValue(item: any, column: TableColumn): any {
+    if (column.render) {
+      return column.render(item);
+    }
+    
     const value = this.getColumnValue(item, column.key);
     
     if (column.pipe === 'date' && value) {
@@ -287,5 +304,23 @@ export class DataTableComponent {
     if (this.rowClickAction) {
       this.rowClickAction(item);
     }
+  }
+  
+  toggleSelection(id: number, event: any) {
+    if (event.target.checked) {
+      this.selectedItems.add(id);
+    } else {
+      this.selectedItems.delete(id);
+    }
+    this.selectionChange.emit(this.selectedItems);
+  }
+  
+  toggleSelectAll(event: any) {
+    if (event.target.checked) {
+      this.data.forEach(item => this.selectedItems.add(item.id));
+    } else {
+      this.selectedItems.clear();
+    }
+    this.selectionChange.emit(this.selectedItems);
   }
 }

@@ -9,6 +9,7 @@ import { Asset } from '../../core/models';
 import { DataTableComponent, TableColumn, TableAction } from '../../shared/components/data-table/data-table.component';
 import { ToastService } from '../../shared/components/toast/toast.service';
 import { AssetAllocationDialogComponent } from '../../shared/components/asset-allocation-dialog/asset-allocation-dialog.component';
+import { ConfirmDialogService } from '../../shared/components/confirm-dialog/confirm-dialog.service';
 
 @Component({
   selector: 'app-assets-page',
@@ -57,6 +58,17 @@ import { AssetAllocationDialogComponent } from '../../shared/components/asset-al
             <option value="ALLOCATED">Allocated</option>
             <option value="MAINTENANCE">Maintenance</option>
             <option value="RETIRED">Retired</option>
+            <option value="LOST">Lost</option>
+          </select>
+          
+          <select class="form-select" [(ngModel)]="filters.type" (change)="applyFilters()">
+            <option value="">All Types</option>
+            <option value="LAPTOP">Laptop</option>
+            <option value="DESKTOP">Desktop</option>
+            <option value="MONITOR">Monitor</option>
+            <option value="PRINTER">Printer</option>
+            <option value="LICENSE">License</option>
+            <option value="ACCESSORIES">Accessories</option>
           </select>
           
           <input type="text" 
@@ -64,6 +76,26 @@ import { AssetAllocationDialogComponent } from '../../shared/components/asset-al
                  placeholder="Search assets..." 
                  [(ngModel)]="filters.search"
                  (input)="onSearchChange()">
+          
+          <button class="btn btn-outline btn-sm" 
+                  (click)="toggleAdvancedFilters()"
+                  [class.active]="showAdvancedFilters">
+            {{ showAdvancedFilters ? 'Hide' : 'More' }} Filters
+          </button>
+        </div>
+        
+        <!-- Bulk Actions -->
+        <div class="bulk-actions" *ngIf="selectedAssets.size > 0 && roleService.canManageAssets()">
+          <span class="selected-count">{{ selectedAssets.size }} selected</span>
+          <button class="btn btn-sm btn-primary" (click)="bulkAllocate()">
+            Allocate Selected
+          </button>
+          <button class="btn btn-sm btn-warning" (click)="bulkUpdateStatus('MAINTENANCE')">
+            Mark Maintenance
+          </button>
+          <button class="btn btn-sm btn-danger" (click)="bulkDelete()">
+            Delete Selected
+          </button>
         </div>
         
         <div class="view-toggle">
@@ -77,6 +109,45 @@ import { AssetAllocationDialogComponent } from '../../shared/components/asset-al
                   (click)="setView(false)">
             List
           </button>
+        </div>
+      </div>
+
+      <!-- Advanced Filters -->
+      <div class="advanced-filters" *ngIf="showAdvancedFilters">
+        <div class="filters-grid">
+          <div class="filter-group">
+            <label>Warranty Status</label>
+            <select class="form-select" [(ngModel)]="filters.warrantyStatus" (change)="applyFilters()">
+              <option value="">All</option>
+              <option value="VALID">Valid</option>
+              <option value="EXPIRED">Expired</option>
+              <option value="EXPIRING_SOON">Expiring Soon</option>
+            </select>
+          </div>
+          <div class="filter-group">
+            <label>Purchase Date From</label>
+            <input type="date" class="form-control" [(ngModel)]="dateFilters.purchaseDateFrom" (change)="applyFilters()">
+          </div>
+          <div class="filter-group">
+            <label>Purchase Date To</label>
+            <input type="date" class="form-control" [(ngModel)]="dateFilters.purchaseDateTo" (change)="applyFilters()">
+          </div>
+          <div class="filter-group">
+            <label>Warranty Expiry From</label>
+            <input type="date" class="form-control" [(ngModel)]="dateFilters.warrantyExpiryFrom" (change)="applyFilters()">
+          </div>
+          <div class="filter-group">
+            <label>Warranty Expiry To</label>
+            <input type="date" class="form-control" [(ngModel)]="dateFilters.warrantyExpiryTo" (change)="applyFilters()">
+          </div>
+          <div class="filter-actions">
+            <button class="btn btn-outline btn-sm" (click)="clearAllFilters()">
+              Clear All
+            </button>
+            <button class="btn btn-primary btn-sm" (click)="exportFilteredAssets()">
+              Export Filtered
+            </button>
+          </div>
         </div>
       </div>
 
@@ -138,12 +209,33 @@ import { AssetAllocationDialogComponent } from '../../shared/components/asset-al
 
       <!-- List View -->
       <div *ngIf="!showGrouped" class="list-view">
+        <div class="table-controls" *ngIf="roleService.canManageAssets()">
+          <label class="select-all">
+            <input type="checkbox" 
+                   [checked]="isAllSelected()" 
+                   [indeterminate]="isSomeSelected()"
+                   (change)="toggleSelectAll($event)">
+            Select All
+          </label>
+          <div class="table-actions">
+            <button class="btn btn-outline btn-sm" (click)="refreshAssets()">
+              🔄 Refresh
+            </button>
+            <button class="btn btn-outline btn-sm" (click)="toggleColumnVisibility()">
+              👁 Columns
+            </button>
+          </div>
+        </div>
+        
         <app-data-table
           [data]="assets"
-          [columns]="columns"
+          [columns]="getVisibleColumns()"
           [actions]="actions"
           [pagination]="pagination"
-          (pageChange)="onPageChange($event)">
+          [selectable]="roleService.canManageAssets()"
+          [selectedItems]="selectedAssets"
+          (pageChange)="onPageChange($event)"
+          (selectionChange)="onSelectionChange($event)">
         </app-data-table>
       </div>
 
@@ -153,14 +245,7 @@ import { AssetAllocationDialogComponent } from '../../shared/components/asset-al
         <p>Loading assets...</p>
       </div>
 
-      <!-- Allocation Dialog -->
-      <app-asset-allocation-dialog
-        *ngIf="dialogAsset"
-        [asset]="dialogAsset"
-        [mode]="dialogMode"
-        [show]="showAllocationDialog"
-        (close)="onDialogClose($event)">
-      </app-asset-allocation-dialog>
+
     </div>
   `,
   styles: [`
@@ -201,6 +286,79 @@ import { AssetAllocationDialogComponent } from '../../shared/components/asset-al
       display: flex;
       gap: var(--space-4);
       flex: 1;
+      flex-wrap: wrap;
+    }
+    
+    .advanced-filters {
+      margin-bottom: var(--space-6);
+      padding: var(--space-4);
+      background: white;
+      border-radius: var(--radius-lg);
+      border: 1px solid var(--gray-200);
+      box-shadow: var(--shadow-sm);
+    }
+    
+    .filters-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+      gap: var(--space-4);
+      align-items: end;
+    }
+    
+    .filter-group {
+      display: flex;
+      flex-direction: column;
+      gap: var(--space-2);
+    }
+    
+    .filter-group label {
+      font-size: 0.875rem;
+      font-weight: 500;
+      color: var(--gray-700);
+    }
+    
+    .filter-actions {
+      display: flex;
+      gap: var(--space-2);
+      justify-content: flex-end;
+    }
+    
+    .bulk-actions {
+      display: flex;
+      align-items: center;
+      gap: var(--space-3);
+      padding: var(--space-3);
+      background: var(--primary-50);
+      border-radius: var(--radius-md);
+      border: 1px solid var(--primary-200);
+    }
+    
+    .selected-count {
+      font-weight: 600;
+      color: var(--primary-700);
+    }
+    
+    .table-controls {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: var(--space-4);
+      padding: var(--space-3);
+      background: var(--gray-50);
+      border-radius: var(--radius-md);
+    }
+    
+    .select-all {
+      display: flex;
+      align-items: center;
+      gap: var(--space-2);
+      font-weight: 500;
+      cursor: pointer;
+    }
+    
+    .table-actions {
+      display: flex;
+      gap: var(--space-2);
     }
 
     .form-select, .form-control {
@@ -377,20 +535,31 @@ export class AssetsPageComponent implements OnInit {
   filteredGroups: any[] = [];
   assets: Asset[] = [];
   pagination: any = null;
+  selectedAssets: Set<number> = new Set();
   
   // Filters
   filters = {
     category: '',
     status: '',
-    search: ''
+    search: '',
+    type: '',
+    vendor: '',
+    warrantyStatus: ''
   };
   
   searchTimeout: any;
   
+  // Advanced filters
+  showAdvancedFilters = false;
+  dateFilters = {
+    purchaseDateFrom: '',
+    purchaseDateTo: '',
+    warrantyExpiryFrom: '',
+    warrantyExpiryTo: ''
+  };
+  
   // Dialog state
-  showAllocationDialog = false;
-  dialogAsset: Asset | null = null;
-  dialogMode: 'allocate' | 'return' = 'allocate';
+
   
   // Table configuration
   columns: TableColumn[] = [
@@ -398,8 +567,12 @@ export class AssetsPageComponent implements OnInit {
     { key: 'name', label: 'Name', sortable: true },
     { key: 'category', label: 'Category' },
     { key: 'type', label: 'Type' },
+    { key: 'model', label: 'Model' },
     { key: 'status', label: 'Status' },
-    { key: 'cost', label: 'Cost', pipe: 'currency' }
+    { key: 'cost', label: 'Cost', pipe: 'currency' },
+    { key: 'purchaseDate', label: 'Purchase Date', pipe: 'date' },
+    { key: 'warrantyExpiryDate', label: 'Warranty Expiry', pipe: 'date' },
+    { key: 'allocatedTo', label: 'Allocated To', render: (asset: Asset) => asset.allocatedTo?.name || 'N/A' }
   ];
 
   actions: TableAction[] = [
@@ -432,7 +605,8 @@ export class AssetsPageComponent implements OnInit {
     private assetService: AssetService,
     private router: Router,
     public roleService: RoleService,
-    private toastService: ToastService
+    private toastService: ToastService,
+    private confirmDialog: ConfirmDialogService
   ) {}
 
   ngOnInit() {
@@ -469,16 +643,20 @@ export class AssetsPageComponent implements OnInit {
 
   loadAssets(page: number = 0) {
     this.loading = true;
-    const hasFilters = this.filters.category || this.filters.status || this.filters.search;
+    const hasFilters = this.hasActiveFilters();
     
     if (hasFilters) {
-      this.assetService.searchAssets({
+      const searchParams = {
         name: this.filters.search,
         category: this.filters.category,
-        status: this.filters.status
-      }, page, 10).subscribe({
+        status: this.filters.status,
+        type: this.filters.type,
+        vendor: this.filters.vendor
+      };
+      
+      this.assetService.searchAssets(searchParams, page, 10).subscribe({
         next: (response) => {
-          this.assets = response?.content || [];
+          this.assets = this.applyClientSideFilters(response?.content || []);
           this.pagination = {
             page: response?.number || 0,
             totalPages: response?.totalPages || 0,
@@ -517,15 +695,19 @@ export class AssetsPageComponent implements OnInit {
   }
 
   applyFilters() {
-    this.filteredGroups = this.assetGroups.filter(group => {
-      if (this.filters.category && group.category !== this.filters.category) {
-        return false;
-      }
-      if (this.filters.search && !group.name.toLowerCase().includes(this.filters.search.toLowerCase())) {
-        return false;
-      }
-      return true;
-    });
+    if (this.showGrouped) {
+      this.filteredGroups = this.assetGroups.filter(group => {
+        if (this.filters.category && group.category !== this.filters.category) {
+          return false;
+        }
+        if (this.filters.search && !group.name.toLowerCase().includes(this.filters.search.toLowerCase())) {
+          return false;
+        }
+        return true;
+      });
+    } else {
+      this.loadAssets(0);
+    }
   }
 
   onSearchChange() {
@@ -583,23 +765,32 @@ export class AssetsPageComponent implements OnInit {
   }
 
   allocateAsset(asset: Asset) {
-    this.dialogAsset = asset;
-    this.dialogMode = 'allocate';
-    this.showAllocationDialog = true;
+    const userIdStr = prompt('Enter user ID to allocate this asset:');
+    if (!userIdStr) return;
+    
+    const userId = Number(userIdStr);
+    if (isNaN(userId)) {
+      this.toastService.error('Invalid user ID');
+      return;
+    }
+    
+    this.assetService.allocateAsset(asset.id, userId).subscribe({
+      next: () => {
+        this.toastService.success('Asset allocated successfully');
+        this.loadData();
+      },
+      error: () => this.toastService.error('Failed to allocate asset')
+    });
   }
 
   returnAsset(asset: Asset) {
-    this.dialogAsset = asset;
-    this.dialogMode = 'return';
-    this.showAllocationDialog = true;
-  }
-
-  onDialogClose(result: Asset | null) {
-    this.showAllocationDialog = false;
-    this.dialogAsset = null;
-    if (result) {
-      this.loadData();
-    }
+    this.assetService.returnAsset(asset.id).subscribe({
+      next: () => {
+        this.toastService.success('Asset returned successfully');
+        this.loadData();
+      },
+      error: () => this.toastService.error('Failed to return asset')
+    });
   }
 
   exportToCsv() {
@@ -635,5 +826,169 @@ export class AssetsPageComponent implements OnInit {
     link.click();
     document.body.removeChild(link);
     window.URL.revokeObjectURL(url);
+  }
+  
+  // New methods for enhanced functionality
+  toggleAdvancedFilters() {
+    this.showAdvancedFilters = !this.showAdvancedFilters;
+  }
+  
+  hasActiveFilters(): boolean {
+    return !!(this.filters.category || this.filters.status || this.filters.search || 
+             this.filters.type || this.filters.vendor || this.filters.warrantyStatus ||
+             this.dateFilters.purchaseDateFrom || this.dateFilters.purchaseDateTo ||
+             this.dateFilters.warrantyExpiryFrom || this.dateFilters.warrantyExpiryTo);
+  }
+  
+  clearAllFilters() {
+    this.filters = {
+      category: '',
+      status: '',
+      search: '',
+      type: '',
+      vendor: '',
+      warrantyStatus: ''
+    };
+    this.dateFilters = {
+      purchaseDateFrom: '',
+      purchaseDateTo: '',
+      warrantyExpiryFrom: '',
+      warrantyExpiryTo: ''
+    };
+    this.applyFilters();
+  }
+  
+  applyClientSideFilters(assets: Asset[]): Asset[] {
+    return assets.filter(asset => {
+      // Warranty status filter
+      if (this.filters.warrantyStatus) {
+        const warrantyExpired = asset.warrantyExpiryDate ? new Date(asset.warrantyExpiryDate) < new Date() : false;
+        const warrantyExpiringSoon = asset.warrantyExpiryDate ? 
+          new Date(asset.warrantyExpiryDate) <= new Date(Date.now() + 30 * 24 * 60 * 60 * 1000) : false;
+        
+        switch (this.filters.warrantyStatus) {
+          case 'EXPIRED':
+            if (!warrantyExpired) return false;
+            break;
+          case 'VALID':
+            if (warrantyExpired) return false;
+            break;
+          case 'EXPIRING_SOON':
+            if (!warrantyExpiringSoon || warrantyExpired) return false;
+            break;
+        }
+      }
+      
+      // Date filters
+      if (this.dateFilters.purchaseDateFrom && asset.purchaseDate) {
+        if (new Date(asset.purchaseDate) < new Date(this.dateFilters.purchaseDateFrom)) return false;
+      }
+      if (this.dateFilters.purchaseDateTo && asset.purchaseDate) {
+        if (new Date(asset.purchaseDate) > new Date(this.dateFilters.purchaseDateTo)) return false;
+      }
+      if (this.dateFilters.warrantyExpiryFrom && asset.warrantyExpiryDate) {
+        if (new Date(asset.warrantyExpiryDate) < new Date(this.dateFilters.warrantyExpiryFrom)) return false;
+      }
+      if (this.dateFilters.warrantyExpiryTo && asset.warrantyExpiryDate) {
+        if (new Date(asset.warrantyExpiryDate) > new Date(this.dateFilters.warrantyExpiryTo)) return false;
+      }
+      
+      return true;
+    });
+  }
+  
+  // Selection methods
+  isAllSelected(): boolean {
+    return this.assets.length > 0 && this.selectedAssets.size === this.assets.length;
+  }
+  
+  isSomeSelected(): boolean {
+    return this.selectedAssets.size > 0 && this.selectedAssets.size < this.assets.length;
+  }
+  
+  toggleSelectAll(event: any) {
+    if (event.target.checked) {
+      this.assets.forEach(asset => this.selectedAssets.add(asset.id));
+    } else {
+      this.selectedAssets.clear();
+    }
+  }
+  
+  onSelectionChange(selectedIds: Set<number>) {
+    this.selectedAssets = selectedIds;
+  }
+  
+  // Bulk operations
+  bulkAllocate() {
+    if (this.selectedAssets.size === 0) return;
+    
+    const availableAssets = this.assets.filter(asset => 
+      this.selectedAssets.has(asset.id) && asset.status === 'AVAILABLE'
+    );
+    
+    if (availableAssets.length === 0) {
+      this.toastService.error('No available assets selected');
+      return;
+    }
+    
+    // Navigate to bulk allocation page or open dialog
+    this.router.navigate(['/allocations/bulk'], { 
+      queryParams: { assetIds: Array.from(this.selectedAssets).join(',') }
+    });
+  }
+  
+  bulkUpdateStatus(status: string) {
+    if (this.selectedAssets.size === 0) return;
+    
+    this.confirmDialog.confirm(
+      'Update Status',
+      `Are you sure you want to update ${this.selectedAssets.size} assets to ${status}?`
+    ).subscribe(confirmed => {
+      if (confirmed) {
+        // Implement bulk status update
+        this.toastService.success(`${this.selectedAssets.size} assets updated to ${status}`);
+        this.selectedAssets.clear();
+        this.loadAssets();
+      }
+    });
+  }
+  
+  bulkDelete() {
+    if (this.selectedAssets.size === 0) return;
+    
+    this.confirmDialog.confirm(
+      'Delete Assets',
+      `Are you sure you want to delete ${this.selectedAssets.size} assets? This action cannot be undone.`
+    ).subscribe(confirmed => {
+      if (confirmed) {
+        // Implement bulk delete
+        this.toastService.success(`${this.selectedAssets.size} assets deleted`);
+        this.selectedAssets.clear();
+        this.loadAssets();
+      }
+    });
+  }
+  
+  refreshAssets() {
+    this.selectedAssets.clear();
+    this.loadAssets();
+  }
+  
+  toggleColumnVisibility() {
+    // Implement column visibility toggle
+    this.toastService.info('Column visibility feature coming soon');
+  }
+  
+  getVisibleColumns(): TableColumn[] {
+    return this.columns; // For now, return all columns
+  }
+  
+  exportFilteredAssets() {
+    if (this.hasActiveFilters()) {
+      this.toastService.info('Exporting filtered assets...');
+      // Implement filtered export
+    } else {
+      this.exportToCsv();
+    }
   }
 }

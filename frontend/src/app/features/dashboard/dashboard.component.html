@@ -1,33 +1,257 @@
-<main class="page-container" role="main">
-  <!-- Welcome Header -->
-  <header class="welcome-header">
-    <h1 class="page-title">Welcome back, {{ currentUser?.name }}!</h1>
-    <p class="page-description">{{ getDashboardDescription() }}</p>
-  </header>
-
-  <!-- Loading State -->
-  <div *ngIf="loading" class="loading-state" role="status" aria-live="polite">
-    <app-loading-spinner [size]="40" message="Loading dashboard..."></app-loading-spinner>
+<div class="dashboard-container">
+  <div class="dashboard-header">
+    <div class="header-content">
+      <h1 class="dashboard-title">{{ getDashboardTitle() }}</h1>
+      <p class="dashboard-description">{{ getDashboardDescription() }}</p>
+    </div>
   </div>
 
-  <!-- Role-specific Dashboards -->
-  <div *ngIf="!loading">
+  <div *ngIf="loading" class="loading-state">
+    <app-loading-spinner></app-loading-spinner>
+    <p>Loading dashboard...</p>
+  </div>
+
+  <div *ngIf="!loading" class="dashboard-content">
     <!-- Employee Dashboard -->
-    <app-employee-dashboard 
-      *ngIf="roleService.isEmployee()" 
-      [dashboardStats]="dashboardStats">
-    </app-employee-dashboard>
+    <div *ngIf="roleService.isEmployee()" class="employee-dashboard">
+      <section class="stats-grid">
+        <div class="stat-card primary">
+          <div class="stat-icon">📦</div>
+          <div class="stat-content">
+            <div class="stat-value">{{ dashboardStats.myAssets || 0 }}</div>
+            <div class="stat-label">My Assets</div>
+          </div>
+          <a routerLink="/assets" class="stat-action">View All</a>
+        </div>
+        <div class="stat-card warning">
+          <div class="stat-icon">⚠️</div>
+          <div class="stat-content">
+            <div class="stat-value">{{ dashboardStats.myIssues || 0 }}</div>
+            <div class="stat-label">My Issues</div>
+          </div>
+          <a routerLink="/issues" class="stat-action">View All</a>
+        </div>
+        <div class="stat-card info">
+          <div class="stat-icon">📋</div>
+          <div class="stat-content">
+            <div class="stat-value">{{ dashboardStats.pendingRequests || 0 }}</div>
+            <div class="stat-label">Pending Requests</div>
+          </div>
+          <a routerLink="/requests" class="stat-action">View All</a>
+        </div>
+      </section>
+
+      <div class="dashboard-grid">
+        <section class="card">
+          <h3 class="card-title">Recent Activities</h3>
+          <div class="activities-list">
+            <div *ngFor="let activity of dashboardStats.recentActivities?.slice(0, 5)" class="activity-item">
+              <div class="activity-icon">{{ getActivityIcon(activity.type) }}</div>
+              <div class="activity-content">
+                <p>{{ activity.description }}</p>
+                <span class="activity-time">{{ formatTime(activity.timestamp) }}</span>
+              </div>
+            </div>
+            <div *ngIf="!dashboardStats.recentActivities?.length" class="empty-state">
+              <p>No recent activities</p>
+            </div>
+          </div>
+        </section>
+
+        <section class="card">
+          <h3 class="card-title">Quick Actions</h3>
+          <div class="actions-grid">
+            <a routerLink="/requests/new" class="action-btn primary">📝 Request Asset</a>
+            <a routerLink="/issues/new" class="action-btn warning">🐛 Report Issue</a>
+            <a routerLink="/profile" class="action-btn info">👤 My Profile</a>
+          </div>
+        </section>
+      </div>
+    </div>
 
     <!-- IT Support Dashboard -->
-    <app-it-support-dashboard 
-      *ngIf="roleService.isITSupport()" 
-      [dashboardStats]="dashboardStats">
-    </app-it-support-dashboard>
+    <div *ngIf="roleService.isITSupport() && !roleService.isAdmin()" class="it-support-dashboard">
+      <section class="metrics-grid">
+        <div class="metric-card primary">
+          <div class="metric-icon">📦</div>
+          <div class="metric-content">
+            <div class="metric-value">{{ dashboardStats.totalAssets || 0 }}</div>
+            <div class="metric-label">Total Assets</div>
+            <div class="metric-trend">{{ getAssetTrend() }}</div>
+          </div>
+        </div>
+        <div class="metric-card success">
+          <div class="metric-icon">✅</div>
+          <div class="metric-content">
+            <div class="metric-value">{{ dashboardStats.availableAssets || 0 }}</div>
+            <div class="metric-label">Available</div>
+            <div class="metric-trend">{{ getUtilizationRate() }}% utilized</div>
+          </div>
+        </div>
+        <div class="metric-card warning">
+          <div class="metric-icon">⚠️</div>
+          <div class="metric-content">
+            <div class="metric-value">{{ dashboardStats.openIssues || 0 }}</div>
+            <div class="metric-label">Open Issues</div>
+            <div class="metric-trend">{{ dashboardStats.averageResolutionTime || 0 }}h avg</div>
+          </div>
+        </div>
+        <div class="metric-card danger">
+          <div class="metric-icon">🔔</div>
+          <div class="metric-content">
+            <div class="metric-value">{{ dashboardStats.warrantyExpiringCount || 0 }}</div>
+            <div class="metric-label">Warranty Alerts</div>
+            <div class="metric-trend">{{ dashboardStats.maintenanceDueCount || 0 }} maintenance</div>
+          </div>
+        </div>
+      </section>
+
+      <div class="dashboard-grid">
+        <section class="card">
+          <h3 class="card-title">Asset Distribution</h3>
+          <div class="chart-container">
+            <div *ngFor="let item of getAssetsByStatusArray()" class="chart-item">
+              <span class="chart-label">{{ formatStatus(item.key) }}</span>
+              <div class="chart-bar">
+                <div class="bar-fill" [style.width.%]="getPercentage(item.value, getTotalAssets())"></div>
+              </div>
+              <span class="chart-value">{{ item.value }}</span>
+            </div>
+          </div>
+        </section>
+
+        <section class="card">
+          <h3 class="card-title">Priority Issues</h3>
+          <div class="issues-list">
+            <div *ngFor="let issue of dashboardStats.topIssues?.slice(0, 5)" class="issue-item">
+              <div class="issue-priority" [class]="'priority-' + issue.priority.toLowerCase()"></div>
+              <div class="issue-content">
+                <h4>{{ issue.title }}</h4>
+                <span>{{ issue.reportedBy }} • {{ formatDate(issue.createdAt) }}</span>
+              </div>
+              <a [routerLink]="['/issues', issue.issueId]" class="issue-action">View</a>
+            </div>
+            <div *ngIf="!dashboardStats.topIssues?.length" class="empty-state">
+              <p>No priority issues</p>
+            </div>
+          </div>
+        </section>
+
+        <section class="card">
+          <h3 class="card-title">Quick Actions</h3>
+          <div class="actions-grid">
+            <a routerLink="/assets/new" class="action-btn primary">➕ Add Asset</a>
+            <a routerLink="/assets/allocate" class="action-btn success">👤 Allocate Asset</a>
+            <a routerLink="/service-records" class="action-btn info">🔧 Maintenance</a>
+            <a routerLink="/vendors" class="action-btn secondary">🏢 Vendors</a>
+          </div>
+        </section>
+      </div>
+    </div>
 
     <!-- Admin Dashboard -->
-    <app-admin-dashboard 
-      *ngIf="roleService.isAdmin()" 
-      [dashboardStats]="dashboardStats">
-    </app-admin-dashboard>
+    <div *ngIf="roleService.isAdmin()" class="admin-dashboard">
+      <section class="executive-summary">
+        <div class="summary-grid">
+          <div class="summary-card primary">
+            <div class="summary-icon">📦</div>
+            <div class="summary-content">
+              <div class="summary-value">{{ dashboardStats.totalAssets || 0 }}</div>
+              <div class="summary-label">Total Assets</div>
+              <div class="summary-change">{{ getAssetTrend() }}</div>
+            </div>
+          </div>
+          <div class="summary-card success">
+            <div class="summary-icon">👥</div>
+            <div class="summary-content">
+              <div class="summary-value">{{ dashboardStats.totalUsers || 0 }}</div>
+              <div class="summary-label">Active Users</div>
+              <div class="summary-change">+2% from last month</div>
+            </div>
+          </div>
+          <div class="summary-card warning">
+            <div class="summary-icon">⚠️</div>
+            <div class="summary-content">
+              <div class="summary-value">{{ dashboardStats.openIssues || 0 }}</div>
+              <div class="summary-label">Open Issues</div>
+              <div class="summary-change">{{ getIssueTrend() }}</div>
+            </div>
+          </div>
+          <div class="summary-card info">
+            <div class="summary-icon">📊</div>
+            <div class="summary-content">
+              <div class="summary-value">{{ getUtilizationRate() }}%</div>
+              <div class="summary-label">Asset Utilization</div>
+              <div class="summary-change">+3% from last month</div>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <div class="admin-grid">
+        <section class="card overview-card">
+          <h3 class="card-title">System Overview</h3>
+          <div class="overview-stats">
+            <div class="stat-item">
+              <span class="stat-number">{{ dashboardStats.totalAssets || 0 }}</span>
+              <span class="stat-label">Total Assets</span>
+            </div>
+            <div class="stat-item">
+              <span class="stat-number">{{ dashboardStats.availableAssets || 0 }}</span>
+              <span class="stat-label">Available</span>
+            </div>
+            <div class="stat-item">
+              <span class="stat-number">{{ dashboardStats.allocatedAssets || 0 }}</span>
+              <span class="stat-label">Allocated</span>
+            </div>
+          </div>
+        </section>
+
+        <section class="card">
+          <h3 class="card-title">Department Analytics</h3>
+          <div class="department-list">
+            <div *ngFor="let dept of getDepartmentAnalytics()" class="department-item">
+              <div class="dept-info">
+                <h4>{{ dept.name }}</h4>
+                <span>{{ dept.assetCount }} assets</span>
+              </div>
+              <div class="dept-metrics">
+                <span>{{ dept.userCount }} users</span>
+                <span>{{ dept.utilization }}% utilization</span>
+              </div>
+            </div>
+          </div>
+        </section>
+
+        <section class="card">
+          <h3 class="card-title">Recent System Activities</h3>
+          <div class="activities-list">
+            <div *ngFor="let activity of dashboardStats.recentActivities?.slice(0, 6)" class="activity-item">
+              <div class="activity-icon">{{ getActivityIcon(activity.type) }}</div>
+              <div class="activity-content">
+                <p>{{ activity.description }}</p>
+                <div class="activity-meta">
+                  <span>{{ activity.user }}</span>
+                  <span>{{ formatTime(activity.timestamp) }}</span>
+                </div>
+              </div>
+              <div class="activity-status" [class]="'status-' + activity.status.toLowerCase()">
+                {{ formatStatus(activity.status) }}
+              </div>
+            </div>
+          </div>
+        </section>
+
+        <section class="card">
+          <h3 class="card-title">Admin Actions</h3>
+          <div class="admin-actions">
+            <a routerLink="/users/new" class="admin-action primary">👤 Add User</a>
+            <a routerLink="/assets/bulk-import" class="admin-action success">📥 Bulk Import</a>
+            <a routerLink="/reports" class="admin-action info">📊 Reports</a>
+            <a routerLink="/system/settings" class="admin-action warning">⚙️ Settings</a>
+          </div>
+        </section>
+      </div>
+    </div>
   </div>
-</main>
+</div>

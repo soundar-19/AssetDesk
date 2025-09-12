@@ -22,7 +22,7 @@ export interface Asset {
   version?: string;
 }
 
-export interface AssetRequest {
+export interface AssetCreateRequest {
   assetTag: string;
   name: string;
   category: string;

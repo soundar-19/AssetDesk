@@ -1,6 +1,6 @@
 export * from './api.model';
 export * from './asset.model';
-export * from './request.model';
+export type { AssetRequest, AssetRequestCreate } from './request.model';
 export * from './user.model';
 export * from './issue.model';
 export * from './vendor.model';

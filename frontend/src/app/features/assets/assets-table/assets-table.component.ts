@@ -43,11 +43,19 @@ import { ConfirmDialogService } from '../../../shared/components/confirm-dialog/
     </div>
   `,
   styles: [`
+    .assets-table {
+      width: 100%;
+      max-width: 100vw;
+      overflow-x: auto;
+    }
+
     .header {
       display: flex;
       justify-content: space-between;
       align-items: center;
       margin-bottom: var(--space-6);
+      flex-wrap: wrap;
+      gap: var(--space-4);
     }
 
     .header h2 {
@@ -69,6 +77,7 @@ import { ConfirmDialogService } from '../../../shared/components/confirm-dialog/
       display: inline-flex;
       align-items: center;
       gap: var(--space-2);
+      white-space: nowrap;
     }
 
     .btn-primary {
@@ -80,6 +89,33 @@ import { ConfirmDialogService } from '../../../shared/components/confirm-dialog/
       background: var(--primary-700);
       transform: translateY(-1px);
       box-shadow: var(--shadow-md);
+    }
+
+    @media (max-width: 768px) {
+      .header {
+        flex-direction: column;
+        align-items: stretch;
+      }
+      
+      .header h2 {
+        text-align: center;
+        font-size: 1.25rem;
+      }
+      
+      .btn {
+        justify-content: center;
+        width: 100%;
+      }
+    }
+
+    @media (max-width: 640px) {
+      .assets-table {
+        padding: 0 var(--space-2);
+      }
+      
+      .header {
+        margin-bottom: var(--space-4);
+      }
     }
   `]
 })

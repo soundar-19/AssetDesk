@@ -4,7 +4,7 @@ import { FormBuilder, FormGroup, Validators, ReactiveFormsModule } from '@angula
 import { Router, ActivatedRoute } from '@angular/router';
 import { AssetService } from '../../../core/services/asset.service';
 import { VendorService } from '../../../core/services/vendor.service';
-import { Asset, AssetRequest, Vendor } from '../../../core/models';
+import { Asset, AssetCreateRequest, Vendor } from '../../../core/models';
 import { ToastService } from '../../../shared/components/toast/toast.service';
 
 import { ASSET_CATEGORIES, ASSET_TYPES, ASSET_STATUSES } from '../../../core/constants/asset.constants';

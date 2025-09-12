@@ -147,7 +147,7 @@ interface AssetGroup {
       </app-empty-state>
       
       <div *ngIf="loading" class="loading-state" role="status" aria-live="polite">
-        <app-loading-spinner [size]="40" message="Loading assets..."></app-loading-spinner>
+        <app-loading-spinner size="lg" message="Loading assets..."></app-loading-spinner>
       </div>
     </main>
   `,
@@ -196,88 +196,195 @@ interface AssetGroup {
 
     .asset-groups-grid {
       display: grid;
-      grid-template-columns: repeat(auto-fill, minmax(400px, 1fr));
-      gap: var(--space-6);
+      grid-template-columns: repeat(auto-fill, minmax(420px, 1fr));
+      gap: var(--space-8);
+      margin-top: var(--space-6);
+    }
+
+    .asset-group-card {
+      background: linear-gradient(135deg, #ffffff 0%, #f8fafc 100%);
+      border: 1px solid var(--gray-200);
+      border-radius: var(--radius-xl);
+      box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
+      transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+      overflow: hidden;
+      position: relative;
+    }
+
+    .asset-group-card::before {
+      content: '';
+      position: absolute;
+      top: 0;
+      left: 0;
+      right: 0;
+      height: 4px;
+      background: linear-gradient(90deg, var(--primary-500), var(--primary-600));
+    }
+
+    .asset-group-card:hover {
+      transform: translateY(-4px);
+      box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04);
+      border-color: var(--primary-200);
+    }
+
+    .card-body {
+      padding: var(--space-6);
     }
 
     .group-header {
       display: flex;
       justify-content: space-between;
       align-items: flex-start;
-      margin-bottom: var(--space-4);
+      margin-bottom: var(--space-6);
+    }
+
+    .group-info {
+      flex: 1;
     }
 
     .group-name {
-      font-size: 1.125rem;
-      font-weight: 600;
-      color: var(--gray-900);
-      margin: 0 0 var(--space-1) 0;
-    }
-
-    .group-details {
-      color: var(--gray-600);
-      font-size: 0.875rem;
-      margin: 0 0 var(--space-2) 0;
-    }
-
-    .group-total {
-      text-align: center;
-    }
-
-    .total-count {
-      display: block;
-      font-size: 2rem;
+      font-size: 1.25rem;
       font-weight: 700;
-      color: var(--primary-600);
-      line-height: 1;
+      color: var(--gray-900);
+      margin: 0 0 var(--space-2) 0;
+      line-height: 1.3;
     }
 
-    .total-label {
+    .badge {
+      display: inline-flex;
+      align-items: center;
+      padding: var(--space-1) var(--space-3);
+      border-radius: var(--radius-full);
       font-size: 0.75rem;
-      color: var(--gray-500);
+      font-weight: 500;
       text-transform: uppercase;
       letter-spacing: 0.05em;
     }
 
-    .status-breakdown {
-      display: grid;
-      grid-template-columns: repeat(auto-fit, minmax(80px, 1fr));
-      gap: var(--space-3);
-      margin-bottom: var(--space-4);
-      padding: var(--space-4);
-      background-color: var(--gray-50);
-      border-radius: var(--radius-md);
+    .badge-info {
+      background: var(--primary-100);
+      color: var(--primary-700);
     }
 
-    .status-item {
+    .group-total {
       text-align: center;
+      background: var(--primary-50);
+      border-radius: var(--radius-lg);
+      padding: var(--space-4);
+      min-width: 80px;
     }
 
-    .status-count {
+    .total-count {
       display: block;
-      font-size: 1.25rem;
-      font-weight: 600;
+      font-size: 2.25rem;
+      font-weight: 800;
+      color: var(--primary-600);
       line-height: 1;
       margin-bottom: var(--space-1);
     }
 
-    .status-count.available { color: var(--success-600); }
-    .status-count.allocated { color: var(--primary-600); }
-    .status-count.maintenance { color: var(--warning-600); }
-    .status-count.retired { color: var(--gray-500); }
+    .total-label {
+      font-size: 0.75rem;
+      color: var(--primary-600);
+      text-transform: uppercase;
+      letter-spacing: 0.1em;
+      font-weight: 600;
+    }
+
+    .status-breakdown {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(90px, 1fr));
+      gap: var(--space-4);
+      margin-bottom: var(--space-6);
+      padding: var(--space-5);
+      background: linear-gradient(135deg, var(--gray-50) 0%, var(--gray-100) 100%);
+      border-radius: var(--radius-lg);
+      border: 1px solid var(--gray-200);
+    }
+
+    .status-item {
+      text-align: center;
+      padding: var(--space-2);
+      border-radius: var(--radius-md);
+      background: white;
+      transition: transform 0.2s ease;
+    }
+
+    .status-item:hover {
+      transform: translateY(-2px);
+    }
+
+    .status-count {
+      display: block;
+      font-size: 1.5rem;
+      font-weight: 700;
+      line-height: 1;
+      margin-bottom: var(--space-2);
+    }
+
+    .status-count.available { 
+      color: var(--success-600);
+      text-shadow: 0 1px 2px rgba(34, 197, 94, 0.1);
+    }
+    .status-count.allocated { 
+      color: var(--primary-600);
+      text-shadow: 0 1px 2px rgba(59, 130, 246, 0.1);
+    }
+    .status-count.maintenance { 
+      color: var(--warning-600);
+      text-shadow: 0 1px 2px rgba(245, 158, 11, 0.1);
+    }
+    .status-count.retired { 
+      color: var(--gray-500);
+      text-shadow: 0 1px 2px rgba(107, 114, 128, 0.1);
+    }
 
     .status-label {
       font-size: 0.75rem;
       color: var(--gray-600);
       text-transform: uppercase;
       letter-spacing: 0.05em;
+      font-weight: 500;
     }
 
     .group-actions {
       display: flex;
-      gap: var(--space-2);
+      gap: var(--space-3);
       justify-content: flex-end;
       flex-wrap: wrap;
+    }
+
+    .group-actions .btn {
+      display: flex;
+      align-items: center;
+      gap: var(--space-2);
+      font-weight: 500;
+      transition: all 0.2s ease;
+    }
+
+    .group-actions .btn-outline {
+      background: white;
+      border: 1px solid var(--gray-300);
+      color: var(--gray-700);
+    }
+
+    .group-actions .btn-outline:hover {
+      background: var(--gray-50);
+      border-color: var(--gray-400);
+      transform: translateY(-1px);
+    }
+
+    .group-actions .btn-primary {
+      background: linear-gradient(135deg, var(--primary-500), var(--primary-600));
+      border: none;
+      color: white;
+      box-shadow: 0 2px 4px rgba(59, 130, 246, 0.2);
+    }
+
+    .group-actions .btn-primary:hover {
+      background: linear-gradient(135deg, var(--primary-600), var(--primary-700));
+      transform: translateY(-1px);
+      box-shadow: 0 4px 8px rgba(59, 130, 246, 0.3);
     }
 
     .empty-state {
@@ -291,22 +398,93 @@ interface AssetGroup {
       margin-bottom: var(--space-4);
     }
 
+    .individual-assets {
+      width: 100%;
+      overflow-x: auto;
+    }
+
+    @media (max-width: 1024px) {
+      .asset-groups-grid {
+        grid-template-columns: repeat(auto-fill, minmax(350px, 1fr));
+        gap: var(--space-6);
+      }
+    }
+
     @media (max-width: 768px) {
       .asset-groups-grid {
         grid-template-columns: 1fr;
+        gap: var(--space-4);
       }
       
       .group-header {
         flex-direction: column;
         gap: var(--space-3);
+        align-items: center;
+        text-align: center;
+      }
+
+      .group-total {
+        order: -1;
+        margin-bottom: var(--space-3);
+      }
+
+      .status-breakdown {
+        grid-template-columns: repeat(2, 1fr);
+        gap: var(--space-3);
+        padding: var(--space-4);
       }
 
       .group-actions {
         justify-content: stretch;
+        gap: var(--space-2);
       }
 
       .group-actions .btn {
         flex: 1;
+        justify-content: center;
+      }
+
+      .header-actions {
+        flex-wrap: wrap;
+        gap: var(--space-2);
+      }
+
+      .filters {
+        flex-direction: column;
+        gap: var(--space-3);
+      }
+
+      .form-select {
+        min-width: auto;
+        width: 100%;
+      }
+    }
+
+    @media (max-width: 480px) {
+      .card-body {
+        padding: var(--space-4);
+      }
+
+      .group-name {
+        font-size: 1.125rem;
+      }
+
+      .total-count {
+        font-size: 2rem;
+      }
+
+      .status-count {
+        font-size: 1.25rem;
+      }
+
+      .status-breakdown {
+        grid-template-columns: 1fr;
+        gap: var(--space-2);
+        padding: var(--space-3);
+      }
+
+      .group-actions {
+        flex-direction: column;
       }
     }
   `]

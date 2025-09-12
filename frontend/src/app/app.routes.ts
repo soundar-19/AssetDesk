@@ -29,15 +29,15 @@ export const routes: Routes = [
         loadComponent: () => import('./features/assets/assets-router.component').then(m => m.AssetsRouterComponent)
       },
       {
-        path: 'assets/groups',
-        loadComponent: () => import('./features/assets/asset-groups-list/asset-groups-list.component').then(m => m.AssetGroupsListComponent)
-      },
-      {
-        path: 'asset-requests',
+        path: 'requests',
         loadComponent: () => import('./features/assets/asset-requests-list.component').then(m => m.AssetRequestsListComponent)
       },
       {
-        path: 'asset-requests/new',
+        path: 'requests/new',
+        loadComponent: () => import('./features/assets/asset-request-form.component').then(m => m.AssetRequestFormComponent)
+      },
+      {
+        path: 'requests/:id',
         loadComponent: () => import('./features/assets/asset-request-form.component').then(m => m.AssetRequestFormComponent)
       },
       {
@@ -61,8 +61,10 @@ export const routes: Routes = [
         loadComponent: () => import('./features/issues/issue-form/issue-form.component').then(m => m.IssueFormComponent)
       },
       {
-        path: 'assets/groups',
-        loadComponent: () => import('./features/assets/asset-groups.component').then(m => m.AssetGroupsComponent)
+        path: 'warranty',
+        loadComponent: () => import('./features/assets/warranty-management.component').then(m => m.WarrantyManagementComponent),
+        canActivate: [RoleGuard],
+        data: { roles: [ROLES.ADMIN, ROLES.IT_SUPPORT] }
       },
       {
         path: 'assets/group/:name',
@@ -175,12 +177,7 @@ export const routes: Routes = [
         path: 'profile/change-password',
         loadComponent: () => import('./features/profile/change-password.component').then(m => m.ChangePasswordComponent)
       },
-      {
-        path: 'warranty-management',
-        loadComponent: () => import('./features/assets/warranty-management.component').then(m => m.WarrantyManagementComponent),
-        canActivate: [RoleGuard],
-        data: { roles: [ROLES.ADMIN] }
-      },
+
       {
         path: 'reports',
         loadComponent: () => import('./features/reports/reports.component').then(m => m.ReportsComponent),
