@@ -9,16 +9,16 @@ import java.util.List;
 
 @Repository
 public interface AssetRequestRepository extends JpaRepository<AssetRequest, Long> {
-    Page<AssetRequest> findByRequesterId(Long requesterId, Pageable pageable);
+    Page<AssetRequest> findByRequestedById(Long requesterId, Pageable pageable);
     
     // Dashboard specific queries
-    Long countByRequesterIdAndStatus(Long userId, AssetRequest.Status status);
+    Long countByRequestedByIdAndStatus(Long userId, AssetRequest.Status status);
     
     Long countByStatus(AssetRequest.Status status);
     
-    List<AssetRequest> findTop5ByOrderByCreatedAtDesc();
+    List<AssetRequest> findTop5ByOrderByRequestedDateDesc();
     
-    List<AssetRequest> findTop5ByRequesterIdOrderByCreatedAtDesc(Long userId);
+    List<AssetRequest> findTop5ByRequestedByIdOrderByRequestedDateDesc(Long userId);
 }
 
 

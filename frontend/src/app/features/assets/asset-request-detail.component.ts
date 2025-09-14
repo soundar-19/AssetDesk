@@ -108,7 +108,7 @@ import { ConfirmDialogService } from '../../shared/components/confirm-dialog/con
             </div>
             <div class="detail-row" *ngIf="request.requestedBy?.department">
               <label>Department:</label>
-              <span>{{ request.requestedBy.department }}</span>
+              <span>{{ request.requestedBy?.department }}</span>
             </div>
             <div class="detail-row">
               <label>Requested Date:</label>

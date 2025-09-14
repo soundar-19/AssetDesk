@@ -56,7 +56,7 @@ public class DashboardServiceImpl implements DashboardService {
         return DashboardStatsDTO.builder()
                 .myAssets(allocationRepository.countCurrentAllocationsByUserId(user.getId()))
                 .myIssues(issueRepository.countByReportedById(user.getId()))
-                .pendingRequests(requestRepository.countByRequesterIdAndStatus(user.getId(), AssetRequest.Status.PENDING))
+                .pendingRequests(requestRepository.countByRequestedByIdAndStatus(user.getId(), AssetRequest.Status.PENDING))
                 .assetsByCategory(getMyAssetsByCategory(user.getId()))
                 .issuesByStatus(getMyIssuesByStatus(user.getId()))
                 .recentActivities(getMyRecentActivities(user.getId()))
@@ -283,14 +283,14 @@ public class DashboardServiceImpl implements DashboardService {
         
         try {
             // Recent requests
-            requestRepository.findTop5ByOrderByCreatedAtDesc().stream()
-                    .filter(request -> request.getRequester() != null)
+            requestRepository.findTop5ByOrderByRequestedDateDesc().stream()
+                    .filter(request -> request.getRequestedBy() != null)
                     .forEach(request -> {
                         activities.add(DashboardStatsDTO.RecentActivityDTO.builder()
                                 .type("REQUEST")
                                 .description("Asset request: " + (request.getRequestType() != null ? request.getRequestType().toString() : "Unknown"))
-                                .timestamp(request.getCreatedAt() != null ? request.getCreatedAt().toString() : "")
-                                .user(request.getRequester().getName())
+                                .timestamp(request.getRequestedDate() != null ? request.getRequestedDate().toString() : "")
+                                .user(request.getRequestedBy().getName())
                                 .status(request.getStatus() != null ? request.getStatus().toString() : "UNKNOWN")
                                 .build());
                     });
@@ -332,12 +332,12 @@ public class DashboardServiceImpl implements DashboardService {
         });
         
         // My recent requests
-        requestRepository.findTop5ByRequesterIdOrderByCreatedAtDesc(userId).forEach(request -> {
+        requestRepository.findTop5ByRequestedByIdOrderByRequestedDateDesc(userId).forEach(request -> {
             activities.add(DashboardStatsDTO.RecentActivityDTO.builder()
                     .type("REQUEST")
                     .description("You requested: " + request.getRequestType().toString())
-                    .timestamp(request.getCreatedAt().toString())
-                    .user(request.getRequester().getName())
+                    .timestamp(request.getRequestedDate().toString())
+                    .user(request.getRequestedBy().getName())
                     .status(request.getStatus().toString())
                     .build());
         });

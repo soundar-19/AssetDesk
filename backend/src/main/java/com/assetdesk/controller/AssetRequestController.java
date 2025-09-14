@@ -22,8 +22,14 @@ public class AssetRequestController {
 
     private final AssetRequestService assetRequestService;
 
-    @PostMapping("/user/{requesterId}")
+    @PostMapping
     public ResponseEntity<AssetRequestResponseDTO> create(
+            @Valid @RequestBody AssetRequestCreateDTO dto) {
+        return new ResponseEntity<>(assetRequestService.createRequest(dto.getRequestedBy(), dto), HttpStatus.CREATED);
+    }
+
+    @PostMapping("/user/{requesterId}")
+    public ResponseEntity<AssetRequestResponseDTO> createForUser(
             @PathVariable Long requesterId,
             @Valid @RequestBody AssetRequestCreateDTO dto) {
         return new ResponseEntity<>(assetRequestService.createRequest(requesterId, dto), HttpStatus.CREATED);
@@ -62,6 +68,28 @@ public class AssetRequestController {
             @PathVariable Long approverId,
             @RequestParam(required = false) String remarks) {
         return ResponseEntity.ok(assetRequestService.reject(id, approverId, remarks));
+    }
+
+    @GetMapping("/{id}")
+    public ResponseEntity<AssetRequestResponseDTO> getById(@PathVariable Long id) {
+        return ResponseEntity.ok(assetRequestService.getById(id));
+    }
+
+    @PutMapping("/{id}")
+    public ResponseEntity<AssetRequestResponseDTO> update(
+            @PathVariable Long id,
+            @Valid @RequestBody AssetRequestCreateDTO dto) {
+        return ResponseEntity.ok(assetRequestService.updateRequest(id, dto));
+    }
+
+    @PreAuthorize("hasAnyRole('ADMIN','IT_SUPPORT')")
+    @PostMapping("/{requestId}/fulfill/{assetId}/{approverId}")
+    public ResponseEntity<AssetRequestResponseDTO> fulfill(
+            @PathVariable Long requestId,
+            @PathVariable Long assetId,
+            @PathVariable Long approverId,
+            @RequestParam(required = false) String remarks) {
+        return ResponseEntity.ok(assetRequestService.fulfill(requestId, assetId, approverId, remarks));
     }
 }
 
