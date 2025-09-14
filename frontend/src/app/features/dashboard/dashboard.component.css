@@ -83,6 +83,17 @@
 .stat-card.warning, .metric-card.warning, .summary-card.warning { border-left: 4px solid #f59e0b; }
 .stat-card.info, .metric-card.info, .summary-card.info { border-left: 4px solid #06b6d4; }
 .stat-card.danger, .metric-card.danger { border-left: 4px solid #ef4444; }
+.stat-card.secondary, .metric-card.secondary, .summary-card.secondary { border-left: 4px solid #6b7280; }
+
+.stat-card.clickable, .metric-card.clickable, .summary-card.clickable {
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.stat-card.clickable:hover, .metric-card.clickable:hover, .summary-card.clickable:hover {
+  transform: translateY(-4px);
+  box-shadow: 0 4px 16px rgba(0,0,0,0.15);
+}
 
 .stat-icon, .metric-icon, .summary-icon {
   font-size: 2rem;

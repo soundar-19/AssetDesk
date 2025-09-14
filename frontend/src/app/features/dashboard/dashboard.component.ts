@@ -1,6 +1,6 @@
 import { Component, OnInit } from '@angular/core';
 import { CommonModule } from '@angular/common';
-import { RouterModule } from '@angular/router';
+import { RouterModule, Router } from '@angular/router';
 import { AuthService } from '../../core/services/auth.service';
 import { RoleService } from '../../core/services/role.service';
 import { DashboardService, DashboardStats } from '../../core/services/dashboard.service';
@@ -21,7 +21,8 @@ export class DashboardComponent implements OnInit {
   constructor(
     private authService: AuthService,
     public roleService: RoleService,
-    private dashboardService: DashboardService
+    private dashboardService: DashboardService,
+    private router: Router
   ) {}
 
   ngOnInit() {
@@ -165,5 +166,9 @@ export class DashboardComponent implements OnInit {
   getTotalRequests(): number {
     if (!this.dashboardStats.requestsByStatus) return 0;
     return Object.values(this.dashboardStats.requestsByStatus).reduce((sum, count) => sum + count, 0);
+  }
+
+  navigateToRequests() {
+    this.router.navigate(['/requests']);
   }
 }

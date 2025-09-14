@@ -106,16 +106,7 @@ import { AssetRequest } from '../../core/models';
                        placeholder="e.g., Dell XPS 13, MacBook Pro">
               </div>
 
-              <div class="form-group">
-                <label for="estimatedCost">Estimated Cost</label>
-                <input type="number" 
-                       id="estimatedCost" 
-                       class="form-control" 
-                       formControlName="estimatedCost"
-                       min="0"
-                       step="0.01"
-                       placeholder="0.00">
-              </div>
+
             </div>
           </div>
 
@@ -457,7 +448,7 @@ export class AssetRequestFormComponent implements OnInit {
       assetType: ['', [Validators.required]],
       assetName: ['', [Validators.required]],
       preferredModel: [''],
-      estimatedCost: [null, [Validators.min(0)]],
+
       businessJustification: ['', [Validators.required, Validators.minLength(20)]],
       priority: ['', [Validators.required]],
       requiredDate: [''],
@@ -508,7 +499,7 @@ export class AssetRequestFormComponent implements OnInit {
           assetType: request.assetType,
           assetName: request.assetName,
           preferredModel: request.preferredModel || '',
-          estimatedCost: request.estimatedCost || null,
+
           businessJustification: request.businessJustification,
           priority: request.priority,
           requiredDate: request.requiredDate || '',
@@ -577,7 +568,7 @@ export class AssetRequestFormComponent implements OnInit {
         assetType: formValue.assetType,
         assetName: formValue.assetName,
         preferredModel: formValue.preferredModel || '',
-        estimatedCost: formValue.estimatedCost || 0,
+
         businessJustification: formValue.businessJustification,
         priority: formValue.priority,
         requiredDate: formValue.requiredDate || null,

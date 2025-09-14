@@ -35,7 +35,7 @@ import { ConfirmDialogService } from '../../shared/components/confirm-dialog/con
       </div>
 
       <!-- Request Statistics -->
-      <div class="request-stats" *ngIf="!roleService.isEmployee()">
+      <div class="request-stats">
         <div class="stats-grid">
           <div class="stat-card pending">
             <div class="stat-icon">⏳</div>
@@ -65,6 +65,18 @@ import { ConfirmDialogService } from '../../shared/components/confirm-dialog/con
               <div class="stat-label">Fulfilled</div>
             </div>
           </div>
+        </div>
+      </div>
+
+      <!-- Tabs for IT Support and Admin -->
+      <div class="tabs-section" *ngIf="!roleService.isEmployee()">
+        <div class="tabs">
+          <button class="tab" [class.active]="activeTab === 'pending'" (click)="setActiveTab('pending')">
+            Pending Requests
+          </button>
+          <button class="tab" [class.active]="activeTab === 'all'" (click)="setActiveTab('all')">
+            All Requests
+          </button>
         </div>
       </div>
 
@@ -106,9 +118,6 @@ import { ConfirmDialogService } from '../../shared/components/confirm-dialog/con
           <button class="btn btn-outline btn-sm" (click)="clearFilters()" *ngIf="hasActiveFilters()">
             Clear Filters
           </button>
-          <button class="btn btn-outline btn-sm" (click)="exportRequests()">
-            📊 Export
-          </button>
         </div>
       </div>
 
@@ -117,8 +126,8 @@ import { ConfirmDialogService } from '../../shared/components/confirm-dialog/con
         <app-data-table
           [data]="filteredRequests"
           [columns]="columns"
-          [actions]="actions"
           [pagination]="pagination"
+          [rowClickAction]="onRequestClick"
           (pageChange)="onPageChange($event)">
         </app-data-table>
       </div>
@@ -271,6 +280,45 @@ import { ConfirmDialogService } from '../../shared/components/confirm-dialog/con
       gap: var(--space-2);
     }
     
+    .tabs-section {
+      margin-bottom: var(--space-6);
+    }
+    
+    .tabs {
+      display: flex;
+      background: white;
+      border-radius: var(--radius-lg);
+      box-shadow: var(--shadow-sm);
+      border: 1px solid var(--gray-200);
+      overflow: hidden;
+    }
+    
+    .tab {
+      flex: 1;
+      padding: var(--space-4) var(--space-6);
+      background: white;
+      border: none;
+      font-weight: 500;
+      color: var(--gray-600);
+      cursor: pointer;
+      transition: all var(--transition-fast);
+      border-right: 1px solid var(--gray-200);
+    }
+    
+    .tab:last-child {
+      border-right: none;
+    }
+    
+    .tab:hover {
+      background: var(--gray-50);
+      color: var(--gray-900);
+    }
+    
+    .tab.active {
+      background: var(--primary-600);
+      color: white;
+    }
+    
     .requests-table {
       background: white;
       border-radius: var(--radius-lg);
@@ -388,6 +436,9 @@ export class AssetRequestsListComponent implements OnInit {
   searchTerm = '';
   searchTimeout: any;
   
+  // Tabs
+  activeTab = 'pending';
+  
   // Table configuration
   columns: TableColumn[] = [
     { key: 'id', label: 'Request ID', sortable: true },
@@ -401,11 +452,6 @@ export class AssetRequestsListComponent implements OnInit {
   ];
 
   actions: TableAction[] = [
-    { 
-      label: 'View', 
-      icon: '👁', 
-      action: (request) => this.viewRequest(request.id) 
-    },
     { 
       label: 'Edit', 
       icon: '✏', 
@@ -448,8 +494,21 @@ export class AssetRequestsListComponent implements OnInit {
   ) {}
 
   ngOnInit() {
-    this.loadRequests();
     this.setupColumnsBasedOnRole();
+    if (!this.roleService.isEmployee()) {
+      this.statusFilter = 'PENDING';
+    }
+    this.loadRequests();
+  }
+  
+  setActiveTab(tab: string) {
+    this.activeTab = tab;
+    if (tab === 'pending') {
+      this.statusFilter = 'PENDING';
+    } else {
+      this.statusFilter = '';
+    }
+    this.applyFilters();
   }
 
   setupColumnsBasedOnRole() {
@@ -472,7 +531,8 @@ export class AssetRequestsListComponent implements OnInit {
       if (currentUser) {
         this.requestService.getRequestsByUser(currentUser.id, page, 20).subscribe({
           next: (response) => {
-            this.requests = response.content || [];
+            this.requests = (response.content || []).sort((a, b) => 
+              new Date(b.requestedDate).getTime() - new Date(a.requestedDate).getTime());
             this.applyFilters();
             this.pagination = {
               page: response.number || 0,
@@ -494,7 +554,8 @@ export class AssetRequestsListComponent implements OnInit {
       // Load all requests for admin/IT support
       this.requestService.getAllRequests(page, 20).subscribe({
         next: (response) => {
-          this.requests = response.content || [];
+          this.requests = (response.content || []).sort((a, b) => 
+            new Date(b.requestedDate).getTime() - new Date(a.requestedDate).getTime());
           this.applyFilters();
           this.pagination = {
             page: response.number || 0,
@@ -682,5 +743,9 @@ export class AssetRequestsListComponent implements OnInit {
         });
       }
     });
+  }
+
+  onRequestClick = (request: AssetRequest) => {
+    this.viewRequest(request.id);
   }
 }

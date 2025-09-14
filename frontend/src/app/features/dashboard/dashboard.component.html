@@ -31,13 +31,12 @@
           </div>
           <a routerLink="/issues" class="stat-action">View All</a>
         </div>
-        <div class="stat-card info">
+        <div class="stat-card info clickable" (click)="navigateToRequests()">
           <div class="stat-icon">📋</div>
           <div class="stat-content">
             <div class="stat-value">{{ dashboardStats.myRequests || 0 }}</div>
             <div class="stat-label">My Requests</div>
           </div>
-          <a routerLink="/requests" class="stat-action">View All</a>
         </div>
       </section>
 
@@ -96,7 +95,7 @@
             <div class="metric-trend">{{ dashboardStats.averageResolutionTime || 0 }}h avg</div>
           </div>
         </div>
-        <div class="metric-card info">
+        <div class="metric-card info clickable" (click)="navigateToRequests()">
           <div class="metric-icon">📋</div>
           <div class="metric-content">
             <div class="metric-value">{{ dashboardStats.pendingRequests || 0 }}</div>
@@ -185,7 +184,7 @@
               <div class="summary-change">{{ getIssueTrend() }}</div>
             </div>
           </div>
-          <div class="summary-card secondary">
+          <div class="summary-card secondary clickable" (click)="navigateToRequests()">
             <div class="summary-icon">📋</div>
             <div class="summary-content">
               <div class="summary-value">{{ getTotalRequests() }}</div>
