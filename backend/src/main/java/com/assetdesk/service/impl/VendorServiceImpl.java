@@ -120,10 +120,21 @@ public class VendorServiceImpl implements VendorService {
     @Override
     @Transactional(readOnly = true)
     public Page<VendorResponseDTO> searchVendors(String name, String email, String phone, String status, Pageable pageable) {
-        Specification<Vendor> spec = Specification.where(hasNameLike(name))
-            .and(hasEmailLike(email))
-            .and(hasPhoneLike(phone))
-            .and(hasStatus(status));
+        Specification<Vendor> spec = Specification.where(null);
+        
+        // Check if this is a global search (same term in multiple fields)
+        boolean isGlobalSearch = name != null && name.equals(email) && name.equals(phone);
+        
+        if (isGlobalSearch) {
+            spec = spec.and(hasGlobalSearch(name));
+        } else {
+            // Individual field searches
+            spec = spec.and(hasNameLike(name))
+                .and(hasEmailLike(email))
+                .and(hasPhoneLike(phone));
+        }
+        
+        spec = spec.and(hasStatus(status));
         return vendorRepository.findAll(spec, pageable).map(VendorResponseDTO::fromEntity);
     }
 }

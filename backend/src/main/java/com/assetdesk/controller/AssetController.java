@@ -4,7 +4,9 @@ import com.assetdesk.dto.asset.AssetRequestDTO;
 import com.assetdesk.dto.asset.AssetResponseDTO;
 import com.assetdesk.dto.asset.AssetGroupResponseDTO;
 import com.assetdesk.dto.asset.WarrantyStatsDTO;
+import com.assetdesk.dto.AssetAllocationResponseDTO;
 import com.assetdesk.service.AssetService;
+import com.assetdesk.service.AssetAllocationService;
 import com.assetdesk.service.DepreciationService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Page;
@@ -18,6 +20,7 @@ import jakarta.validation.Valid;
 import org.springframework.data.domain.PageRequest;
 import java.util.List;
 import java.util.Map;
+import java.time.LocalDate;
 
 @RestController
 @RequestMapping("/api/assets")
@@ -25,6 +28,7 @@ import java.util.Map;
 public class AssetController {
     
     private final AssetService assetService;
+    private final AssetAllocationService allocationService;
     private final DepreciationService depreciationService;
     
     @PostMapping
@@ -231,5 +235,45 @@ public class AssetController {
         Pageable pageable = PageRequest.of(page, size);
         Page<AssetResponseDTO> assets = assetService.getValidWarranties(pageable);
         return ResponseEntity.ok(assets);
+    }
+    
+    // Allocation-related endpoints
+    @GetMapping("/{assetId}/allocations")
+    public ResponseEntity<List<AssetAllocationResponseDTO>> getAssetAllocationHistory(@PathVariable Long assetId) {
+        var allocations = allocationService.getAllocationHistory(assetId);
+        var dtos = allocations.stream().map(AssetAllocationResponseDTO::fromEntity).toList();
+        return ResponseEntity.ok(dtos);
+    }
+    
+    @GetMapping("/allocations/analytics")
+    @PreAuthorize("hasRole('ADMIN') or hasRole('IT_SUPPORT')")
+    public ResponseEntity<Map<String, Object>> getAllocationAnalytics() {
+        return ResponseEntity.ok((Map<String, Object>) allocationService.getAnalytics());
+    }
+    
+    @PostMapping("/bulk/return")
+    @PreAuthorize("hasRole('ADMIN') or hasRole('IT_SUPPORT')")
+    public ResponseEntity<Map<String, Object>> bulkReturnAssets(
+            @RequestBody List<Long> assetIds,
+            @RequestParam(required = false) String remarks) {
+        int successCount = 0;
+        int failureCount = 0;
+        
+        for (Long assetId : assetIds) {
+            try {
+                assetService.returnAsset(assetId, remarks);
+                successCount++;
+            } catch (Exception e) {
+                failureCount++;
+            }
+        }
+        
+        Map<String, Object> result = Map.of(
+            "total", assetIds.size(),
+            "success", successCount,
+            "failures", failureCount
+        );
+        
+        return ResponseEntity.ok(result);
     }
 }

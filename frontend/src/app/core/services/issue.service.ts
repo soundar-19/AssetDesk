@@ -91,4 +91,30 @@ export class IssueService {
   sendIssueNotification(issueId: number, title: string, message: string, type: string): Observable<any> {
     return this.api.post(`/issues/${issueId}/notify`, { title, message, type });
   }
+
+  searchIssues(params: {
+    title?: string;
+    description?: string;
+    status?: string;
+    priority?: string;
+    type?: string;
+    reportedById?: number;
+    assignedToId?: number;
+    assetId?: number;
+    sortBy?: string;
+    sortDir?: string;
+  }, page: number = 0, size: number = 10): Observable<PageResponse<Issue>> {
+    const searchParams = new URLSearchParams();
+    searchParams.append('page', page.toString());
+    searchParams.append('size', size.toString());
+    
+    Object.keys(params).forEach(key => {
+      const value = params[key as keyof typeof params];
+      if (value !== null && value !== undefined && value !== '') {
+        searchParams.append(key, value.toString());
+      }
+    });
+    
+    return this.api.get<PageResponse<Issue>>(`${this.endpoint}/search?${searchParams.toString()}`);
+  }
 }

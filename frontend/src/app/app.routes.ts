@@ -38,6 +38,10 @@ export const routes: Routes = [
       },
       {
         path: 'requests/:id',
+        loadComponent: () => import('./features/assets/asset-request-detail.component').then(m => m.AssetRequestDetailComponent)
+      },
+      {
+        path: 'requests/:id/edit',
         loadComponent: () => import('./features/assets/asset-request-form.component').then(m => m.AssetRequestFormComponent)
       },
       {
@@ -53,6 +57,12 @@ export const routes: Routes = [
       {
         path: 'assets/:id/edit',
         loadComponent: () => import('./features/assets/asset-form/asset-form.component').then(m => m.AssetFormComponent),
+        canActivate: [RoleGuard],
+        data: { roles: [ROLES.ADMIN, ROLES.IT_SUPPORT] }
+      },
+      {
+        path: 'assets/:id/allocations',
+        loadComponent: () => import('./features/assets/asset-allocation-history.component').then(m => m.AssetAllocationHistoryComponent),
         canActivate: [RoleGuard],
         data: { roles: [ROLES.ADMIN, ROLES.IT_SUPPORT] }
       },
@@ -111,11 +121,30 @@ export const routes: Routes = [
         data: { roles: [ROLES.ADMIN] }
       },
       {
+        path: 'users/:id',
+        loadComponent: () => import('./features/users/user-detail.component').then(m => m.UserDetailComponent),
+        canActivate: [RoleGuard],
+        data: { roles: [ROLES.ADMIN] }
+      },
+      {
         path: 'users/:id/edit',
         loadComponent: () => import('./features/users/user-form.component').then(m => m.UserFormComponent),
         canActivate: [RoleGuard],
         data: { roles: [ROLES.ADMIN] }
       },
+      {
+        path: 'users/:id/assets',
+        loadComponent: () => import('./features/users/user-assets-page.component').then(m => m.UserAssetsPageComponent),
+        canActivate: [RoleGuard],
+        data: { roles: [ROLES.ADMIN] }
+      },
+      {
+        path: 'users/:id/allocations',
+        loadComponent: () => import('./features/users/user-allocation-history.component').then(m => m.UserAllocationHistoryComponent),
+        canActivate: [RoleGuard],
+        data: { roles: [ROLES.ADMIN] }
+      },
+
       {
         path: 'vendors',
         loadComponent: () => import('./features/vendors/vendors-list.component').then(m => m.VendorsListComponent),
@@ -129,15 +158,18 @@ export const routes: Routes = [
         data: { roles: [ROLES.ADMIN, ROLES.IT_SUPPORT] }
       },
       {
+        path: 'vendors/:id',
+        loadComponent: () => import('./features/vendors/vendor-detail.component').then(m => m.VendorDetailComponent),
+        canActivate: [RoleGuard],
+        data: { roles: [ROLES.ADMIN, ROLES.IT_SUPPORT] }
+      },
+      {
         path: 'vendors/:id/edit',
         loadComponent: () => import('./features/vendors/vendor-form.component').then(m => m.VendorFormComponent),
         canActivate: [RoleGuard],
         data: { roles: [ROLES.ADMIN, ROLES.IT_SUPPORT] }
       },
-      {
-        path: 'allocations',
-        loadComponent: () => import('./features/allocations/modern-allocations.component').then(m => m.ModernAllocationsComponent)
-      },
+
       {
         path: 'notifications',
         loadComponent: () => import('./features/notifications/notifications-list.component').then(m => m.NotificationsListComponent)

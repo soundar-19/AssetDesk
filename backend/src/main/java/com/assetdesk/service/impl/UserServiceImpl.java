@@ -161,11 +161,11 @@ public class UserServiceImpl implements UserService {
             String department, String role, String status, Pageable pageable) {
         Specification<User> spec = Specification.where(null);
         
-        // Handle global search - if name, email, and employeeId are the same, treat as OR search
-        if (name != null && name.equals(email) && name.equals(employeeId)) {
-            spec = spec.and(Specification.where(hasNameLike(name))
-                .or(hasEmailLike(name))
-                .or(hasEmployeeIdLike(name)));
+        // Check if this is a global search (same term in multiple fields)
+        boolean isGlobalSearch = name != null && name.equals(email) && name.equals(employeeId);
+        
+        if (isGlobalSearch) {
+            spec = spec.and(hasGlobalSearch(name));
         } else {
             // Individual field searches
             spec = spec.and(hasNameLike(name))

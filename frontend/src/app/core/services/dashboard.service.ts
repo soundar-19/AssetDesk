@@ -11,20 +11,27 @@ export interface DashboardStats {
   // Role-specific stats
   myAssets?: number;
   myIssues?: number;
+  myRequests?: number;
   availableAssets?: number;
   allocatedAssets?: number;
   openIssues?: number;
   totalUsers?: number;
   pendingRequests?: number;
+  approvedRequests?: number;
+  rejectedRequests?: number;
+  fulfilledRequests?: number;
   
   // Charts data
   assetsByCategory?: { [key: string]: number };
   assetsByStatus?: { [key: string]: number };
   issuesByPriority?: { [key: string]: number };
   issuesByStatus?: { [key: string]: number };
+  requestsByStatus?: { [key: string]: number };
+  requestsByCategory?: { [key: string]: number };
   assetsByDepartment?: { [key: string]: number };
   monthlyAssetTrends?: { [key: string]: number };
   monthlyIssueTrends?: { [key: string]: number };
+  monthlyRequestTrends?: { [key: string]: number };
   
   // Recent activities
   recentActivities?: RecentActivity[];

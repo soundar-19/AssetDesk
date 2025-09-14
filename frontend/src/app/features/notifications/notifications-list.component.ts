@@ -492,7 +492,11 @@ export class NotificationsListComponent implements OnInit {
 
   updateCounts() {
     this.totalNotifications = this.pagination?.totalElements || 0;
-    this.unreadCount = this.notifications.filter(n => !n.isRead).length;
+    // Get actual unread count from service
+    this.notificationService.getUnreadCount().subscribe({
+      next: (count) => this.unreadCount = count,
+      error: () => this.unreadCount = this.notifications.filter(n => !n.isRead).length
+    });
   }
 
   onPageChange(page: number) {
@@ -536,6 +540,10 @@ export class NotificationsListComponent implements OnInit {
     // Mark as read first
     if (!notification.isRead) {
       this.notificationService.markAsRead(notification.id).subscribe({
+        next: () => {
+          notification.isRead = true;
+          this.updateCounts();
+        },
         error: (error) => {
           this.toastService.error('Failed to mark notification as read');
           console.error('Error marking notification as read:', error);
@@ -543,11 +551,14 @@ export class NotificationsListComponent implements OnInit {
       });
     }
     
-    // Redirect based on notification type
+    // Redirect based on notification type and related entities
     if (notification.relatedIssueId) {
       this.router.navigate(['/issues', notification.relatedIssueId]);
     } else if (notification.relatedAssetId) {
       this.router.navigate(['/assets', notification.relatedAssetId]);
+    } else {
+      // Show notification details in a modal or expanded view
+      this.toastService.info(notification.message);
     }
   }
 

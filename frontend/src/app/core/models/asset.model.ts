@@ -14,6 +14,8 @@ export interface Asset {
   imageUrl?: string;
   vendor?: any;
   allocatedTo?: { id: number; name: string; email: string };
+  allocatedDate?: string;
+  allocationDurationDays?: number;
   // Software license specific fields
   totalLicenses?: number;
   usedLicenses?: number;

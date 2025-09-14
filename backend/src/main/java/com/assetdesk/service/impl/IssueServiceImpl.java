@@ -340,14 +340,26 @@ public class IssueServiceImpl implements IssueService {
     @Transactional(readOnly = true)
     public Page<IssueResponseDTO> searchIssues(String title, String description, String status, 
             String priority, String type, Long reportedById, Long assignedToId, Long assetId, Pageable pageable) {
-        Specification<Issue> spec = Specification.where(hasTitleLike(title))
-            .and(hasDescriptionLike(description))
-            .and(hasStatus(status))
+        Specification<Issue> spec = Specification.where(null);
+        
+        // Check if this is a global search (same term in title and description)
+        boolean isGlobalSearch = title != null && title.equals(description);
+        
+        if (isGlobalSearch) {
+            spec = spec.and(hasGlobalSearch(title));
+        } else {
+            // Individual field searches
+            spec = spec.and(hasTitleLike(title))
+                .and(hasDescriptionLike(description));
+        }
+        
+        spec = spec.and(hasStatus(status))
             .and(hasPriority(priority))
             .and(hasType(type))
             .and(hasReportedBy(reportedById))
             .and(hasAssignedTo(assignedToId))
             .and(hasAsset(assetId));
+            
         return issueRepository.findAll(spec, pageable).map(IssueResponseDTO::fromEntity);
     }
 }

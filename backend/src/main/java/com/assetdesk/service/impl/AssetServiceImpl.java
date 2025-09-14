@@ -7,6 +7,7 @@ import com.assetdesk.domain.Asset;
 import com.assetdesk.domain.AssetAllocation;
 import com.assetdesk.domain.User;
 import com.assetdesk.repository.AssetRepository;
+import com.assetdesk.repository.AssetAllocationRepository;
 import com.assetdesk.repository.UserRepository;
 import com.assetdesk.repository.VendorRepository;
 import com.assetdesk.service.AssetService;
@@ -34,6 +35,7 @@ import com.assetdesk.domain.AssetAllocation;
 public class AssetServiceImpl implements AssetService {
     
     private final AssetRepository assetRepository;
+    private final AssetAllocationRepository allocationRepository;
     private final VendorRepository vendorRepository;
     private final UserRepository userRepository;
     private final AssetAllocationService assetAllocationService;
@@ -84,7 +86,10 @@ public class AssetServiceImpl implements AssetService {
     @Transactional(readOnly = true)
     public Page<AssetResponseDTO> getAllAssets(Pageable pageable) {
         return assetRepository.findAll(pageable)
-            .map(AssetResponseDTO::fromEntity);
+            .map(asset -> {
+                AssetAllocation currentAllocation = allocationRepository.findCurrentAllocationByAssetId(asset.getId()).orElse(null);
+                return AssetResponseDTO.fromEntityWithAllocation(asset, currentAllocation);
+            });
     }
     
     @Override
@@ -92,7 +97,10 @@ public class AssetServiceImpl implements AssetService {
     public Page<AssetResponseDTO> getAssetsByCategory(String category, Pageable pageable) {
         Asset.Category assetCategory = Asset.Category.valueOf(category.toUpperCase(Locale.ROOT));
         return assetRepository.findByCategory(assetCategory, pageable)
-            .map(AssetResponseDTO::fromEntity);
+            .map(asset -> {
+                AssetAllocation currentAllocation = allocationRepository.findCurrentAllocationByAssetId(asset.getId()).orElse(null);
+                return AssetResponseDTO.fromEntityWithAllocation(asset, currentAllocation);
+            });
     }
     
     @Override
@@ -254,11 +262,21 @@ public class AssetServiceImpl implements AssetService {
     @Override
     @Transactional(readOnly = true)
     public Page<AssetResponseDTO> search(String name, String category, String type, String status, Pageable pageable) {
-        Specification<Asset> spec = Specification.where(hasNameLike(name))
-            .and(hasCategory(category))
+        Specification<Asset> spec = Specification.where(null);
+        
+        if (name != null && !name.trim().isEmpty()) {
+            spec = spec.and(hasGlobalSearch(name));
+        }
+        
+        spec = spec.and(hasCategory(category))
             .and(hasType(type))
             .and(hasStatus(status));
-        return assetRepository.findAll(spec, pageable).map(AssetResponseDTO::fromEntity);
+            
+        return assetRepository.findAll(spec, pageable)
+            .map(asset -> {
+                AssetAllocation currentAllocation = allocationRepository.findCurrentAllocationByAssetId(asset.getId()).orElse(null);
+                return AssetResponseDTO.fromEntityWithAllocation(asset, currentAllocation);
+            });
     }
 
     @Override
@@ -267,12 +285,11 @@ public class AssetServiceImpl implements AssetService {
             String assetTag, String model, String serialNumber, String vendor, Pageable pageable) {
         Specification<Asset> spec = Specification.where(null);
         
-        // Handle global search - if multiple text fields have the same value, treat as OR search
-        if (name != null && name.equals(assetTag) && name.equals(model) && name.equals(serialNumber)) {
-            spec = spec.and(Specification.where(hasNameLike(name))
-                .or(hasAssetTagLike(name))
-                .or(hasModelLike(name))
-                .or(hasSerialNumberLike(name)));
+        // Check if this is a global search (same term in multiple fields)
+        boolean isGlobalSearch = name != null && name.equals(assetTag) && name.equals(model) && name.equals(serialNumber);
+        
+        if (isGlobalSearch) {
+            spec = spec.and(hasGlobalSearch(name));
         } else {
             // Individual field searches
             spec = spec.and(hasNameLike(name))
@@ -287,7 +304,11 @@ public class AssetServiceImpl implements AssetService {
             .and(hasStatus(status))
             .and(hasVendorNameLike(vendor));
             
-        return assetRepository.findAll(spec, pageable).map(AssetResponseDTO::fromEntity);
+        return assetRepository.findAll(spec, pageable)
+            .map(asset -> {
+                AssetAllocation currentAllocation = allocationRepository.findCurrentAllocationByAssetId(asset.getId()).orElse(null);
+                return AssetResponseDTO.fromEntityWithAllocation(asset, currentAllocation);
+            });
     }
 
     @Override

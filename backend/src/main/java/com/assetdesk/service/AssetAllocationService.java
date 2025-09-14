@@ -18,4 +18,7 @@ public interface AssetAllocationService {
     List<AssetAllocation> getCurrentAllocations();
     AssetAllocation getCurrentAllocation(Long assetId);
     Page<AssetAllocation> getActiveAllocations(Pageable pageable);
+    AssetAllocation requestReturn(Long assetId, String remarks);
+    List<AssetAllocation> getUserAllocationsWithHistory(Long userId);
+    List<AssetAllocation> getAssetAllocationsWithHistory(Long assetId);
 }

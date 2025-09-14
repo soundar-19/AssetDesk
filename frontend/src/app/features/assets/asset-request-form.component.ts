@@ -1,10 +1,11 @@
 import { Component, OnInit } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormBuilder, FormGroup, Validators, ReactiveFormsModule } from '@angular/forms';
-import { Router } from '@angular/router';
+import { Router, ActivatedRoute } from '@angular/router';
 import { RequestService } from '../../core/services/request.service';
 import { AuthService } from '../../core/services/auth.service';
 import { ToastService } from '../../shared/components/toast/toast.service';
+import { AssetRequest } from '../../core/models';
 
 @Component({
   selector: 'app-asset-request-form',
@@ -14,8 +15,8 @@ import { ToastService } from '../../shared/components/toast/toast.service';
     <div class="page-container">
       <div class="page-header">
         <div>
-          <h1 class="page-title">Request Asset</h1>
-          <p class="page-description">Submit a request for a new asset</p>
+          <h1 class="page-title">{{ isEditMode ? 'Edit Request' : 'Request Asset' }}</h1>
+          <p class="page-description">{{ isEditMode ? 'Update your asset request' : 'Submit a request for a new asset' }}</p>
         </div>
         <button class="btn btn-outline" (click)="goBack()">
           ← Back to Requests
@@ -192,7 +193,7 @@ import { ToastService } from '../../shared/components/toast/toast.service';
             </button>
             <button type="submit" class="btn btn-primary" [disabled]="requestForm.invalid || loading">
               <span *ngIf="loading" class="loading-spinner"></span>
-              Submit Request
+              {{ isEditMode ? 'Update Request' : 'Submit Request' }}
             </button>
           </div>
         </form>
@@ -438,12 +439,16 @@ export class AssetRequestFormComponent implements OnInit {
   loading = false;
   minDate = new Date().toISOString().split('T')[0];
   availableTypes: string[] = [];
+  isEditMode = false;
+  requestId: number | null = null;
+  existingRequest: AssetRequest | null = null;
 
   constructor(
     private fb: FormBuilder,
     private requestService: RequestService,
     private authService: AuthService,
     private router: Router,
+    private route: ActivatedRoute,
     private toastService: ToastService
   ) {
     this.requestForm = this.fb.group({
@@ -462,12 +467,69 @@ export class AssetRequestFormComponent implements OnInit {
   }
 
   ngOnInit() {
-    // Set default required date to 2 weeks from now
-    const defaultDate = new Date();
-    defaultDate.setDate(defaultDate.getDate() + 14);
-    this.requestForm.patchValue({
-      requiredDate: defaultDate.toISOString().split('T')[0]
+    // Check if we're in edit mode
+    const id = this.route.snapshot.params['id'];
+    if (id && this.route.snapshot.url.some(segment => segment.path === 'edit')) {
+      this.isEditMode = true;
+      this.requestId = parseInt(id);
+      this.loadExistingRequest();
+    } else {
+      // Set default required date to 2 weeks from now
+      const defaultDate = new Date();
+      defaultDate.setDate(defaultDate.getDate() + 14);
+      this.requestForm.patchValue({
+        requiredDate: defaultDate.toISOString().split('T')[0]
+      });
+    }
+  }
+
+  loadExistingRequest() {
+    if (!this.requestId) return;
+    
+    this.loading = true;
+    this.requestService.getRequestById(this.requestId).subscribe({
+      next: (request) => {
+        this.existingRequest = request;
+        
+        // Check if user can edit this request
+        const currentUser = this.authService.getCurrentUser();
+        if (request.status !== 'PENDING' || 
+            (currentUser?.id !== request.requestedBy?.id && !this.canManageRequests())) {
+          this.toastService.error('You cannot edit this request');
+          this.goBack();
+          return;
+        }
+        
+        // Populate form with existing data
+        this.updateAvailableTypes(request.category);
+        this.requestForm.patchValue({
+          requestType: request.requestType,
+          category: request.category,
+          assetType: request.assetType,
+          assetName: request.assetName,
+          preferredModel: request.preferredModel || '',
+          estimatedCost: request.estimatedCost || null,
+          businessJustification: request.businessJustification,
+          priority: request.priority,
+          requiredDate: request.requiredDate || '',
+          specifications: request.specifications || '',
+          additionalNotes: request.additionalNotes || ''
+        });
+        
+        this.loading = false;
+      },
+      error: (error) => {
+        console.error('Error loading request:', error);
+        this.toastService.error('Failed to load request details');
+        this.loading = false;
+        this.goBack();
+      }
     });
+  }
+
+  canManageRequests(): boolean {
+    const currentUser = this.authService.getCurrentUser();
+    return currentUser?.role === 'ADMIN' || currentUser?.role === 'IT_SUPPORT';
   }
 
   onCategoryChange() {
@@ -524,18 +586,33 @@ export class AssetRequestFormComponent implements OnInit {
         requestedBy: currentUser.id
       };
 
-      this.requestService.createAssetRequest(requestData).subscribe({
-        next: () => {
-          this.toastService.success('Asset request submitted successfully');
-          this.loading = false;
-          this.router.navigate(['/requests']);
-        },
-        error: (error) => {
-          console.error('Request submission error:', error);
-          this.toastService.error(error?.error?.message || 'Failed to submit request');
-          this.loading = false;
-        }
-      });
+      if (this.isEditMode && this.requestId) {
+        this.requestService.updateRequest(this.requestId, requestData).subscribe({
+          next: () => {
+            this.toastService.success('Asset request updated successfully');
+            this.loading = false;
+            this.router.navigate(['/requests', this.requestId]);
+          },
+          error: (error) => {
+            console.error('Request update error:', error);
+            this.toastService.error(error?.error?.message || 'Failed to update request');
+            this.loading = false;
+          }
+        });
+      } else {
+        this.requestService.createAssetRequest(requestData).subscribe({
+          next: () => {
+            this.toastService.success('Asset request submitted successfully');
+            this.loading = false;
+            this.router.navigate(['/requests']);
+          },
+          error: (error) => {
+            console.error('Request submission error:', error);
+            this.toastService.error(error?.error?.message || 'Failed to submit request');
+            this.loading = false;
+          }
+        });
+      }
     } else {
       // Mark all fields as touched to show validation errors
       Object.keys(this.requestForm.controls).forEach(key => {

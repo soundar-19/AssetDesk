@@ -14,7 +14,10 @@ export const ROLE_PERMISSIONS = {
     canManageAssets: false,
     canManageUsers: false,
     canViewAllIssues: false,
-    canManageSystem: false
+    canManageSystem: false,
+    canCreateAssetRequests: true,
+    canViewOwnRequests: true,
+    canManageRequests: false
   },
   [ROLES.IT_SUPPORT]: {
     canViewAssets: true,
@@ -24,7 +27,12 @@ export const ROLE_PERMISSIONS = {
     canManageUsers: false,
     canViewAllIssues: true,
     canManageSystem: false,
-    canResolveIssues: true
+    canResolveIssues: true,
+    canCreateAssetRequests: true,
+    canViewOwnRequests: true,
+    canManageRequests: true,
+    canApproveRequests: true,
+    canFulfillRequests: true
   },
   [ROLES.ADMIN]: {
     canViewAssets: true,
@@ -34,7 +42,12 @@ export const ROLE_PERMISSIONS = {
     canManageUsers: true,
     canViewAllIssues: true,
     canManageSystem: true,
-    canResolveIssues: true
+    canResolveIssues: true,
+    canCreateAssetRequests: true,
+    canViewOwnRequests: true,
+    canManageRequests: true,
+    canApproveRequests: true,
+    canFulfillRequests: true
   }
 } as const;
 

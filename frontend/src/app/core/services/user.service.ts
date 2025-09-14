@@ -28,7 +28,18 @@ export class UserService {
     sortBy?: string;
     sortDir?: string;
   }, page: number = 0, size: number = 10): Observable<PageResponse<User>> {
-    return this.api.getPagedData<User>(`${this.endpoint}/search`, page, size, params);
+    const searchParams = new URLSearchParams();
+    searchParams.append('page', page.toString());
+    searchParams.append('size', size.toString());
+    
+    Object.keys(params).forEach(key => {
+      const value = params[key as keyof typeof params];
+      if (value !== null && value !== undefined && value !== '') {
+        searchParams.append(key, value.toString());
+      }
+    });
+    
+    return this.api.get<PageResponse<User>>(`${this.endpoint}/search?${searchParams.toString()}`);
   }
 
   getUserById(id: number): Observable<User> {

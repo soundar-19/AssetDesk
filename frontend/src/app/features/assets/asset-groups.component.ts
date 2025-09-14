@@ -16,7 +16,7 @@ import { ToastService } from '../../shared/components/toast/toast.service';
       </div>
 
       <div class="groups-grid">
-        <div *ngFor="let group of assetGroups" class="group-card" (click)="viewGroupAssets(group.name)">
+        <div *ngFor="let group of assetGroups" class="group-card clickable" (click)="viewGroupAssets(group.name)">
           <div class="group-name">{{ group.name }}</div>
           <div class="group-count">{{ group.count }} assets</div>
         </div>
@@ -43,6 +43,13 @@ import { ToastService } from '../../shared/components/toast/toast.service';
       transform: translateY(-2px); 
       box-shadow: 0 4px 8px rgba(0,0,0,0.15);
       border-color: #007bff;
+    }
+    .group-card.clickable {
+      cursor: pointer;
+    }
+
+    .group-card.clickable * {
+      pointer-events: none;
     }
     .group-name { font-size: 1.1rem; font-weight: 600; color: #333; margin-bottom: 0.5rem; }
     .group-count { color: #666; font-size: 0.9rem; }

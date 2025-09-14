@@ -3,7 +3,7 @@ import { CommonModule } from '@angular/common';
 import { Router } from '@angular/router';
 import { UserService } from '../../core/services/user.service';
 import { User } from '../../core/models';
-import { DataTableComponent, TableColumn, TableAction } from '../../shared/components/data-table/data-table.component';
+import { ModernListComponent, ListItem } from '../../shared/components/modern-list.component';
 import { SearchFilterComponent, FilterOption, SearchFilters } from '../../shared/components/search-filter/search-filter.component';
 import { ToastService } from '../../shared/components/toast/toast.service';
 import { ConfirmDialogService } from '../../shared/components/confirm-dialog/confirm-dialog.service';
@@ -12,7 +12,7 @@ import { RoleService } from '../../core/services/role.service';
 @Component({
   selector: 'app-users-list',
   standalone: true,
-  imports: [CommonModule, DataTableComponent, SearchFilterComponent],
+  imports: [CommonModule, ModernListComponent, SearchFilterComponent],
   template: `
     <div class="users-list">
       <div class="header">
@@ -28,37 +28,23 @@ import { RoleService } from '../../core/services/role.service';
         (filtersChange)="onFiltersChange($event)">
       </app-search-filter>
 
-      <app-data-table
-        [data]="users"
-        [columns]="columns"
-        [actions]="actions"
-        [pagination]="pagination"
-        [sortColumn]="sortColumn"
-        [sortDirection]="sortDirection"
-        (pageChange)="onPageChange($event)"
-        (sort)="onSort($event)">
-      </app-data-table>
+      <app-modern-list
+        [items]="userItems"
+        (itemClick)="onUserClick($event)">
+      </app-modern-list>
     </div>
   `,
   styleUrls: ['./users-list.component.css']
 })
 export class UsersListComponent implements OnInit {
   users: User[] = [];
+  userItems: ListItem[] = [];
   pagination: any = null;
   searchTerm = '';
   filters: SearchFilters = {};
   sortColumn = '';
   sortDirection: 'asc' | 'desc' = 'asc';
   
-  columns: TableColumn[] = [
-    { key: 'employeeId', label: 'Employee ID', sortable: true },
-    { key: 'name', label: 'Name', sortable: true },
-    { key: 'email', label: 'Email', sortable: true },
-    { key: 'role', label: 'Role', sortable: true },
-    { key: 'department', label: 'Department', sortable: true },
-    { key: 'status', label: 'Status', sortable: true }
-  ];
-
   filterOptions: FilterOption[] = [
     {
       key: 'department',
@@ -87,12 +73,6 @@ export class UsersListComponent implements OnInit {
     }
   ];
 
-  actions: TableAction[] = [
-    { label: 'Edit', icon: '✏', action: (user) => this.editUser(user.id), condition: () => this.roleService.canManageUsers() },
-    { label: 'Reset Password', icon: '🔑', action: (user) => this.resetPassword(user.id, user.name), condition: () => this.roleService.isAdmin() },
-    { label: 'Delete', icon: '🗑', action: (user) => this.deleteUser(user.id), condition: () => this.roleService.canManageUsers() }
-  ];
-
   constructor(
     private userService: UserService,
     private router: Router,
@@ -115,6 +95,7 @@ export class UsersListComponent implements OnInit {
       this.userService.getUsers(page, 10, this.sortColumn, this.sortDirection).subscribe({
         next: (response) => {
           this.users = response?.content || [];
+          this.userItems = this.transformToListItems(this.users);
           this.pagination = {
             page: response?.number || 0,
             totalPages: response?.totalPages || 0,
@@ -155,6 +136,7 @@ export class UsersListComponent implements OnInit {
     this.userService.searchUsers(searchParams, page, 10).subscribe({
       next: (response) => {
         this.users = response?.content || [];
+        this.userItems = this.transformToListItems(this.users);
         this.pagination = {
           page: response?.number || 0,
           totalPages: response?.totalPages || 0,
@@ -212,6 +194,46 @@ export class UsersListComponent implements OnInit {
     } else if (newPassword !== null) {
       this.toastService.error('Password must be at least 6 characters long');
     }
+  }
+
+  viewUser(user: any) {
+    this.router.navigate(['/users', user.id || user]);
+  }
+
+  viewUserAssets(id: number) {
+    this.router.navigate(['/users', id, 'assets']);
+  }
+
+  viewUserHistory(id: number) {
+    this.router.navigate(['/users', id, 'allocations']);
+  }
+
+  transformToListItems(users: User[]): ListItem[] {
+    return users.map(user => ({
+      id: user.id,
+      title: user.name,
+      subtitle: `${user.email} • ${user.department}`,
+      status: user.status,
+      badge: user.role,
+      metadata: [
+        { label: 'Employee ID', value: user.employeeId },
+        { label: 'Role', value: user.role },
+        { label: 'Department', value: user.department }
+      ],
+      actions: [
+        { label: 'Edit', icon: '✏', action: () => this.editUser(user.id), primary: this.roleService.canManageUsers() },
+        { label: 'Reset', icon: '🔑', action: () => this.resetPassword(user.id, user.name), primary: false },
+        { label: 'Delete', icon: '🗑', action: () => this.deleteUser(user.id), primary: false }
+      ].filter(action => {
+        if (action.label === 'Edit' || action.label === 'Delete') return this.roleService.canManageUsers();
+        if (action.label === 'Reset') return this.roleService.isAdmin();
+        return true;
+      })
+    }));
+  }
+
+  onUserClick(item: ListItem) {
+    this.router.navigate(['/users', item.id]);
   }
 
   deleteUser(id: number) {

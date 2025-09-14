@@ -416,13 +416,19 @@ export class AssetRequestsListComponent implements OnInit {
       label: 'Approve', 
       icon: '✅', 
       action: (request) => this.approveRequest(request), 
-      condition: (request) => request.status === 'PENDING' && this.roleService.canManageAssets()
+      condition: (request) => request.status === 'PENDING' && this.roleService.canApproveRequests()
     },
     { 
       label: 'Reject', 
       icon: '❌', 
       action: (request) => this.rejectRequest(request), 
-      condition: (request) => request.status === 'PENDING' && this.roleService.canManageAssets()
+      condition: (request) => request.status === 'PENDING' && this.roleService.canApproveRequests()
+    },
+    { 
+      label: 'Fulfill', 
+      icon: '📦', 
+      action: (request) => this.fulfillRequest(request), 
+      condition: (request) => request.status === 'APPROVED' && this.roleService.canFulfillRequests()
     },
     { 
       label: 'Cancel', 
@@ -615,21 +621,28 @@ export class AssetRequestsListComponent implements OnInit {
     this.router.navigate(['/requests', id, 'edit']);
   }
 
+  fulfillRequest(request: AssetRequest) {
+    this.router.navigate(['/requests', request.id]);
+  }
+
   approveRequest(request: AssetRequest) {
     this.confirmDialog.confirm(
       'Approve Request',
       `Are you sure you want to approve the request for "${request.assetName}"?`
     ).subscribe(confirmed => {
       if (confirmed) {
-        this.requestService.updateRequestStatus(request.id, 'APPROVED').subscribe({
-          next: () => {
-            this.toastService.success('Request approved successfully');
-            this.loadRequests();
-          },
-          error: () => {
-            this.toastService.error('Failed to approve request');
-          }
-        });
+        const currentUser = this.authService.getCurrentUser();
+        if (currentUser) {
+          this.requestService.approveRequest(request.id, currentUser.id).subscribe({
+            next: () => {
+              this.toastService.success('Request approved successfully');
+              this.loadRequests();
+            },
+            error: () => {
+              this.toastService.error('Failed to approve request');
+            }
+          });
+        }
       }
     });
   }
@@ -637,15 +650,18 @@ export class AssetRequestsListComponent implements OnInit {
   rejectRequest(request: AssetRequest) {
     const reason = prompt('Please provide a reason for rejection:');
     if (reason) {
-      this.requestService.updateRequestStatus(request.id, 'REJECTED', reason).subscribe({
-        next: () => {
-          this.toastService.success('Request rejected');
-          this.loadRequests();
-        },
-        error: () => {
-          this.toastService.error('Failed to reject request');
-        }
-      });
+      const currentUser = this.authService.getCurrentUser();
+      if (currentUser) {
+        this.requestService.rejectRequest(request.id, currentUser.id, reason).subscribe({
+          next: () => {
+            this.toastService.success('Request rejected');
+            this.loadRequests();
+          },
+          error: () => {
+            this.toastService.error('Failed to reject request');
+          }
+        });
+      }
     }
   }
 

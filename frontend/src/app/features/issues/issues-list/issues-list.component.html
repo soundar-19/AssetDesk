@@ -13,28 +13,20 @@
     </div>
   </header>
 
-  <section class="filters" aria-label="Filter options">
-    <div class="filters-header">
-      <h2>Filters</h2>
-    </div>
-    <div class="filters-content">
-      <div class="filter-group">
-        <label for="statusFilter" class="filter-label">Status</label>
-        <select id="statusFilter" class="filter-select" [(ngModel)]="statusFilter" (change)="onStatusFilterChange()" aria-label="Filter by status">
-          <option value="">All Issues</option>
-          <option value="OPEN">Open</option>
-          <option value="IN_PROGRESS">In Progress</option>
-          <option value="RESOLVED">Resolved</option>
-        </select>
-      </div>
-      
-      <div class="filter-group">
-        <label class="checkbox-label">
-          <input type="checkbox" [(ngModel)]="showClosedIssues" (change)="toggleClosedIssues()" aria-describedby="closedIssuesHelp">
-          Show Closed Issues
-        </label>
-        <span id="closedIssuesHelp" class="help-text">Include resolved and closed issues in the list</span>
-      </div>
+  <app-search-filter
+    searchPlaceholder="Search issues by title, description, asset, or reporter..."
+    [filterOptions]="filterOptions"
+    (search)="onSearch($event)"
+    (filtersChange)="onFiltersChange($event)">
+  </app-search-filter>
+
+  <section class="additional-filters" aria-label="Additional filter options">
+    <div class="filter-group">
+      <label class="checkbox-label">
+        <input type="checkbox" [(ngModel)]="showClosedIssues" (change)="toggleClosedIssues()" aria-describedby="closedIssuesHelp">
+        Show Closed Issues
+      </label>
+      <span id="closedIssuesHelp" class="help-text">Include resolved and closed issues in the list</span>
     </div>
   </section>
 
@@ -46,7 +38,7 @@
       [pagination]="pagination"
       [sortColumn]="sortColumn"
       [sortDirection]="sortDirection"
-      [rowClickAction]="viewIssueDetails.bind(this)"
+      [rowClickAction]="viewIssue.bind(this)"
       (pageChange)="onPageChange($event)"
       (sort)="onSort($event)"
       role="table"

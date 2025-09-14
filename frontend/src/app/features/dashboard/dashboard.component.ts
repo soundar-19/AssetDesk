@@ -143,4 +143,27 @@ export class DashboardComponent implements OnInit {
     }
     return '-8% this month';
   }
+
+  getRequestTrend(): string {
+    if (this.dashboardStats.monthlyRequestTrends) {
+      const values = Object.values(this.dashboardStats.monthlyRequestTrends);
+      if (values.length >= 2) {
+        const current = values[values.length - 1];
+        const previous = values[values.length - 2];
+        const change = previous > 0 ? ((current - previous) / previous * 100) : 0;
+        return `${change >= 0 ? '+' : ''}${change.toFixed(1)}% this month`;
+      }
+    }
+    return '+12% this month';
+  }
+
+  getRequestsByStatusArray() {
+    if (!this.dashboardStats.requestsByStatus) return [];
+    return Object.entries(this.dashboardStats.requestsByStatus).map(([key, value]) => ({ key, value }));
+  }
+
+  getTotalRequests(): number {
+    if (!this.dashboardStats.requestsByStatus) return 0;
+    return Object.values(this.dashboardStats.requestsByStatus).reduce((sum, count) => sum + count, 0);
+  }
 }

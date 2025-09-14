@@ -40,6 +40,7 @@ import { ROLE_PERMISSIONS } from '../../../core/constants/role.constants';
         <div class="main-content">
           <div class="tabs">
             <button class="tab" [class.active]="activeTab === 'overview'" (click)="setActiveTab('overview')">Overview</button>
+            <button class="tab" [class.active]="activeTab === 'ownership'" (click)="setActiveTab('ownership')">Ownership History</button>
             <button class="tab" [class.active]="activeTab === 'service'" (click)="setActiveTab('service')">Service History</button>
             <button class="tab" [class.active]="activeTab === 'issues'" (click)="setActiveTab('issues')">Issues</button>
             <button class="tab" [class.active]="activeTab === 'warranty'" (click)="setActiveTab('warranty')">Warranty</button>
@@ -162,11 +163,11 @@ import { ROLE_PERMISSIONS } from '../../../core/constants/role.constants';
                 </div>
 
                 <div class="info-section" *ngIf="currentAllocation">
-                  <h3><i class="icon-user"></i> Current Allocation</h3>
+                  <h3><i class="icon-user"></i> Current Owner</h3>
                   <div class="allocation-card">
                     <div class="user-info">
-                      <div class="user-name">{{ currentAllocation.user?.name }}</div>
-                      <div class="user-details">{{ currentAllocation.user?.email }}</div>
+                      <div class="user-name" (click)="viewUserDetails(currentAllocation.userId)" style="cursor: pointer; color: var(--primary-600);">{{ currentAllocation.userName }}</div>
+                      <div class="user-details">{{ currentAllocation.userEmail }}</div>
                       <div class="user-department" *ngIf="currentAllocation.user?.department">{{ currentAllocation.user?.department }}</div>
                     </div>
                     <div class="allocation-details">
@@ -174,56 +175,65 @@ import { ROLE_PERMISSIONS } from '../../../core/constants/role.constants';
                         <label>Allocated Date:</label>
                         <span>{{ formatDate(currentAllocation.allocatedDate) }}</span>
                       </div>
-                      <div class="detail-item" *ngIf="currentAllocation.allocationRemarks">
+                      <div class="detail-item">
+                        <label>Duration:</label>
+                        <span>{{ currentAllocation.daysAllocated }} days</span>
+                      </div>
+                      <div class="detail-item" *ngIf="currentAllocation.remarks">
                         <label>Remarks:</label>
-                        <span>{{ currentAllocation.allocationRemarks }}</span>
+                        <span>{{ currentAllocation.remarks }}</span>
                       </div>
                     </div>
                   </div>
                 </div>
 
-                <div class="info-section" *ngIf="groupSummary && shouldShowGroupSummary()">
-                  <div class="section-title">
-                    <h3><i class="icon-grid"></i> Model Summary</h3>
-                    <button class="btn btn-success btn-add-asset" (click)="addAssetToGroup()" *ngIf="canManageAssets()">
-                      <i class="icon-plus"></i> Add Asset
-                    </button>
-                  </div>
-                  <div class="summary-cards">
-                    <div class="summary-card">
-                      <div class="card-value">{{ groupSummary.total }}</div>
-                      <div class="card-label">Total</div>
+
+              </div>
+            </div>
+
+            <!-- Ownership History Tab -->
+            <div *ngIf="activeTab === 'ownership'" class="tab-panel">
+              <div class="section-header">
+                <h3><i class="icon-users"></i> Ownership History</h3>
+              </div>
+              <div class="ownership-timeline" *ngIf="ownershipHistory.length > 0; else noOwnership">
+                <div *ngFor="let period of ownershipHistory" class="ownership-period">
+                  <div class="period-header">
+                    <div class="owner-info">
+                      <div class="owner-name" (click)="viewUserDetails(period.userId)" style="cursor: pointer; color: var(--primary-600);">{{ period.userName }}</div>
+                      <div class="owner-email">{{ period.userEmail }}</div>
                     </div>
-                    <div class="summary-card available">
-                      <div class="card-value">{{ groupSummary.available }}</div>
-                      <div class="card-label">Available</div>
-                    </div>
-                    <div class="summary-card allocated">
-                      <div class="card-value">{{ groupSummary.allocated }}</div>
-                      <div class="card-label">Allocated</div>
-                    </div>
-                    <div class="summary-card maintenance">
-                      <div class="card-value">{{ groupSummary.maintenance }}</div>
-                      <div class="card-label">Maintenance</div>
+                    <div class="period-dates">
+                      <span class="allocated-date">{{ formatDate(period.allocatedDate) }}</span>
+                      <span class="separator">→</span>
+                      <span class="returned-date">{{ period.returnedDate ? formatDate(period.returnedDate) : 'Current' }}</span>
+                      <span class="duration">({{ period.daysAllocated }} days)</span>
                     </div>
                   </div>
-                  <div class="allocated-users" *ngIf="groupSummary.allocatedUsers?.length">
-                    <h4>Allocated Users</h4>
-                    <div class="user-list">
-                      <div *ngFor="let u of groupSummary.allocatedUsers" class="user-item">
-                        <span class="user-name">{{ u.name }}</span>
-                        <span class="user-dept">{{ u.department }}</span>
-                        <span class="user-email">{{ u.email }}</span>
+                  
+                  <div class="period-services" *ngIf="period.serviceRecords?.length">
+                    <h4>Service Records During This Period</h4>
+                    <div class="service-list">
+                      <div *ngFor="let service of period.serviceRecords" class="service-item" (click)="viewServiceRecord(service)" style="cursor: pointer;">
+                        <div class="service-date">{{ formatDate(service.serviceDate) }}</div>
+                        <div class="service-description">{{ service.description || service.serviceDescription }}</div>
+                        <div class="service-cost" *ngIf="shouldShowFinancialInfo()">{{ service.cost | currency }}</div>
                       </div>
                     </div>
                   </div>
-                  <div class="actions" *ngIf="groupSummary.available > 0 && canManageAssets()">
-                    <button class="btn btn-primary" (click)="quickAllocate()">
-                      <i class="icon-plus"></i> Allocate Available Asset
-                    </button>
+                  
+                  <div class="period-remarks" *ngIf="period.remarks">
+                    <strong>Remarks:</strong> {{ period.remarks }}
                   </div>
                 </div>
               </div>
+              <ng-template #noOwnership>
+                <div class="empty-state">
+                  <i class="icon-users"></i>
+                  <h4>No Ownership History</h4>
+                  <p>This asset has never been allocated to any user.</p>
+                </div>
+              </ng-template>
             </div>
 
             <!-- Service History Tab -->
@@ -336,14 +346,21 @@ import { ROLE_PERMISSIONS } from '../../../core/constants/role.constants';
                 </button>
               </div>
               <div class="issues-list" *ngIf="recentIssues && recentIssues.length > 0; else noIssues">
-                <div *ngFor="let issue of recentIssues" class="issue-card">
+                <div *ngFor="let issue of recentIssues" class="issue-card" (click)="viewIssueDetails(issue.id)" style="cursor: pointer;">
                   <div class="issue-header">
                     <div class="issue-title">{{ issue.title }}</div>
                     <span class="issue-status" [class]="'status-' + issue.status.toLowerCase()">{{ issue.status }}</span>
                   </div>
                   <div class="issue-meta">
                     <span class="priority" [class]="'priority-' + issue.priority?.toLowerCase()">{{ issue.priority }}</span>
-                    <span class="created-date">{{ formatDate(issue.createdAt) }}</span>
+                    <span class="created-date">{{ formatDate(issue.createdAt || issue.createdDate) }}</span>
+                    <span class="reporter" *ngIf="issue.reportedBy">by {{ issue.reportedBy.name }}</span>
+                  </div>
+                  <div class="issue-description" *ngIf="issue.description">
+                    {{ issue.description }}
+                  </div>
+                  <div class="issue-resolution" *ngIf="issue.status === 'CLOSED' && issue.resolution">
+                    <strong>Resolution:</strong> {{ issue.resolution }}
                   </div>
                 </div>
               </div>
@@ -406,10 +423,10 @@ import { ROLE_PERMISSIONS } from '../../../core/constants/role.constants';
             <button class="action-btn" (click)="reportIssue()" *ngIf="canCreateIssues()">
               <i class="icon-alert"></i> Report Issue
             </button>
-            <button class="action-btn" *ngIf="!currentAllocation && asset.status === 'AVAILABLE' && canManageAssets()" (click)="allocateAsset()">
+            <button class="action-btn" *ngIf="asset.status === 'AVAILABLE' && canManageAssets()" (click)="allocateAsset()">
               <i class="icon-user"></i> Allocate
             </button>
-            <button class="action-btn" *ngIf="currentAllocation && canManageAssets()" (click)="returnAsset()">
+            <button class="action-btn" *ngIf="asset.status === 'ALLOCATED' && canManageAssets()" (click)="returnAsset()">
               <i class="icon-return"></i> Return Asset
             </button>
             <button class="action-btn" (click)="viewAssetHistory()" *ngIf="canManageAssets()">
@@ -765,6 +782,9 @@ import { ROLE_PERMISSIONS } from '../../../core/constants/role.constants';
     .priority-medium { background: #fff3cd; color: #856404; }
     .priority-low { background: #d4edda; color: #155724; }
     .created-date { color: #666; font-size: 0.875rem; }
+    .reporter { color: #666; font-size: 0.875rem; }
+    .issue-description { margin-top: 0.5rem; color: #666; font-size: 0.875rem; }
+    .issue-resolution { margin-top: 0.5rem; padding: 0.5rem; background: #d4edda; border-radius: 0.375rem; font-size: 0.875rem; }
     
     .warranty-card { text-align: center; padding: 2rem; background: #d4edda; border-radius: 1rem; }
     .warranty-card.expired { background: #f8d7da; }
@@ -852,6 +872,24 @@ import { ROLE_PERMISSIONS } from '../../../core/constants/role.constants';
     .btn-success { background: linear-gradient(135deg, #28a745, #20c997); color: white; }
     .btn-success:hover { transform: translateY(-1px); box-shadow: 0 4px 12px rgba(40,167,69,0.3); }
     
+    .ownership-timeline { display: flex; flex-direction: column; gap: 1.5rem; }
+    .ownership-period { background: white; padding: 1.5rem; border-radius: 0.75rem; box-shadow: 0 2px 4px rgba(0,0,0,0.05); border: 1px solid #f0f0f0; }
+    .period-header { display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 1rem; }
+    .owner-name { font-weight: 600; color: #1a1a1a; font-size: 1.125rem; }
+    .owner-email { color: #666; font-size: 0.875rem; }
+    .period-dates { display: flex; align-items: center; gap: 0.5rem; font-size: 0.875rem; }
+    .allocated-date, .returned-date { font-weight: 500; }
+    .separator { color: #666; }
+    .duration { color: #666; font-size: 0.75rem; }
+    .period-services { margin-top: 1rem; }
+    .period-services h4 { margin: 0 0 0.75rem 0; font-size: 1rem; color: #1a1a1a; }
+    .service-list { display: flex; flex-direction: column; gap: 0.5rem; }
+    .service-item { display: flex; justify-content: space-between; align-items: center; padding: 0.5rem; background: #f8f9fa; border-radius: 0.375rem; }
+    .service-date { font-weight: 500; color: #666; font-size: 0.875rem; }
+    .service-description { flex: 1; margin: 0 1rem; }
+    .service-cost { font-weight: 600; color: #28a745; }
+    .period-remarks { margin-top: 1rem; padding: 0.75rem; background: #f8f9fa; border-radius: 0.375rem; border-left: 3px solid #007bff; font-size: 0.875rem; }
+    
     @media (max-width: 1024px) {
       .content {
         grid-template-columns: 1fr;
@@ -920,7 +958,7 @@ export class AssetDetailComponent implements OnInit {
   serviceRecords: ServiceRecord[] = [];
   depreciation: any = null;
   warrantyHistory: WarrantyHistoryItem[] = [];
-  groupSummary: any = null;
+
   activeTab = 'overview';
   showLicenseKey = false;
   performerFilter = '';
@@ -930,6 +968,7 @@ export class AssetDetailComponent implements OnInit {
   currentUser: User | null = null;
   userRole: UserRole | null = null;
   permissions: any = {};
+  ownershipHistory: any[] = [];
 
   constructor(
     private route: ActivatedRoute,
@@ -981,10 +1020,12 @@ export class AssetDetailComponent implements OnInit {
   }
 
   private loadAssetData(id: number) {
-    // Load data based on user permissions
+    // Load service records (which will then load ownership history)
+    this.loadServiceRecords(id);
+    
+    // Load other data
     this.loadCurrentAllocation(id);
     this.loadRecentIssues(id);
-    this.loadServiceRecords(id);
     
     // Only load financial data for authorized roles
     if (this.permissions.canManageAssets || this.permissions.canManageSystem) {
@@ -994,10 +1035,7 @@ export class AssetDetailComponent implements OnInit {
     // Load warranty history for all users
     this.loadWarrantyHistory(id);
     
-    // Load group summary for asset managers
-    if (this.permissions.canManageAssets) {
-      this.loadGroupSummary();
-    }
+
   }
 
   loadWarrantyHistory(assetId: number) {
@@ -1011,11 +1049,13 @@ export class AssetDetailComponent implements OnInit {
       next: (response) => {
         this.serviceRecords = response || [];
         this.filteredServiceRecords = [...this.serviceRecords];
+        this.loadOwnershipHistory(assetId);
       },
       error: (error) => {
         console.error('Error loading service records:', error);
         this.serviceRecords = [];
         this.filteredServiceRecords = [];
+        this.loadOwnershipHistory(assetId);
       }
     });
   }
@@ -1033,8 +1073,9 @@ export class AssetDetailComponent implements OnInit {
       next: (allocation) => {
         this.currentAllocation = allocation;
       },
-      error: () => {
-        // No current allocation
+      error: (error) => {
+        console.error('Error loading current allocation:', error);
+        this.currentAllocation = null;
       }
     });
   }
@@ -1051,12 +1092,7 @@ export class AssetDetailComponent implements OnInit {
     });
   }
 
-  loadGroupSummary() {
-    if (!this.asset?.name) return;
-    this.assetService.getGroupSummary(this.asset.name).subscribe({
-      next: (data) => this.groupSummary = data
-    });
-  }
+
 
   editAsset() {
     if (!this.canManageAssets()) {
@@ -1172,60 +1208,38 @@ export class AssetDetailComponent implements OnInit {
     return !!(this.performerFilter || this.vendorFilter || this.serviceTypeFilter);
   }
 
-  addAssetToGroup() {
-    if (!this.asset) return;
-    
-    const preloadData = {
-      name: this.asset.name,
-      category: this.asset.category,
-      type: this.asset.type,
-      model: this.asset.model,
-      cost: this.asset.cost,
-      usefulLifeYears: this.asset.usefulLifeYears,
-      vendorId: this.asset.vendor?.id,
-      // License specific fields
-      ...(this.asset.type === 'LICENSE' && {
-        version: this.asset.version,
-        totalLicenses: this.asset.totalLicenses,
-        licenseExpiryDate: this.asset.licenseExpiryDate
-      })
-    };
-    
-    this.router.navigate(['/assets/new'], { 
-      queryParams: { preload: JSON.stringify(preloadData) }
-    });
-  }
+
 
   allocateAsset() {
-    if (!this.canManageAssets()) {
-      this.toastService.error('Access denied');
-      return;
-    }
-    this.router.navigate(['/allocations/new'], { queryParams: { assetId: this.asset?.id } });
-  }
-
-  quickAllocate() {
-    if (!this.canManageAssets()) {
+    if (!this.canManageAssets() || !this.asset) {
       this.toastService.error('Access denied');
       return;
     }
     
-    const userIdStr = prompt('Enter user ID to allocate an available asset from this model:');
+    if (this.asset.status !== 'AVAILABLE') {
+      this.toastService.error('Asset is not available for allocation');
+      return;
+    }
+    
+    const userIdStr = prompt('Enter user ID to allocate this asset:');
     if (!userIdStr) return;
+    
     const userId = Number(userIdStr);
     if (isNaN(userId)) {
       this.toastService.error('Invalid user ID');
       return;
     }
-    const remarks = `Quick allocated from group ${this.asset?.name}`;
-    this.assetService.allocateFromGroup(this.asset!.name, userId, remarks).subscribe({
+    
+    this.assetService.allocateAsset(this.asset.id, userId).subscribe({
       next: () => {
-        this.toastService.success('Asset allocated');
+        this.toastService.success('Asset allocated successfully');
         this.loadAsset(this.asset!.id);
       },
-      error: () => this.toastService.error('Allocation failed')
+      error: () => this.toastService.error('Failed to allocate asset')
     });
   }
+
+
 
   // Role-based access control methods
   shouldShowField(field: string): boolean {
@@ -1244,9 +1258,7 @@ export class AssetDetailComponent implements OnInit {
     return this.permissions.canManageAssets || this.permissions.canManageSystem;
   }
 
-  shouldShowGroupSummary(): boolean {
-    return this.permissions.canManageAssets;
-  }
+
 
   canManageAssets(): boolean {
     return this.permissions.canManageAssets || false;
@@ -1305,5 +1317,45 @@ export class AssetDetailComponent implements OnInit {
   getTotalServiceCost(): number {
     if (!this.shouldShowFinancialInfo()) return 0;
     return (this.serviceRecords || []).reduce((total, record) => total + (record.cost || 0), 0);
+  }
+
+  loadOwnershipHistory(assetId: number) {
+    this.allocationService.getAllocationsByAsset(assetId).subscribe({
+      next: (allocations) => {
+        this.ownershipHistory = (allocations || []).map(allocation => ({
+          ...allocation,
+          serviceRecords: this.getServiceRecordsForPeriod(allocation)
+        })).sort((a, b) => new Date(b.allocatedDate).getTime() - new Date(a.allocatedDate).getTime());
+        
+        if (!this.currentAllocation && this.ownershipHistory.length > 0) {
+          const current = this.ownershipHistory.find(h => !h.returnedDate);
+          if (current) {
+            this.currentAllocation = current;
+          }
+        }
+      },
+      error: (error) => {
+        console.error('Error loading ownership history:', error);
+        this.ownershipHistory = [];
+      }
+    });
+  }
+
+  getServiceRecordsForPeriod(allocation: any): any[] {
+    if (!this.serviceRecords) return [];
+    return this.serviceRecords.filter(service => {
+      const serviceDate = new Date(service.serviceDate);
+      const allocatedDate = new Date(allocation.allocatedDate);
+      const returnedDate = allocation.returnedDate ? new Date(allocation.returnedDate) : new Date();
+      return serviceDate >= allocatedDate && serviceDate <= returnedDate;
+    });
+  }
+
+  viewUserDetails(userId: number) {
+    this.router.navigate(['/users', userId]);
+  }
+
+  viewIssueDetails(issueId: number) {
+    this.router.navigate(['/issues', issueId]);
   }
 }

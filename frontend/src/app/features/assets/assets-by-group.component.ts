@@ -13,7 +13,7 @@ import { AssetAllocationDialogComponent } from '../../shared/components/asset-al
 @Component({
   selector: 'app-assets-by-group',
   standalone: true,
-  imports: [CommonModule, FormsModule, DataTableComponent, AssetAllocationDialogComponent],
+  imports: [CommonModule, FormsModule, DataTableComponent],
   template: `
     <div class="page-container">
       <div class="page-header">
@@ -124,6 +124,7 @@ import { AssetAllocationDialogComponent } from '../../shared/components/asset-al
           [columns]="columns"
           [actions]="actions"
           [pagination]="pagination"
+          [rowClickAction]="viewAsset.bind(this)"
           (pageChange)="onPageChange($event)">
         </app-data-table>
       </div>
@@ -555,11 +556,7 @@ export class AssetsByGroupComponent implements OnInit {
   ];
 
   actions: TableAction[] = [
-    { 
-      label: 'View', 
-      icon: '👁', 
-      action: (asset) => this.viewAsset(asset.id) 
-    },
+
     { 
       label: 'Edit', 
       icon: '✏', 
@@ -716,8 +713,8 @@ export class AssetsByGroupComponent implements OnInit {
   }
 
   // Asset actions
-  viewAsset(id: number) {
-    this.router.navigate(['/assets', id]);
+  viewAsset(asset: any) {
+    this.router.navigate(['/assets', asset.id || asset]);
   }
 
   editAsset(id: number) {

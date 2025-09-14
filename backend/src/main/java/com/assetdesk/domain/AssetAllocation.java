@@ -13,11 +13,13 @@ public class AssetAllocation {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
-    @ManyToOne(fetch = FetchType.LAZY)
+    @ManyToOne(fetch = FetchType.EAGER)
     @JoinColumn(name = "asset_id", nullable = false)
     private Asset asset;
 
-    @ManyToOne(fetch = FetchType.LAZY)
+    @ManyToOne(fetch = FetchType.EAGER)
+
+
     @JoinColumn(name = "user_id", nullable = false)
     private User user;
 
@@ -28,4 +30,9 @@ public class AssetAllocation {
 
     @Column(columnDefinition = "TEXT")
     private String remarks;
+    
+    private LocalDate returnRequestDate;
+    
+    @Column(columnDefinition = "TEXT")
+    private String returnRequestRemarks;
 }

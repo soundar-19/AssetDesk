@@ -34,8 +34,8 @@
         <div class="stat-card info">
           <div class="stat-icon">📋</div>
           <div class="stat-content">
-            <div class="stat-value">{{ dashboardStats.pendingRequests || 0 }}</div>
-            <div class="stat-label">Pending Requests</div>
+            <div class="stat-value">{{ dashboardStats.myRequests || 0 }}</div>
+            <div class="stat-label">My Requests</div>
           </div>
           <a routerLink="/requests" class="stat-action">View All</a>
         </div>
@@ -96,6 +96,14 @@
             <div class="metric-trend">{{ dashboardStats.averageResolutionTime || 0 }}h avg</div>
           </div>
         </div>
+        <div class="metric-card info">
+          <div class="metric-icon">📋</div>
+          <div class="metric-content">
+            <div class="metric-value">{{ dashboardStats.pendingRequests || 0 }}</div>
+            <div class="metric-label">Pending Requests</div>
+            <div class="metric-trend">{{ getRequestTrend() }}</div>
+          </div>
+        </div>
         <div class="metric-card danger">
           <div class="metric-icon">🔔</div>
           <div class="metric-content">
@@ -141,7 +149,7 @@
           <h3 class="card-title">Quick Actions</h3>
           <div class="actions-grid">
             <a routerLink="/assets/new" class="action-btn primary">➕ Add Asset</a>
-            <a routerLink="/assets/allocate" class="action-btn success">👤 Allocate Asset</a>
+            <a routerLink="/requests" class="action-btn warning">📋 Review Requests</a>
             <a routerLink="/service-records" class="action-btn info">🔧 Maintenance</a>
             <a routerLink="/vendors" class="action-btn secondary">🏢 Vendors</a>
           </div>
@@ -175,6 +183,14 @@
               <div class="summary-value">{{ dashboardStats.openIssues || 0 }}</div>
               <div class="summary-label">Open Issues</div>
               <div class="summary-change">{{ getIssueTrend() }}</div>
+            </div>
+          </div>
+          <div class="summary-card secondary">
+            <div class="summary-icon">📋</div>
+            <div class="summary-content">
+              <div class="summary-value">{{ getTotalRequests() }}</div>
+              <div class="summary-label">Asset Requests</div>
+              <div class="summary-change">{{ getRequestTrend() }}</div>
             </div>
           </div>
           <div class="summary-card info">

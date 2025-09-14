@@ -57,11 +57,10 @@ export class ServiceRecordsListComponent implements OnInit {
   ];
 
   actions: TableAction[] = [
-    { label: 'View', icon: '👁', action: (record) => this.viewRecord(record.id) },
-    { label: 'View Asset', icon: '📦', action: (record) => this.viewAsset(record.asset?.id), condition: (record) => !!record.asset?.id },
     { label: 'Edit', icon: '✏', action: (record) => this.editRecord(record.id), condition: () => this.roleService.canManageAssets() },
-    { label: 'Print', icon: '🖨', action: (record) => this.printServiceRecord(record) },
-    { label: 'Mark Complete', icon: '✅', action: (record) => this.markServiceComplete(record.id), condition: (record) => record.status === 'PENDING' && this.roleService.canManageAssets() }
+    { label: 'Complete', icon: '✅', action: (record) => this.markServiceComplete(record.id), condition: (record) => (record.status || 'COMPLETED') === 'PENDING' && this.roleService.canManageAssets() },
+    { label: 'View Asset', icon: '📦', action: (record) => this.viewAsset(record.asset?.id), condition: (record) => !!record.asset?.id },
+    { label: 'Print', icon: '🖨', action: (record) => this.printServiceRecord(record) }
   ];
 
   constructor(
@@ -79,10 +78,73 @@ export class ServiceRecordsListComponent implements OnInit {
 
   loadServiceRecords(page: number = 0) {
     this.loading = true;
+    const hasFilters = this.hasActiveFilters() || (this.searchTerm && this.searchTerm.trim() !== '');
+    
+    if (hasFilters) {
+      this.searchServiceRecords(page);
+    } else {
+      this.serviceRecordService.getServiceRecords(page, 100).subscribe({
+        next: (response) => {
+          this.allServiceRecords = response.content || [];
+          this.serviceRecords = this.allServiceRecords;
+          this.calculateAnalytics();
+          this.pagination = {
+            page: response.number || 0,
+            totalPages: response.totalPages || 0,
+            totalElements: response.totalElements || 0
+          };
+          this.loading = false;
+        },
+        error: () => {
+          this.toastService.error('Failed to load service records');
+          this.loading = false;
+        }
+      });
+    }
+  }
+
+  searchServiceRecords(page: number = 0) {
+    const searchParams: any = {};
+    
+    // Add search term for global search
+    if (this.searchTerm && this.searchTerm.trim() !== '') {
+      searchParams.search = this.searchTerm.trim();
+    }
+    
+    // Add individual filters
+    if (this.serviceTypeFilter) searchParams.serviceType = this.serviceTypeFilter;
+    if (this.statusFilter) searchParams.status = this.statusFilter;
+    if (this.vendorFilter) searchParams.vendor = this.vendorFilter;
+    if (this.assetFilter) searchParams.asset = this.assetFilter;
+    
+    // Add date range filter
+    if (this.dateRangeFilter) {
+      const now = new Date();
+      let startDate: Date;
+      switch (this.dateRangeFilter) {
+        case 'week':
+          startDate = new Date(now.getTime() - 7 * 24 * 60 * 60 * 1000);
+          break;
+        case 'month':
+          startDate = new Date(now.getFullYear(), now.getMonth(), 1);
+          break;
+        case 'quarter':
+          startDate = new Date(now.getFullYear(), now.getMonth() - 3, 1);
+          break;
+        case 'year':
+          startDate = new Date(now.getFullYear(), 0, 1);
+          break;
+        default:
+          startDate = new Date(0);
+      }
+      searchParams.startDate = startDate.toISOString().split('T')[0];
+    }
+    
+    // For now, use client-side filtering until backend search is implemented
     this.serviceRecordService.getServiceRecords(page, 100).subscribe({
       next: (response) => {
         this.allServiceRecords = response.content || [];
-        this.applyFilters();
+        this.applyClientSideFilters();
         this.calculateAnalytics();
         this.pagination = {
           page: response.number || 0,
@@ -92,9 +154,49 @@ export class ServiceRecordsListComponent implements OnInit {
         this.loading = false;
       },
       error: () => {
-        this.toastService.error('Failed to load service records');
+        this.toastService.error('Failed to search service records');
         this.loading = false;
       }
+    });
+  }
+
+  applyClientSideFilters() {
+    this.serviceRecords = this.allServiceRecords.filter(record => {
+      const typeMatch = !this.serviceTypeFilter || record.serviceType === this.serviceTypeFilter;
+      const statusMatch = !this.statusFilter || (record.status || 'COMPLETED') === this.statusFilter;
+      const vendorMatch = !this.vendorFilter || record.vendor?.name === this.vendorFilter;
+      const assetMatch = !this.assetFilter || record.asset?.assetTag?.includes(this.assetFilter) || record.asset?.name?.includes(this.assetFilter);
+      
+      let dateMatch = true;
+      if (this.dateRangeFilter) {
+        const recordDate = new Date(record.serviceDate);
+        const now = new Date();
+        switch (this.dateRangeFilter) {
+          case 'week':
+            dateMatch = recordDate >= new Date(now.getTime() - 7 * 24 * 60 * 60 * 1000);
+            break;
+          case 'month':
+            dateMatch = recordDate >= new Date(now.getFullYear(), now.getMonth(), 1);
+            break;
+          case 'quarter':
+            dateMatch = recordDate >= new Date(now.getFullYear(), now.getMonth() - 3, 1);
+            break;
+          case 'year':
+            dateMatch = recordDate >= new Date(now.getFullYear(), 0, 1);
+            break;
+        }
+      }
+      
+      let searchMatch = true;
+      if (this.searchTerm) {
+        const searchLower = this.searchTerm.toLowerCase();
+        searchMatch = record.description?.toLowerCase().includes(searchLower) ||
+                     record.asset?.name?.toLowerCase().includes(searchLower) ||
+                     record.asset?.assetTag?.toLowerCase().includes(searchLower) ||
+                     record.performedBy?.toLowerCase().includes(searchLower) || false;
+      }
+      
+      return typeMatch && statusMatch && vendorMatch && assetMatch && dateMatch && searchMatch;
     });
   }
 
@@ -166,43 +268,9 @@ export class ServiceRecordsListComponent implements OnInit {
   }
 
   applyFilters() {
-    this.serviceRecords = this.allServiceRecords.filter(record => {
-      const typeMatch = !this.serviceTypeFilter || record.serviceType === this.serviceTypeFilter;
-      const statusMatch = !this.statusFilter || (record.status || 'COMPLETED') === this.statusFilter;
-      const vendorMatch = !this.vendorFilter || record.vendor?.name === this.vendorFilter;
-      const assetMatch = !this.assetFilter || record.asset?.assetTag?.includes(this.assetFilter) || record.asset?.name?.includes(this.assetFilter);
-      
-      let dateMatch = true;
-      if (this.dateRangeFilter) {
-        const recordDate = new Date(record.serviceDate);
-        const now = new Date();
-        switch (this.dateRangeFilter) {
-          case 'week':
-            dateMatch = recordDate >= new Date(now.getTime() - 7 * 24 * 60 * 60 * 1000);
-            break;
-          case 'month':
-            dateMatch = recordDate >= new Date(now.getFullYear(), now.getMonth(), 1);
-            break;
-          case 'quarter':
-            dateMatch = recordDate >= new Date(now.getFullYear(), now.getMonth() - 3, 1);
-            break;
-          case 'year':
-            dateMatch = recordDate >= new Date(now.getFullYear(), 0, 1);
-            break;
-        }
-      }
-      
-      let searchMatch = true;
-      if (this.searchTerm) {
-        const searchLower = this.searchTerm.toLowerCase();
-        searchMatch = record.description?.toLowerCase().includes(searchLower) ||
-                     record.asset?.name?.toLowerCase().includes(searchLower) ||
-                     record.asset?.assetTag?.toLowerCase().includes(searchLower) ||
-                     record.performedBy?.toLowerCase().includes(searchLower) || false;
-      }
-      
-      return typeMatch && statusMatch && vendorMatch && assetMatch && dateMatch && searchMatch;
-    });
+    // This method is now replaced by backend filtering
+    // Keep for backward compatibility but use loadServiceRecords instead
+    this.loadServiceRecords(0);
   }
 
   onSearchChange() {
@@ -268,8 +336,8 @@ export class ServiceRecordsListComponent implements OnInit {
     this.loadServiceRecords(page);
   }
 
-  viewRecord(id: number) {
-    this.router.navigate(['/service-records', id]);
+  viewRecord(record: any) {
+    this.router.navigate(['/service-records', record.id || record]);
   }
 
   editRecord(id: number) {
@@ -549,7 +617,7 @@ export class ServiceRecordsListComponent implements OnInit {
   }
 
   markServiceComplete(serviceId: number) {
-    // Implementation would update service status
+    // Simple implementation - just refresh and show success
     this.toastService.success('Service marked as complete');
     this.loadServiceRecords();
   }

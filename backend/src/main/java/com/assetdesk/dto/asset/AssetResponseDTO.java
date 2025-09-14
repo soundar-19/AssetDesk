@@ -1,9 +1,11 @@
 package com.assetdesk.dto.asset;
 
 import com.assetdesk.domain.Asset;
+import com.assetdesk.dto.user.UserResponseDTO;
 import lombok.Data;
 import java.math.BigDecimal;
 import java.time.LocalDate;
+import java.time.temporal.ChronoUnit;
 
 @Data
 public class AssetResponseDTO {
@@ -30,6 +32,11 @@ public class AssetResponseDTO {
     private String licenseKey;
     private String version;
     
+    // Allocation information
+    private UserResponseDTO allocatedTo;
+    private LocalDate allocatedDate;
+    private Long allocationDurationDays;
+    
     public static AssetResponseDTO fromEntity(Asset asset) {
         AssetResponseDTO dto = new AssetResponseDTO();
         dto.setId(asset.getId());
@@ -51,6 +58,18 @@ public class AssetResponseDTO {
         dto.setLicenseExpiryDate(asset.getLicenseExpiryDate());
         dto.setLicenseKey(asset.getLicenseKey());
         dto.setVersion(asset.getVersion());
+        return dto;
+    }
+    
+    public static AssetResponseDTO fromEntityWithAllocation(Asset asset, com.assetdesk.domain.AssetAllocation allocation) {
+        AssetResponseDTO dto = fromEntity(asset);
+        if (allocation != null) {
+            dto.setAllocatedTo(allocation.getUser() != null ? UserResponseDTO.fromEntity(allocation.getUser()) : null);
+            dto.setAllocatedDate(allocation.getAllocatedDate());
+            if (allocation.getAllocatedDate() != null) {
+                dto.setAllocationDurationDays(ChronoUnit.DAYS.between(allocation.getAllocatedDate(), LocalDate.now()));
+            }
+        }
         return dto;
     }
 }

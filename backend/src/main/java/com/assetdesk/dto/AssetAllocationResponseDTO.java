@@ -21,6 +21,9 @@ public class AssetAllocationResponseDTO {
     private String remarks;
     private String status;
     private Long daysAllocated;
+    private LocalDate returnRequestDate;
+    private String returnRequestRemarks;
+    private boolean returnRequested;
     
     public static AssetAllocationResponseDTO fromEntity(AssetAllocation allocation) {
         AssetAllocationResponseDTO dto = new AssetAllocationResponseDTO();
@@ -54,6 +57,10 @@ public class AssetAllocationResponseDTO {
             dto.setDaysAllocated(ChronoUnit.DAYS.between(
                 allocation.getAllocatedDate(), LocalDate.now()));
         }
+        
+        dto.setReturnRequestDate(allocation.getReturnRequestDate());
+        dto.setReturnRequestRemarks(allocation.getReturnRequestRemarks());
+        dto.setReturnRequested(allocation.getReturnRequestDate() != null);
         
         return dto;
     }

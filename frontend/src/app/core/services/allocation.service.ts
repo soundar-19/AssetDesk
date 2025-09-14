@@ -23,8 +23,8 @@ export class AllocationService {
     return this.api.getPagedData<AssetAllocation>(`${this.endpoint}/user/${userId}`, page, size);
   }
 
-  getAllocationsByAsset(assetId: number, page: number = 0, size: number = 10): Observable<PageResponse<AssetAllocation>> {
-    return this.api.getPagedData<AssetAllocation>(`${this.endpoint}/asset/${assetId}`, page, size);
+  getAllocationsByAsset(assetId: number): Observable<AssetAllocation[]> {
+    return this.api.get<AssetAllocation[]>(`${this.endpoint}/asset/${assetId}/history`);
   }
 
   getActiveAllocations(page: number = 0, size: number = 10): Observable<PageResponse<AssetAllocation>> {
@@ -44,5 +44,18 @@ export class AllocationService {
 
   getAnalytics(): Observable<any> {
     return this.api.get<any>(`${this.endpoint}/analytics`);
+  }
+
+  bulkReturnAssets(assetIds: number[], remarks?: string): Observable<any> {
+    const params = remarks ? { remarks } : {};
+    return this.api.post<any>('/assets/bulk/return', assetIds, params);
+  }
+
+  requestReturn(assetId: number, remarks: string): Observable<AssetAllocation> {
+    return this.api.post<AssetAllocation>(`${this.endpoint}/request-return/${assetId}`, null, { remarks });
+  }
+
+  getUserAllocationHistory(userId: number): Observable<AssetAllocation[]> {
+    return this.api.get<AssetAllocation[]>(`${this.endpoint}/user/${userId}/history`);
   }
 }

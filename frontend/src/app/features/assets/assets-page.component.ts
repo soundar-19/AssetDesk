@@ -5,16 +5,17 @@ import { FormsModule } from '@angular/forms';
 
 import { AssetService } from '../../core/services/asset.service';
 import { RoleService } from '../../core/services/role.service';
-import { Asset } from '../../core/models';
+import { AllocationService } from '../../core/services/allocation.service';
+import { Asset, AssetAllocation, User } from '../../core/models';
 import { DataTableComponent, TableColumn, TableAction } from '../../shared/components/data-table/data-table.component';
 import { ToastService } from '../../shared/components/toast/toast.service';
-import { AssetAllocationDialogComponent } from '../../shared/components/asset-allocation-dialog/asset-allocation-dialog.component';
+import { UserSelectorDialogComponent } from '../../shared/components/user-selector-dialog/user-selector-dialog.component';
 import { ConfirmDialogService } from '../../shared/components/confirm-dialog/confirm-dialog.service';
 
 @Component({
   selector: 'app-assets-page',
   standalone: true,
-  imports: [CommonModule, FormsModule, DataTableComponent, AssetAllocationDialogComponent],
+  imports: [CommonModule, FormsModule, DataTableComponent, UserSelectorDialogComponent],
   template: `
     <div class="page-container">
       <div class="page-header">
@@ -23,17 +24,6 @@ import { ConfirmDialogService } from '../../shared/components/confirm-dialog/con
           <p class="page-description">Manage your organization's assets</p>
         </div>
         <div class="header-actions">
-          <div class="export-buttons">
-            <button class="btn btn-outline btn-sm" (click)="exportToCsv()" title="Export to CSV">
-              📊 CSV
-            </button>
-            <button class="btn btn-outline btn-sm" (click)="exportToPdf()" title="Export to PDF">
-              📄 PDF
-            </button>
-          </div>
-          <button class="btn btn-outline" (click)="toggleView()">
-            {{ showGrouped ? 'Individual View' : 'Grouped View' }}
-          </button>
           <button *ngIf="roleService.canManageAssets()" 
                   class="btn btn-primary" 
                   (click)="createAsset()">
@@ -52,15 +42,6 @@ import { ConfirmDialogService } from '../../shared/components/confirm-dialog/con
             <option value="ACCESSORIES">Accessories</option>
           </select>
           
-          <select class="form-select" [(ngModel)]="filters.status" (change)="applyFilters()">
-            <option value="">All Statuses</option>
-            <option value="AVAILABLE">Available</option>
-            <option value="ALLOCATED">Allocated</option>
-            <option value="MAINTENANCE">Maintenance</option>
-            <option value="RETIRED">Retired</option>
-            <option value="LOST">Lost</option>
-          </select>
-          
           <select class="form-select" [(ngModel)]="filters.type" (change)="applyFilters()">
             <option value="">All Types</option>
             <option value="LAPTOP">Laptop</option>
@@ -70,18 +51,6 @@ import { ConfirmDialogService } from '../../shared/components/confirm-dialog/con
             <option value="LICENSE">License</option>
             <option value="ACCESSORIES">Accessories</option>
           </select>
-          
-          <input type="text" 
-                 class="form-control" 
-                 placeholder="Search assets..." 
-                 [(ngModel)]="filters.search"
-                 (input)="onSearchChange()">
-          
-          <button class="btn btn-outline btn-sm" 
-                  (click)="toggleAdvancedFilters()"
-                  [class.active]="showAdvancedFilters">
-            {{ showAdvancedFilters ? 'Hide' : 'More' }} Filters
-          </button>
         </div>
         
         <!-- Bulk Actions -->
@@ -89,6 +58,12 @@ import { ConfirmDialogService } from '../../shared/components/confirm-dialog/con
           <span class="selected-count">{{ selectedAssets.size }} selected</span>
           <button class="btn btn-sm btn-primary" (click)="bulkAllocate()">
             Allocate Selected
+          </button>
+          <button class="btn btn-sm btn-secondary" (click)="bulkReturn()">
+            Return Selected
+          </button>
+          <button class="btn btn-sm btn-info" (click)="viewAllocationHistory()">
+            View Allocation History
           </button>
           <button class="btn btn-sm btn-warning" (click)="bulkUpdateStatus('MAINTENANCE')">
             Mark Maintenance
@@ -112,54 +87,17 @@ import { ConfirmDialogService } from '../../shared/components/confirm-dialog/con
         </div>
       </div>
 
-      <!-- Advanced Filters -->
-      <div class="advanced-filters" *ngIf="showAdvancedFilters">
-        <div class="filters-grid">
-          <div class="filter-group">
-            <label>Warranty Status</label>
-            <select class="form-select" [(ngModel)]="filters.warrantyStatus" (change)="applyFilters()">
-              <option value="">All</option>
-              <option value="VALID">Valid</option>
-              <option value="EXPIRED">Expired</option>
-              <option value="EXPIRING_SOON">Expiring Soon</option>
-            </select>
-          </div>
-          <div class="filter-group">
-            <label>Purchase Date From</label>
-            <input type="date" class="form-control" [(ngModel)]="dateFilters.purchaseDateFrom" (change)="applyFilters()">
-          </div>
-          <div class="filter-group">
-            <label>Purchase Date To</label>
-            <input type="date" class="form-control" [(ngModel)]="dateFilters.purchaseDateTo" (change)="applyFilters()">
-          </div>
-          <div class="filter-group">
-            <label>Warranty Expiry From</label>
-            <input type="date" class="form-control" [(ngModel)]="dateFilters.warrantyExpiryFrom" (change)="applyFilters()">
-          </div>
-          <div class="filter-group">
-            <label>Warranty Expiry To</label>
-            <input type="date" class="form-control" [(ngModel)]="dateFilters.warrantyExpiryTo" (change)="applyFilters()">
-          </div>
-          <div class="filter-actions">
-            <button class="btn btn-outline btn-sm" (click)="clearAllFilters()">
-              Clear All
-            </button>
-            <button class="btn btn-primary btn-sm" (click)="exportFilteredAssets()">
-              Export Filtered
-            </button>
-          </div>
-        </div>
-      </div>
+
 
       <!-- Grouped View -->
       <div *ngIf="showGrouped" class="grouped-view">
         <div class="asset-groups-grid">
-          <div *ngFor="let group of filteredGroups" class="asset-group-card card card-hover">
+          <div *ngFor="let group of filteredGroups" class="asset-group-card card card-hover clickable" (click)="viewGroupDetails(group)">
             <div class="card-body">
               <div class="group-header">
                 <div class="group-info">
                   <h3 class="group-name">{{ group.name }}</h3>
-                  <span class="badge badge-info">{{ group.category || 'Asset Group' }}</span>
+                  <span class="badge badge-info">{{ getGroupCategory(group) }}</span>
                 </div>
                 <div class="group-total">
                   <span class="total-count">{{ group.total }}</span>
@@ -168,34 +106,25 @@ import { ConfirmDialogService } from '../../shared/components/confirm-dialog/con
               </div>
 
               <div class="status-breakdown">
-                <div class="status-item">
+                <div class="status-item" (click)="viewGroupByStatus(group, 'AVAILABLE')" style="cursor: pointer;">
                   <div class="status-count available">{{ group.available }}</div>
                   <div class="status-label">Available</div>
                 </div>
-                <div class="status-item">
+                <div class="status-item" (click)="viewGroupByStatus(group, 'ALLOCATED')" style="cursor: pointer;">
                   <div class="status-count allocated">{{ group.allocated }}</div>
                   <div class="status-label">Allocated</div>
                 </div>
-                <div class="status-item">
+                <div class="status-item" (click)="viewGroupByStatus(group, 'MAINTENANCE')" style="cursor: pointer;">
                   <div class="status-count maintenance">{{ group.maintenance }}</div>
                   <div class="status-label">Maintenance</div>
                 </div>
-                <div class="status-item" *ngIf="group.retired > 0">
+                <div class="status-item" *ngIf="group.retired > 0" (click)="viewGroupByStatus(group, 'RETIRED')" style="cursor: pointer;">
                   <div class="status-count retired">{{ group.retired }}</div>
                   <div class="status-label">Retired</div>
                 </div>
               </div>
 
-              <div class="group-actions">
-                <button class="btn btn-outline btn-sm" (click)="viewGroupDetails(group)">
-                  View Details
-                </button>
-                <button *ngIf="group.available > 0 && roleService.canManageAssets()" 
-                        class="btn btn-primary btn-sm" 
-                        (click)="allocateFromGroup(group)">
-                  Allocate ({{ group.available }})
-                </button>
-              </div>
+
             </div>
           </div>
         </div>
@@ -221,9 +150,7 @@ import { ConfirmDialogService } from '../../shared/components/confirm-dialog/con
             <button class="btn btn-outline btn-sm" (click)="refreshAssets()">
               🔄 Refresh
             </button>
-            <button class="btn btn-outline btn-sm" (click)="toggleColumnVisibility()">
-              👁 Columns
-            </button>
+
           </div>
         </div>
         
@@ -245,7 +172,10 @@ import { ConfirmDialogService } from '../../shared/components/confirm-dialog/con
         <p>Loading assets...</p>
       </div>
 
-
+      <!-- User Selector Dialog -->
+      <div *ngIf="showUserSelector">
+        <app-user-selector-dialog></app-user-selector-dialog>
+      </div>
     </div>
   `,
   styles: [`
@@ -262,31 +192,23 @@ import { ConfirmDialogService } from '../../shared/components/confirm-dialog/con
       align-items: center;
     }
 
-    .export-buttons {
-      display: flex;
-      gap: var(--space-2);
-    }
 
-    .export-buttons .btn {
-      font-size: 0.875rem;
-      padding: var(--space-2) var(--space-3);
-    }
 
     .filters-section {
-      display: flex;
-      justify-content: space-between;
-      align-items: center;
       margin-bottom: var(--space-6);
       padding: var(--space-4);
-      background: var(--gray-50);
+      background: white;
       border-radius: var(--radius-lg);
+      box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+      border: 1px solid var(--gray-200);
     }
 
     .filters {
-      display: flex;
-      gap: var(--space-4);
-      flex: 1;
-      flex-wrap: wrap;
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+      gap: var(--space-3);
+      margin-bottom: var(--space-4);
+      align-items: end;
     }
     
     .advanced-filters {
@@ -331,6 +253,8 @@ import { ConfirmDialogService } from '../../shared/components/confirm-dialog/con
       background: var(--primary-50);
       border-radius: var(--radius-md);
       border: 1px solid var(--primary-200);
+      margin-top: var(--space-4);
+      flex-wrap: wrap;
     }
     
     .selected-count {
@@ -362,20 +286,30 @@ import { ConfirmDialogService } from '../../shared/components/confirm-dialog/con
     }
 
     .form-select, .form-control {
-      min-width: 150px;
+      width: 100%;
       padding: var(--space-2) var(--space-3);
       border: 1px solid var(--gray-300);
       border-radius: var(--radius-md);
       font-size: 0.875rem;
+      background: white;
+      transition: border-color 0.2s;
+    }
+    
+    .form-select:focus, .form-control:focus {
+      outline: none;
+      border-color: var(--primary-500);
+      box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1);
     }
 
     .view-toggle {
       display: flex;
       gap: var(--space-1);
-      background: white;
+      background: var(--gray-100);
       border-radius: var(--radius-md);
       padding: var(--space-1);
-      box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+      margin-top: var(--space-4);
+      width: fit-content;
+      margin-left: auto;
     }
 
     .view-toggle .btn {
@@ -400,6 +334,10 @@ import { ConfirmDialogService } from '../../shared/components/confirm-dialog/con
 
     .asset-group-card {
       transition: all var(--transition-fast);
+    }
+
+    .asset-group-card.clickable {
+      cursor: pointer;
     }
 
     .group-header {
@@ -468,6 +406,8 @@ import { ConfirmDialogService } from '../../shared/components/confirm-dialog/con
       text-transform: uppercase;
       letter-spacing: 0.05em;
     }
+    
+
 
     .group-actions {
       display: flex;
@@ -512,7 +452,16 @@ import { ConfirmDialogService } from '../../shared/components/confirm-dialog/con
       }
 
       .filters {
-        flex-direction: column;
+        grid-template-columns: 1fr;
+      }
+      
+      .view-toggle {
+        margin-left: 0;
+        width: 100%;
+      }
+      
+      .bulk-actions {
+        justify-content: center;
       }
 
       .asset-groups-grid {
@@ -536,30 +485,21 @@ export class AssetsPageComponent implements OnInit {
   assets: Asset[] = [];
   pagination: any = null;
   selectedAssets: Set<number> = new Set();
+  allocationAnalytics: any = null;
   
   // Filters
   filters = {
     category: '',
-    status: '',
-    search: '',
-    type: '',
-    vendor: '',
-    warrantyStatus: ''
+    type: ''
   };
   
   searchTimeout: any;
   
-  // Advanced filters
-  showAdvancedFilters = false;
-  dateFilters = {
-    purchaseDateFrom: '',
-    purchaseDateTo: '',
-    warrantyExpiryFrom: '',
-    warrantyExpiryTo: ''
-  };
+
   
   // Dialog state
-
+  showUserSelector = false;
+  userSelectorData: any = null;
   
   // Table configuration
   columns: TableColumn[] = [
@@ -572,7 +512,8 @@ export class AssetsPageComponent implements OnInit {
     { key: 'cost', label: 'Cost', pipe: 'currency' },
     { key: 'purchaseDate', label: 'Purchase Date', pipe: 'date' },
     { key: 'warrantyExpiryDate', label: 'Warranty Expiry', pipe: 'date' },
-    { key: 'allocatedTo', label: 'Allocated To', render: (asset: Asset) => asset.allocatedTo?.name || 'N/A' }
+    { key: 'allocatedTo', label: 'Allocated To', render: (asset: Asset) => asset.allocatedTo?.name || 'N/A' },
+    { key: 'allocationDuration', label: 'Allocation Duration', render: (asset: Asset) => this.getAllocationDuration(asset) }
   ];
 
   actions: TableAction[] = [
@@ -598,11 +539,24 @@ export class AssetsPageComponent implements OnInit {
       icon: '↩', 
       action: (asset) => this.returnAsset(asset), 
       condition: (asset) => asset.status === 'ALLOCATED' && this.roleService.canManageAssets() 
+    },
+    { 
+      label: 'Request Return', 
+      icon: '📤', 
+      action: (asset) => this.requestReturn(asset), 
+      condition: (asset) => asset.status === 'ALLOCATED' && this.roleService.canManageAssets() 
+    },
+    { 
+      label: 'History', 
+      icon: '📋', 
+      action: (asset) => this.viewAssetAllocationHistory(asset.id), 
+      condition: () => this.roleService.canManageAssets() 
     }
   ];
 
   constructor(
     private assetService: AssetService,
+    private allocationService: AllocationService,
     private router: Router,
     public roleService: RoleService,
     private toastService: ToastService,
@@ -611,6 +565,7 @@ export class AssetsPageComponent implements OnInit {
 
   ngOnInit() {
     this.loadData();
+    this.loadAllocationAnalytics();
   }
 
   loadData() {
@@ -645,53 +600,34 @@ export class AssetsPageComponent implements OnInit {
     this.loading = true;
     const hasFilters = this.hasActiveFilters();
     
-    if (hasFilters) {
-      const searchParams = {
-        name: this.filters.search,
-        category: this.filters.category,
-        status: this.filters.status,
-        type: this.filters.type,
-        vendor: this.filters.vendor
-      };
-      
-      this.assetService.searchAssets(searchParams, page, 10).subscribe({
-        next: (response) => {
-          this.assets = this.applyClientSideFilters(response?.content || []);
-          this.pagination = {
-            page: response?.number || 0,
-            totalPages: response?.totalPages || 0,
-            totalElements: response?.totalElements || 0
-          };
-          this.loading = false;
-        },
-        error: (error) => {
-          console.error('Failed to search assets:', error);
-          this.assets = [];
-          this.pagination = { page: 0, totalPages: 0, totalElements: 0 };
-          this.toastService.error('Failed to search assets');
-          this.loading = false;
+    this.assetService.getAssets(page, 10).subscribe({
+      next: (response) => {
+        let assets = response?.content || [];
+        
+        // Apply filters
+        if (this.filters.category) {
+          assets = assets.filter(asset => asset.category === this.filters.category);
         }
-      });
-    } else {
-      this.assetService.getAssets(page, 10).subscribe({
-        next: (response) => {
-          this.assets = response?.content || [];
-          this.pagination = {
-            page: response?.number || 0,
-            totalPages: response?.totalPages || 0,
-            totalElements: response?.totalElements || 0
-          };
-          this.loading = false;
-        },
-        error: (error) => {
-          console.error('Failed to load assets:', error);
-          this.assets = [];
-          this.pagination = { page: 0, totalPages: 0, totalElements: 0 };
-          this.toastService.error('Failed to load assets');
-          this.loading = false;
+        if (this.filters.type) {
+          assets = assets.filter(asset => asset.type === this.filters.type);
         }
-      });
-    }
+        
+        this.assets = assets;
+        this.pagination = {
+          page: response?.number || 0,
+          totalPages: response?.totalPages || 0,
+          totalElements: response?.totalElements || 0
+        };
+        this.loading = false;
+      },
+      error: (error) => {
+        console.error('Failed to load assets:', error);
+        this.assets = [];
+        this.pagination = { page: 0, totalPages: 0, totalElements: 0 };
+        this.toastService.error('Failed to load assets');
+        this.loading = false;
+      }
+    });
   }
 
   applyFilters() {
@@ -700,10 +636,13 @@ export class AssetsPageComponent implements OnInit {
         if (this.filters.category && group.category !== this.filters.category) {
           return false;
         }
-        if (this.filters.search && !group.name.toLowerCase().includes(this.filters.search.toLowerCase())) {
-          return false;
+        if (this.filters.type && group.name.toLowerCase().includes(this.filters.type.toLowerCase())) {
+          return true;
         }
-        return true;
+        if (!this.filters.type) {
+          return true;
+        }
+        return false;
       });
     } else {
       this.loadAssets(0);
@@ -754,18 +693,18 @@ export class AssetsPageComponent implements OnInit {
     this.router.navigate(['/assets/group', encodeURIComponent(group.name)]);
   }
 
-  allocateFromGroup(group: any) {
-    if (group.available <= 0) {
-      this.toastService.error('No available assets in this group');
-      return;
-    }
-    this.router.navigate(['/assets/allocate'], { 
-      queryParams: { group: group.name }
-    });
-  }
+
 
   allocateAsset(asset: Asset) {
-    const userIdStr = prompt('Enter user ID to allocate this asset:');
+    if (asset.type === 'LICENSE') {
+      this.showUserSelectorDialog([asset]);
+    } else {
+      this.showSingleUserSelector(asset);
+    }
+  }
+  
+  showSingleUserSelector(asset: Asset) {
+    const userIdStr = prompt(`Enter user ID to allocate ${asset.name}:`);
     if (!userIdStr) return;
     
     const userId = Number(userIdStr);
@@ -784,7 +723,9 @@ export class AssetsPageComponent implements OnInit {
   }
 
   returnAsset(asset: Asset) {
-    this.assetService.returnAsset(asset.id).subscribe({
+    const remarks = prompt(`Enter return remarks for ${asset.name} (optional):`);
+    
+    this.assetService.returnAsset(asset.id, remarks || undefined).subscribe({
       next: () => {
         this.toastService.success('Asset returned successfully');
         this.loadData();
@@ -792,109 +733,39 @@ export class AssetsPageComponent implements OnInit {
       error: () => this.toastService.error('Failed to return asset')
     });
   }
-
-  exportToCsv() {
-    this.assetService.exportToCsv().subscribe({
-      next: (blob) => {
-        this.downloadFile(blob, 'assets.csv', 'text/csv');
-        this.toastService.success('Assets exported to CSV successfully');
+  
+  requestReturn(asset: Asset) {
+    const remarks = prompt(`Enter reason for return request for ${asset.name}:`);
+    if (!remarks) return;
+    
+    this.allocationService.requestReturn(asset.id, remarks).subscribe({
+      next: () => {
+        this.toastService.success('Return request sent to user');
+        this.loadData();
       },
-      error: () => {
-        this.toastService.error('Failed to export assets to CSV');
-      }
+      error: () => this.toastService.error('Failed to send return request')
     });
   }
 
-  exportToPdf() {
-    this.assetService.exportToPdf().subscribe({
-      next: (blob) => {
-        this.downloadFile(blob, 'assets.pdf', 'application/pdf');
-        this.toastService.success('Assets exported to PDF successfully');
-      },
-      error: () => {
-        this.toastService.error('Failed to export assets to PDF');
-      }
-    });
-  }
 
-  private downloadFile(blob: Blob, filename: string, mimeType: string) {
-    const url = window.URL.createObjectURL(new Blob([blob], { type: mimeType }));
-    const link = document.createElement('a');
-    link.href = url;
-    link.download = filename;
-    document.body.appendChild(link);
-    link.click();
-    document.body.removeChild(link);
-    window.URL.revokeObjectURL(url);
-  }
   
   // New methods for enhanced functionality
-  toggleAdvancedFilters() {
-    this.showAdvancedFilters = !this.showAdvancedFilters;
-  }
+
   
   hasActiveFilters(): boolean {
-    return !!(this.filters.category || this.filters.status || this.filters.search || 
-             this.filters.type || this.filters.vendor || this.filters.warrantyStatus ||
-             this.dateFilters.purchaseDateFrom || this.dateFilters.purchaseDateTo ||
-             this.dateFilters.warrantyExpiryFrom || this.dateFilters.warrantyExpiryTo);
+    return !!(this.filters.category || this.filters.type);
   }
   
   clearAllFilters() {
     this.filters = {
       category: '',
-      status: '',
-      search: '',
-      type: '',
-      vendor: '',
-      warrantyStatus: ''
-    };
-    this.dateFilters = {
-      purchaseDateFrom: '',
-      purchaseDateTo: '',
-      warrantyExpiryFrom: '',
-      warrantyExpiryTo: ''
+      type: ''
     };
     this.applyFilters();
   }
   
   applyClientSideFilters(assets: Asset[]): Asset[] {
-    return assets.filter(asset => {
-      // Warranty status filter
-      if (this.filters.warrantyStatus) {
-        const warrantyExpired = asset.warrantyExpiryDate ? new Date(asset.warrantyExpiryDate) < new Date() : false;
-        const warrantyExpiringSoon = asset.warrantyExpiryDate ? 
-          new Date(asset.warrantyExpiryDate) <= new Date(Date.now() + 30 * 24 * 60 * 60 * 1000) : false;
-        
-        switch (this.filters.warrantyStatus) {
-          case 'EXPIRED':
-            if (!warrantyExpired) return false;
-            break;
-          case 'VALID':
-            if (warrantyExpired) return false;
-            break;
-          case 'EXPIRING_SOON':
-            if (!warrantyExpiringSoon || warrantyExpired) return false;
-            break;
-        }
-      }
-      
-      // Date filters
-      if (this.dateFilters.purchaseDateFrom && asset.purchaseDate) {
-        if (new Date(asset.purchaseDate) < new Date(this.dateFilters.purchaseDateFrom)) return false;
-      }
-      if (this.dateFilters.purchaseDateTo && asset.purchaseDate) {
-        if (new Date(asset.purchaseDate) > new Date(this.dateFilters.purchaseDateTo)) return false;
-      }
-      if (this.dateFilters.warrantyExpiryFrom && asset.warrantyExpiryDate) {
-        if (new Date(asset.warrantyExpiryDate) < new Date(this.dateFilters.warrantyExpiryFrom)) return false;
-      }
-      if (this.dateFilters.warrantyExpiryTo && asset.warrantyExpiryDate) {
-        if (new Date(asset.warrantyExpiryDate) > new Date(this.dateFilters.warrantyExpiryTo)) return false;
-      }
-      
-      return true;
-    });
+    return assets;
   }
   
   // Selection methods
@@ -931,10 +802,42 @@ export class AssetsPageComponent implements OnInit {
       return;
     }
     
-    // Navigate to bulk allocation page or open dialog
-    this.router.navigate(['/allocations/bulk'], { 
-      queryParams: { assetIds: Array.from(this.selectedAssets).join(',') }
+    // Check if all selected assets are software licenses
+    const licenseAssets = availableAssets.filter(asset => asset.type === 'LICENSE');
+    const hardwareAssets = availableAssets.filter(asset => asset.type !== 'LICENSE');
+    
+    if (hardwareAssets.length > 0) {
+      this.toastService.error(`Cannot bulk allocate hardware assets (${hardwareAssets.length} selected). Hardware requires individual allocation for setup and configuration. Only software licenses can be bulk allocated.`);
+      return;
+    }
+    
+    if (licenseAssets.length === 0) {
+      this.toastService.error('No software licenses selected for bulk allocation');
+      return;
+    }
+    
+    const userIdStr = prompt(`Enter user ID to allocate ${licenseAssets.length} software licenses:`);
+    if (!userIdStr) return;
+    
+    const userId = Number(userIdStr);
+    if (isNaN(userId)) {
+      this.toastService.error('Invalid user ID');
+      return;
+    }
+    
+    // Check license availability
+    const unavailableLicenses = licenseAssets.filter(asset => {
+      const available = (asset.totalLicenses || 0) - (asset.usedLicenses || 0);
+      return available <= 0;
     });
+    
+    if (unavailableLicenses.length > 0) {
+      this.toastService.error(`Some licenses have no available seats: ${unavailableLicenses.map(l => l.name).join(', ')}`);
+      return;
+    }
+    
+    // Show user selector dialog
+    this.showUserSelectorDialog(licenseAssets);
   }
   
   bulkUpdateStatus(status: string) {
@@ -974,21 +877,158 @@ export class AssetsPageComponent implements OnInit {
     this.loadAssets();
   }
   
-  toggleColumnVisibility() {
-    // Implement column visibility toggle
-    this.toastService.info('Column visibility feature coming soon');
-  }
+
   
   getVisibleColumns(): TableColumn[] {
     return this.columns; // For now, return all columns
   }
   
-  exportFilteredAssets() {
-    if (this.hasActiveFilters()) {
-      this.toastService.info('Exporting filtered assets...');
-      // Implement filtered export
+
+  
+  // New allocation-specific methods
+  loadAllocationAnalytics() {
+    this.assetService.getAllocationAnalytics().subscribe({
+      next: (analytics) => {
+        this.allocationAnalytics = analytics;
+      },
+      error: (error) => {
+        console.error('Failed to load allocation analytics:', error);
+        // Fallback to allocation service
+        this.allocationService.getAnalytics().subscribe({
+          next: (analytics) => {
+            this.allocationAnalytics = analytics;
+          },
+          error: () => {
+            console.error('Failed to load allocation analytics from fallback');
+          }
+        });
+      }
+    });
+  }
+  
+  getAllocationDuration(asset: Asset): string {
+    if (asset.status !== 'ALLOCATED' || !asset.allocatedDate) {
+      return 'N/A';
+    }
+    const allocated = new Date(asset.allocatedDate);
+    const now = new Date();
+    const days = Math.floor((now.getTime() - allocated.getTime()) / (1000 * 60 * 60 * 24));
+    return `${days} days`;
+  }
+  
+  viewAssetAllocationHistory(assetId: number) {
+    this.router.navigate(['/assets', assetId, 'allocations']);
+  }
+  
+  viewAllocationHistory() {
+    if (this.selectedAssets.size === 1) {
+      const assetId = Array.from(this.selectedAssets)[0];
+      this.viewAssetAllocationHistory(assetId);
     } else {
-      this.exportToCsv();
+      this.toastService.info('Please select a single asset to view allocation history');
     }
   }
+  
+  viewGroupAllocationHistory(group: any) {
+    this.toastService.info(`Viewing allocation history for ${group.name} group`);
+  }
+  
+  viewGroupByStatus(group: any, status: string) {
+    this.router.navigate(['/assets/group', encodeURIComponent(group.name)], {
+      queryParams: { status: status }
+    });
+  }
+  
+  bulkReturn() {
+    if (this.selectedAssets.size === 0) return;
+    
+    const allocatedAssets = this.assets.filter(asset => 
+      this.selectedAssets.has(asset.id) && asset.status === 'ALLOCATED'
+    );
+    
+    if (allocatedAssets.length === 0) {
+      this.toastService.error('No allocated assets selected');
+      return;
+    }
+    
+    const remarks = prompt(`Enter return remarks for ${allocatedAssets.length} assets (optional):`);
+    
+    this.confirmDialog.confirm(
+      'Return Assets',
+      `Are you sure you want to return ${allocatedAssets.length} allocated assets?`
+    ).subscribe(confirmed => {
+      if (confirmed) {
+        // Process bulk return using the new bulk API
+        const assetIds = allocatedAssets.map(asset => asset.id);
+        this.assetService.bulkReturnAssets(assetIds, remarks || undefined).subscribe({
+          next: (result) => {
+            this.toastService.success(`${result.success} assets returned successfully`);
+            if (result.failures > 0) {
+              this.toastService.error(`${result.failures} assets failed to return`);
+            }
+            this.selectedAssets.clear();
+            this.loadAssets();
+          },
+          error: () => {
+            this.toastService.error('Failed to return assets');
+          }
+        });
+      }
+    });
+  }
+  
+
+  
+  showUserSelectorDialog(licenseAssets: Asset[]) {
+    // Simple user selection for now
+    const userIdStr = prompt(`Enter user ID to allocate ${licenseAssets.length} licenses:`);
+    if (!userIdStr) return;
+    
+    const userId = Number(userIdStr);
+    if (isNaN(userId)) {
+      this.toastService.error('Invalid user ID');
+      return;
+    }
+    
+    // Allocate to single user
+    let completed = 0;
+    licenseAssets.forEach(asset => {
+      this.assetService.allocateAsset(asset.id, userId).subscribe({
+        next: () => {
+          completed++;
+          if (completed === licenseAssets.length) {
+            this.toastService.success(`${licenseAssets.length} licenses allocated successfully`);
+            this.selectedAssets.clear();
+            this.loadAssets();
+          }
+        },
+        error: () => {
+          this.toastService.error(`Failed to allocate ${asset.name}`);
+        }
+      });
+    });
+  }
+
+  bulkAllocateGroup(group: any) {
+    this.router.navigate(['/assets/allocate'], { 
+      queryParams: { group: group.name }
+    });
+  }
+
+  exportGroupData(group: any) {
+    this.toastService.info(`Please use the Reports page to export ${group.name} group data`);
+    this.router.navigate(['/reports']);
+  }
+
+  getGroupCategory(group: any): string {
+    const name = group.name.toLowerCase();
+    if (name.includes('laptop') || name.includes('dell') || name.includes('hp') || name.includes('lenovo')) return 'Hardware';
+    if (name.includes('monitor') || name.includes('display')) return 'Display';
+    if (name.includes('printer')) return 'Printer';
+    if (name.includes('license') || name.includes('software') || name.includes('office') || name.includes('adobe')) return 'Software';
+    if (name.includes('mouse') || name.includes('keyboard') || name.includes('cable')) return 'Accessories';
+    return 'Equipment';
+  }
+  
+
 }

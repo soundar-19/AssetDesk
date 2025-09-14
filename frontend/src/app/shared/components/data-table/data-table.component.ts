@@ -54,12 +54,19 @@ export interface TableAction {
               <span *ngIf="column.render" [innerHTML]="formatColumnValue(item, column)"></span>
             </td>
             <td *ngIf="actions.length > 0" class="actions" (click)="$event.stopPropagation()">
-              <button *ngFor="let action of getVisibleActions(item)"
-                      class="btn btn-sm"
-                      (click)="action.action(item)">
-                <span *ngIf="action.icon" class="icon">{{ action.icon }}</span>
-                {{ action.label }}
-              </button>
+              <div class="action-dropdown" [class.open]="openDropdown === item.id">
+                <button class="action-trigger" (click)="toggleDropdown(item.id)">
+                  ⋯
+                </button>
+                <div class="action-menu" *ngIf="openDropdown === item.id">
+                  <button *ngFor="let action of getVisibleActions(item)"
+                          class="action-item"
+                          (click)="executeAction(action, item)">
+                    <span *ngIf="action.icon" class="action-icon">{{ action.icon }}</span>
+                    {{ action.label }}
+                  </button>
+                </div>
+              </div>
             </td>
           </tr>
           <tr *ngIf="data.length === 0">
@@ -162,30 +169,93 @@ export interface TableAction {
     
     .actions {
       white-space: nowrap;
+      position: relative;
+    }
+    
+    .action-dropdown {
+      position: relative;
+      display: inline-block;
+    }
+    
+    .action-trigger {
+      background: none;
+      border: none;
+      font-size: 1.25rem;
+      font-weight: bold;
+      color: #6b7280;
+      cursor: pointer;
+      padding: 0.5rem;
+      border-radius: 0.375rem;
+      transition: all 0.15s ease;
+    }
+    
+    .action-trigger:hover {
+      background: #f3f4f6;
+      color: #374151;
+    }
+    
+    .action-menu {
+      position: absolute;
+      right: 0;
+      top: 100%;
+      background: white;
+      border: 1px solid #e5e7eb;
+      border-radius: 0.5rem;
+      box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1);
+      z-index: 50;
+      min-width: 150px;
+      overflow: hidden;
+    }
+    
+    .action-item {
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+      width: 100%;
+      padding: 0.75rem 1rem;
+      background: none;
+      border: none;
+      text-align: left;
+      font-size: 0.875rem;
+      color: #374151;
+      cursor: pointer;
+      transition: background-color 0.15s ease;
+    }
+    
+    .action-item:hover {
+      background: #f3f4f6;
+    }
+    
+    .action-item:last-child {
+      border-bottom: none;
+    }
+    
+    .action-icon {
+      font-size: 1rem;
     }
     
     .btn {
-      padding: var(--space-2) var(--space-4);
-      margin-right: var(--space-2);
-      border: 1px solid var(--primary-200);
-      background: var(--primary-600);
+      padding: 0.5rem 1rem;
+      margin-right: 0.5rem;
+      border: 1px solid #d1d5db;
+      background: #2563eb;
       color: white;
       cursor: pointer;
-      border-radius: var(--radius-md);
+      border-radius: 0.375rem;
       font-size: 0.75rem;
       font-weight: 600;
       display: inline-flex;
       align-items: center;
-      gap: var(--space-2);
-      transition: all var(--transition-fast);
+      gap: 0.5rem;
+      transition: all 0.15s ease;
       text-decoration: none;
     }
     
     .btn:hover:not(:disabled) {
-      background: var(--primary-700);
-      border-color: var(--primary-300);
+      background: #1d4ed8;
+      border-color: #9ca3af;
       transform: translateY(-1px);
-      box-shadow: var(--shadow-md);
+      box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
     }
     
     .btn:active {
@@ -264,6 +334,8 @@ export class DataTableComponent {
   @Output() sort = new EventEmitter<{column: string, direction: 'asc' | 'desc'}>();
   @Output() pageChange = new EventEmitter<number>();
   @Output() selectionChange = new EventEmitter<Set<number>>();
+  
+  openDropdown: number | null = null;
 
   onSort(column: TableColumn) {
     if (!column.sortable) return;
@@ -322,5 +394,14 @@ export class DataTableComponent {
       this.selectedItems.clear();
     }
     this.selectionChange.emit(this.selectedItems);
+  }
+  
+  toggleDropdown(itemId: number) {
+    this.openDropdown = this.openDropdown === itemId ? null : itemId;
+  }
+  
+  executeAction(action: TableAction, item: any) {
+    action.action(item);
+    this.openDropdown = null;
   }
 }

@@ -193,11 +193,6 @@ export class AssetsTableComponent implements OnInit {
 
   actions: TableAction[] = [
     { 
-      label: 'View', 
-      icon: '👁', 
-      action: (asset) => this.viewAsset(asset) 
-    },
-    { 
       label: 'Edit', 
       icon: '✏', 
       action: (asset) => this.editAsset(asset.id), 
@@ -207,19 +202,19 @@ export class AssetsTableComponent implements OnInit {
       label: 'Allocate', 
       icon: '👤', 
       action: (asset) => this.allocateAsset(asset.id), 
-      condition: (asset) => asset.status === 'AVAILABLE' && this.roleService.canManageAssets() 
+      condition: (asset) => asset.status === 'AVAILABLE' && this.roleService.canManageAssets()
     },
     { 
       label: 'Return', 
       icon: '↩', 
       action: (asset) => this.returnAsset(asset.id), 
-      condition: (asset) => asset.status === 'ALLOCATED' && this.roleService.canManageAssets() 
+      condition: (asset) => asset.status === 'ALLOCATED' && this.roleService.canManageAssets()
     },
     { 
       label: 'Delete', 
       icon: '🗑', 
       action: (asset) => this.deleteAsset(asset.id), 
-      condition: () => this.roleService.canManageAssets() 
+      condition: () => this.roleService.canManageAssets()
     }
   ];
 
@@ -242,9 +237,9 @@ export class AssetsTableComponent implements OnInit {
     if (hasSearch || hasFilters) {
       this.searchAssets(page);
     } else {
-      this.assetService.getAllAssets(page, 10, this.sortColumn, this.sortDirection).subscribe({
+      this.assetService.getAssets(page, 10, this.sortColumn, this.sortDirection).subscribe({
         next: (response) => {
-          this.assets = response.content;
+          this.assets = response.content || [];
           this.pagination = {
             page: response.number || 0,
             totalPages: response.totalPages || 0,
@@ -282,7 +277,7 @@ export class AssetsTableComponent implements OnInit {
 
     this.assetService.searchAssets(searchParams, page, 10).subscribe({
       next: (response) => {
-        this.assets = response.content;
+        this.assets = response.content || [];
         this.pagination = {
           page: response.number || 0,
           totalPages: response.totalPages || 0,

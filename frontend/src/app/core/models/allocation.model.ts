@@ -12,6 +12,9 @@ export interface AssetAllocation {
   remarks?: string;
   status: 'ACTIVE' | 'RETURNED';
   daysAllocated: number;
+  returnRequestDate?: string;
+  returnRequestRemarks?: string;
+  returnRequested: boolean;
 }
 
 export interface AllocationAnalytics {

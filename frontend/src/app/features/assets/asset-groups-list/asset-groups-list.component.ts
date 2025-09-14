@@ -39,7 +39,7 @@ interface AssetGroup {
       </div>
 
       <div class="asset-groups-grid">
-        <div *ngFor="let group of filteredGroups" class="asset-group-card card card-hover">
+        <div *ngFor="let group of filteredGroups" class="asset-group-card card card-hover clickable" (click)="viewGroupDetails(group)">
           <div class="card-body">
             <div class="group-header">
               <div class="group-info">
@@ -71,10 +71,8 @@ interface AssetGroup {
               </div>
             </div>
 
-            <div class="group-actions">
-              <button class="btn btn-outline btn-sm" (click)="viewGroupDetails(group)">
-                View Details
-              </button>
+            <div class="group-actions" (click)="$event.stopPropagation()">
+
               <button 
                 *ngIf="group.available > 0 && roleService.canManageAssets()" 
                 class="btn btn-primary btn-sm" 
@@ -201,6 +199,10 @@ interface AssetGroup {
     .empty-icon {
       font-size: 3rem;
       margin-bottom: var(--space-4);
+    }
+
+    .asset-group-card.clickable {
+      cursor: pointer;
     }
 
     @media (max-width: 768px) {

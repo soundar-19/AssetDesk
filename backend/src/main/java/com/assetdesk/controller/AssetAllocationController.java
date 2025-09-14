@@ -47,6 +47,13 @@ public class AssetAllocationController {
         return ResponseEntity.ok(allocations);
     }
     
+    @GetMapping("/user/{userId}/history")
+    public ResponseEntity<List<AssetAllocationResponseDTO>> getUserAllocationHistory(@PathVariable Long userId) {
+        List<AssetAllocation> allocations = assetAllocationService.getUserAllocationsWithHistory(userId);
+        List<AssetAllocationResponseDTO> dtos = allocations.stream().map(AssetAllocationResponseDTO::fromEntity).toList();
+        return ResponseEntity.ok(dtos);
+    }
+    
     @GetMapping
     public ResponseEntity<Page<AssetAllocationResponseDTO>> getAllAllocations(
             @RequestParam(defaultValue = "0") int page,
@@ -92,5 +99,11 @@ public class AssetAllocationController {
     public ResponseEntity<AssetAllocation> getCurrentAllocation(@PathVariable Long assetId) {
         AssetAllocation allocation = assetAllocationService.getCurrentAllocation(assetId);
         return ResponseEntity.ok(allocation);
+    }
+    
+    @PostMapping("/request-return/{assetId}")
+    public ResponseEntity<AssetAllocationResponseDTO> requestReturn(@PathVariable Long assetId, @RequestParam(required = false) String remarks) {
+        AssetAllocation allocation = assetAllocationService.requestReturn(assetId, remarks);
+        return ResponseEntity.ok(AssetAllocationResponseDTO.fromEntity(allocation));
     }
 }

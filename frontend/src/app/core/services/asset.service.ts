@@ -100,7 +100,18 @@ export class AssetService {
     sortBy?: string;
     sortDir?: string;
   }, page: number = 0, size: number = 10): Observable<PageResponse<Asset>> {
-    return this.api.getPagedData<Asset>(`${this.endpoint}/search`, page, size, params);
+    const searchParams = new URLSearchParams();
+    searchParams.append('page', page.toString());
+    searchParams.append('size', size.toString());
+    
+    Object.keys(params).forEach(key => {
+      const value = params[key as keyof typeof params];
+      if (value !== null && value !== undefined && value !== '') {
+        searchParams.append(key, value.toString());
+      }
+    });
+    
+    return this.api.get<PageResponse<Asset>>(`${this.endpoint}/search?${searchParams.toString()}`);
   }
 
   getGroupSummary(name: string): Observable<{ [key: string]: any }> {
@@ -125,11 +136,43 @@ export class AssetService {
     return this.api.getPagedData<Asset>(`${this.endpoint}/warranty/valid`, page, size);
   }
 
-  exportToCsv(): Observable<Blob> {
-    return this.api.getBlob(`${this.endpoint}/export/csv`);
+  exportToCsv(filters?: any): Observable<Blob> {
+    const params = new URLSearchParams();
+    if (filters) {
+      Object.keys(filters).forEach(key => {
+        const value = filters[key];
+        if (value !== null && value !== undefined && value !== '') {
+          params.append(key, value.toString());
+        }
+      });
+    }
+    const queryString = params.toString();
+    const url = queryString ? `${this.endpoint}/export/csv?${queryString}` : `${this.endpoint}/export/csv`;
+    return this.api.getBlob(url);
   }
 
-  exportToPdf(): Observable<Blob> {
-    return this.api.getBlob(`${this.endpoint}/export/pdf`);
+  exportToPdf(filters?: any): Observable<Blob> {
+    const params = new URLSearchParams();
+    if (filters) {
+      Object.keys(filters).forEach(key => {
+        const value = filters[key];
+        if (value !== null && value !== undefined && value !== '') {
+          params.append(key, value.toString());
+        }
+      });
+    }
+    const queryString = params.toString();
+    const url = queryString ? `${this.endpoint}/export/pdf?${queryString}` : `${this.endpoint}/export/pdf`;
+    return this.api.getBlob(url);
+  }
+
+  getAllocationAnalytics(): Observable<any> {
+    return this.api.get<any>(`${this.endpoint}/allocations/analytics`);
+  }
+
+  bulkReturnAssets(assetIds: number[], remarks?: string): Observable<any> {
+    const body = assetIds;
+    const params = remarks ? { remarks } : {};
+    return this.api.post<any>(`${this.endpoint}/bulk/return`, body, params);
   }
 }

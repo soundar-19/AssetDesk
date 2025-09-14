@@ -74,8 +74,9 @@ interface AssetGroup {
 
       <section *ngIf="showGrouped" class="asset-groups-grid" aria-label="Asset groups">
         <article *ngFor="let group of filteredGroups; trackBy: trackByGroupName" 
-                 class="asset-group-card card card-hover" 
-                 [attr.aria-label]="'Asset group: ' + group.name">
+                 class="asset-group-card card card-hover clickable" 
+                 [attr.aria-label]="'Asset group: ' + group.name"
+                 (click)="viewGroupDetails(group)">
           <div class="card-body">
             <header class="group-header">
               <div class="group-info">
@@ -107,16 +108,8 @@ interface AssetGroup {
               </div>
             </div>
 
-            <footer class="group-actions">
-              <button class="btn btn-outline btn-sm" 
-                      (click)="viewGroupDetails(group)"
-                      [attr.aria-label]="'View details for ' + group.name">
-                <svg width="14" height="14" viewBox="0 0 20 20" fill="currentColor" aria-hidden="true">
-                  <path d="M10 12a2 2 0 100-4 2 2 0 000 4z"/>
-                  <path fill-rule="evenodd" d="M.458 10C1.732 5.943 5.522 3 10 3s8.268 2.943 9.542 7c-1.274 4.057-5.064 7-9.542 7S1.732 14.057.458 10zM14 10a4 4 0 11-8 0 4 4 0 018 0z"/>
-                </svg>
-                View Details
-              </button>
+            <footer class="group-actions" (click)="$event.stopPropagation()">
+
               <button 
                 *ngIf="group.available > 0 && roleService.canManageAssets()" 
                 class="btn btn-primary btn-sm" 
@@ -225,6 +218,14 @@ interface AssetGroup {
       transform: translateY(-4px);
       box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04);
       border-color: var(--primary-200);
+    }
+
+    .asset-group-card.clickable {
+      cursor: pointer;
+    }
+
+    .card-body {
+      cursor: pointer;
     }
 
     .card-body {
@@ -527,7 +528,14 @@ export class AssetsListComponent implements OnInit {
   }
 
   filterByCategory(event: any) {
-    this.filteredGroups = this.assetGroups;
+    const category = event.target.value;
+    if (!category) {
+      this.filteredGroups = this.assetGroups;
+    } else {
+      this.filteredGroups = this.assetGroups.filter(group => 
+        group.category === category
+      );
+    }
   }
 
   toggleView() {

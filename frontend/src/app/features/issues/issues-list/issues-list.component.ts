@@ -7,13 +7,14 @@ import { Issue } from '../../../core/models';
 import { AuthService } from '../../../core/services/auth.service';
 import { UserService } from '../../../core/services/user.service';
 import { DataTableComponent, TableColumn, TableAction } from '../../../shared/components/data-table/data-table.component';
+import { SearchFilterComponent, FilterOption, SearchFilters } from '../../../shared/components/search-filter/search-filter.component';
 import { ToastService } from '../../../shared/components/toast/toast.service';
 import { ConfirmDialogService } from '../../../shared/components/confirm-dialog/confirm-dialog.service';
 
 @Component({
   selector: 'app-issues-list',
   standalone: true,
-  imports: [CommonModule, FormsModule, DataTableComponent],
+  imports: [CommonModule, FormsModule, DataTableComponent, SearchFilterComponent],
   templateUrl: './issues-list.component.html',
   styleUrls: ['./issues-list.component.css']
 })
@@ -24,35 +25,64 @@ export class IssuesListComponent implements OnInit {
   statusFilter = '';
   sortColumn = 'createdAt';
   sortDirection: 'asc' | 'desc' = 'desc';
+  searchTerm = '';
+  filters: SearchFilters = {};
   
   columns: TableColumn[] = [
     { key: 'createdAt', label: 'Created Date', pipe: 'date', sortable: true },
     { key: 'title', label: 'Title', sortable: true },
-    { key: 'priority', label: 'Priority' },
-    { key: 'status', label: 'Status' },
+    { key: 'priority', label: 'Priority', sortable: true },
+    { key: 'status', label: 'Status', sortable: true },
     { key: 'assetTag', label: 'Asset' },
     { key: 'reportedByName', label: 'Reported By' },
     { key: 'assignedToName', label: 'Assigned To' }
   ];
 
-  actions: TableAction[] = [
+  filterOptions: FilterOption[] = [
     {
-      label: 'View',
-      icon: '👁',
-      action: (issue) => this.viewIssue(issue.id)
+      key: 'status',
+      label: 'Status',
+      type: 'select',
+      options: [
+        { value: 'OPEN', label: 'Open' },
+        { value: 'IN_PROGRESS', label: 'In Progress' },
+        { value: 'RESOLVED', label: 'Resolved' },
+        { value: 'CLOSED', label: 'Closed' }
+      ]
     },
+    {
+      key: 'priority',
+      label: 'Priority',
+      type: 'select',
+      options: [
+        { value: 'LOW', label: 'Low' },
+        { value: 'MEDIUM', label: 'Medium' },
+        { value: 'HIGH', label: 'High' },
+        { value: 'CRITICAL', label: 'Critical' }
+      ]
+    },
+    {
+      key: 'type',
+      label: 'Type',
+      type: 'select',
+      options: [
+        { value: 'HARDWARE', label: 'Hardware' },
+        { value: 'SOFTWARE', label: 'Software' },
+        { value: 'NETWORK', label: 'Network' },
+        { value: 'OTHER', label: 'Other' }
+      ]
+    }
+  ];
+
+  actions: TableAction[] = [
+
+
 
     {
       label: 'Start Work',
       icon: '🔧',
       action: (issue) => this.startWork(issue.id),
       condition: (issue) => issue.status === 'OPEN' && (this.isITSupport() || this.authService.getCurrentUser()?.role === 'ADMIN')
-    },
-    {
-      label: 'Chat',
-      icon: '💬',
-      action: (issue) => this.openChat(issue.id),
-      condition: (issue) => issue.status === 'IN_PROGRESS' && (this.isITSupport() || this.isIssueReporter(issue))
     },
     {
       label: 'Resolve',
@@ -88,41 +118,93 @@ export class IssuesListComponent implements OnInit {
   }
 
   loadIssues(page: number = 0) {
-    const currentUser = this.authService.getCurrentUser();
-    let request;
+    const hasSearch = this.searchTerm && this.searchTerm.trim() !== '';
+    const hasFilters = Object.values(this.filters).some(value => value !== null && value !== undefined && value !== '');
     
-    if (this.authService.getCurrentUser()?.role === 'EMPLOYEE') {
-      // Employees see only their issues
-      request = this.issueService.getIssuesByReportedBy(currentUser?.id || 0, page, 10);
+    if (hasSearch || hasFilters) {
+      this.searchIssues(page);
     } else {
-      // IT_SUPPORT and ADMIN see all issues
-      request = this.showClosedIssues 
-        ? this.issueService.getAllIssuesIncludingClosed(page, 10)
-        : this.issueService.getAllIssues(page, 10);
-    }
+      const currentUser = this.authService.getCurrentUser();
+      let request;
       
-    request.subscribe({
-      next: (response) => {
-        let filteredIssues = response.content;
+      if (this.authService.getCurrentUser()?.role === 'EMPLOYEE') {
+        // Employees see only their issues
+        request = this.issueService.getIssuesByReportedBy(currentUser?.id || 0, page, 10);
+      } else {
+        // IT_SUPPORT and ADMIN see all issues
+        request = this.showClosedIssues 
+          ? this.issueService.getAllIssuesIncludingClosed(page, 10)
+          : this.issueService.getAllIssues(page, 10);
+      }
         
-        // Apply status filter
-        if (this.statusFilter) {
-          filteredIssues = filteredIssues.filter(issue => issue.status === this.statusFilter);
+      request.subscribe({
+        next: (response) => {
+          let filteredIssues = response.content;
+          
+          // Apply status filter
+          if (this.statusFilter) {
+            filteredIssues = filteredIssues.filter(issue => issue.status === this.statusFilter);
+          }
+          
+          this.issues = this.sortIssues(filteredIssues);
+          this.pagination = {
+            page: response.number || 0,
+            totalPages: response.totalPages || 0,
+            totalElements: response.totalElements || 0
+          };
+        },
+        error: (error) => {
+          console.error('Error loading issues:', error);
+          this.issues = [];
+          this.pagination = { page: 0, totalPages: 0, totalElements: 0 };
         }
-        
-        this.issues = this.sortIssues(filteredIssues);
+      });
+    }
+  }
+
+  searchIssues(page: number = 0) {
+    const searchParams: any = {};
+    
+    // Add search term to relevant fields if provided
+    if (this.searchTerm && this.searchTerm.trim() !== '') {
+      searchParams.title = this.searchTerm.trim();
+      searchParams.description = this.searchTerm.trim();
+    }
+    
+    // Add individual filters
+    Object.keys(this.filters).forEach(key => {
+      const value = this.filters[key];
+      if (value !== null && value !== undefined && value !== '') {
+        searchParams[key] = value;
+      }
+    });
+
+    this.issueService.searchIssues(searchParams, page, 10).subscribe({
+      next: (response) => {
+        this.issues = this.sortIssues(response?.content || []);
         this.pagination = {
-          page: response.number || 0,
-          totalPages: response.totalPages || 0,
-          totalElements: response.totalElements || 0
+          page: response?.number || 0,
+          totalPages: response?.totalPages || 0,
+          totalElements: response?.totalElements || 0
         };
       },
       error: (error) => {
-        console.error('Error loading issues:', error);
+        console.error('Failed to search issues:', error);
         this.issues = [];
         this.pagination = { page: 0, totalPages: 0, totalElements: 0 };
+        this.toastService.error('Failed to search issues');
       }
     });
+  }
+
+  onSearch(searchTerm: string) {
+    this.searchTerm = searchTerm;
+    this.loadIssues(0);
+  }
+
+  onFiltersChange(filters: SearchFilters) {
+    this.filters = filters;
+    this.loadIssues(0);
   }
 
   onSort(event: {column: string, direction: 'asc' | 'desc'}) {
@@ -170,8 +252,8 @@ export class IssuesListComponent implements OnInit {
     this.router.navigate(['/issues/new']);
   }
 
-  viewIssue(id: number) {
-    this.router.navigate(['/issues', id]);
+  viewIssue(issue: any) {
+    this.router.navigate(['/issues', issue.id || issue]);
   }
 
   viewIssueDetails(issue: Issue) {
@@ -251,6 +333,12 @@ export class IssuesListComponent implements OnInit {
         });
       }
     });
+  }
+
+  viewAssetDetails(assetId: number | undefined) {
+    if (assetId) {
+      this.router.navigate(['/assets', assetId]);
+    }
   }
 
   deleteIssue(id: number) {

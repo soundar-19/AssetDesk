@@ -43,14 +43,9 @@ import { filter } from 'rxjs/operators';
             </svg>
             <span *ngIf="!collapsed">Assets</span>
           </a>
-          <a routerLink="/allocations" class="nav-item" routerLinkActive="active">
-            <svg class="nav-icon" width="20" height="20" viewBox="0 0 20 20" fill="currentColor">
-              <path d="M13 6a3 3 0 11-6 0 3 3 0 016 0zM18 8a2 2 0 11-4 0 2 2 0 014 0zM14 15a4 4 0 00-8 0v3h8v-3z"/>
-            </svg>
-            <span *ngIf="!collapsed">Allocations</span>
-          </a>
 
-          <a routerLink="/asset-requests" class="nav-item" routerLinkActive="active">
+
+          <a routerLink="/requests" class="nav-item" routerLinkActive="active">
             <svg class="nav-icon" width="20" height="20" viewBox="0 0 20 20" fill="currentColor">
               <path d="M9 2a1 1 0 000 2h2a1 1 0 100-2H9z"/>
               <path fill-rule="evenodd" d="M4 5a2 2 0 012-2v1a1 1 0 001 1h6a1 1 0 001-1V3a2 2 0 012 2v6a2 2 0 01-2 2H6a2 2 0 01-2-2V5zm3 4a1 1 0 000 2h.01a1 1 0 100-2H7zm3 0a1 1 0 000 2h3a1 1 0 100-2h-3z"/>

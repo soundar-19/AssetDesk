@@ -224,6 +224,7 @@
           [columns]="columns"
           [actions]="actions"
           [pagination]="pagination"
+          [rowClickAction]="viewRecord.bind(this)"
           (pageChange)="onPageChange($event)">
         </app-data-table>
       </div>

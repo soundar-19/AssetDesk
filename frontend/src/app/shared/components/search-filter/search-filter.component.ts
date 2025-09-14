@@ -322,7 +322,9 @@ export class SearchFilterComponent implements OnInit {
   }
 
   onSearchChange() {
-    clearTimeout(this.searchTimeout);
+    if (this.searchTimeout) {
+      clearTimeout(this.searchTimeout);
+    }
     this.searchTimeout = setTimeout(() => {
       this.onSearch();
     }, 300);

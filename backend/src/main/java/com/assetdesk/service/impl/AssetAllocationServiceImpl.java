@@ -186,4 +186,44 @@ public class AssetAllocationServiceImpl implements AssetAllocationService {
     public Page<AssetAllocation> getActiveAllocations(Pageable pageable) {
         return assetAllocationRepository.findByReturnedDateIsNull(pageable);
     }
+    
+    @Override
+    public AssetAllocation requestReturn(Long assetId, String remarks) {
+        AssetAllocation currentAllocation = assetAllocationRepository.findCurrentAllocationByAssetId(assetId)
+            .orElseThrow(() -> new ResourceNotFoundException("Current allocation not found for asset", "assetId", assetId));
+        
+        currentAllocation.setReturnRequestDate(LocalDate.now());
+        currentAllocation.setReturnRequestRemarks(remarks);
+        
+        AssetAllocation savedAllocation = assetAllocationRepository.save(currentAllocation);
+        
+        // Send notification to user about return request
+        try {
+            notificationService.createNotification(
+                currentAllocation.getUser().getId(),
+                "Asset Return Requested",
+                "Please return asset '" + currentAllocation.getAsset().getName() + "' at your earliest convenience." + 
+                (remarks != null ? " Reason: " + remarks : ""),
+                com.assetdesk.domain.Notification.Type.WARNING,
+                null,
+                currentAllocation.getAsset().getId()
+            );
+        } catch (Exception e) {
+            System.out.println("Failed to create return request notification: " + e.getMessage());
+        }
+        
+        return savedAllocation;
+    }
+    
+    @Override
+    @Transactional(readOnly = true)
+    public List<AssetAllocation> getUserAllocationsWithHistory(Long userId) {
+        return assetAllocationRepository.findByUserId(userId);
+    }
+    
+    @Override
+    @Transactional(readOnly = true)
+    public List<AssetAllocation> getAssetAllocationsWithHistory(Long assetId) {
+        return assetAllocationRepository.findByAssetId(assetId);
+    }
 }

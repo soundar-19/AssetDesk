@@ -133,4 +133,29 @@ export class RoleService {
   canManageServiceRecords(): boolean {
     return this.canManageAssets();
   }
+
+  canCreateAssetRequests(): boolean {
+    const currentUser = this.authService.getCurrentUser();
+    return currentUser?.role ? ROLE_PERMISSIONS[currentUser.role].canCreateAssetRequests || false : false;
+  }
+
+  canViewOwnRequests(): boolean {
+    const currentUser = this.authService.getCurrentUser();
+    return currentUser?.role ? ROLE_PERMISSIONS[currentUser.role].canViewOwnRequests || false : false;
+  }
+
+  canManageRequests(): boolean {
+    const currentUser = this.authService.getCurrentUser();
+    return currentUser?.role ? ROLE_PERMISSIONS[currentUser.role].canManageRequests || false : false;
+  }
+
+  canApproveRequests(): boolean {
+    const currentUser = this.authService.getCurrentUser();
+    return currentUser?.role ? ROLE_PERMISSIONS[currentUser.role].canApproveRequests || false : false;
+  }
+
+  canFulfillRequests(): boolean {
+    const currentUser = this.authService.getCurrentUser();
+    return currentUser?.role ? ROLE_PERMISSIONS[currentUser.role].canFulfillRequests || false : false;
+  }
 }
