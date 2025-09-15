@@ -35,10 +35,17 @@ public class DepreciationServiceImpl implements DepreciationService {
         BigDecimal yearlyDepreciation = BigDecimal.ZERO;
         long yearsUsed = 0;
 
-        if (purchaseCost.compareTo(BigDecimal.ZERO) > 0 && lifeYears != null && lifeYears > 0 && startDate != null) {
-            yearsUsed = Math.max(0, (int) Math.min(lifeYears, ChronoUnit.YEARS.between(startDate, today)));
-            yearlyDepreciation = purchaseCost.divide(new BigDecimal(lifeYears), 2, RoundingMode.HALF_UP);
-            BigDecimal accumulated = yearlyDepreciation.multiply(new BigDecimal(yearsUsed));
+        // Use default useful life of 5 years if not specified
+        if (lifeYears == null || lifeYears <= 0) {
+            lifeYears = 5; // Default useful life for assets
+        }
+        
+        if (purchaseCost.compareTo(BigDecimal.ZERO) > 0 && startDate != null) {
+            yearsUsed = Math.max(0, ChronoUnit.YEARS.between(startDate, today));
+            // Ensure years used doesn't exceed useful life
+            yearsUsed = Math.min(yearsUsed, lifeYears);
+            yearlyDepreciation = purchaseCost.divide(BigDecimal.valueOf(lifeYears), 2, RoundingMode.HALF_UP);
+            BigDecimal accumulated = yearlyDepreciation.multiply(BigDecimal.valueOf(yearsUsed));
             currentValue = purchaseCost.subtract(accumulated);
             if (currentValue.compareTo(BigDecimal.ZERO) < 0) {
                 currentValue = BigDecimal.ZERO;

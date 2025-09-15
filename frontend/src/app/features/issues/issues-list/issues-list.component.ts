@@ -7,14 +7,15 @@ import { Issue } from '../../../core/models';
 import { AuthService } from '../../../core/services/auth.service';
 import { UserService } from '../../../core/services/user.service';
 import { DataTableComponent, TableColumn, TableAction } from '../../../shared/components/data-table/data-table.component';
-import { SearchFilterComponent, FilterOption, SearchFilters } from '../../../shared/components/search-filter/search-filter.component';
+
 import { ToastService } from '../../../shared/components/toast/toast.service';
 import { ConfirmDialogService } from '../../../shared/components/confirm-dialog/confirm-dialog.service';
+import { InputModalService } from '../../../shared/components/input-modal/input-modal.service';
 
 @Component({
   selector: 'app-issues-list',
   standalone: true,
-  imports: [CommonModule, FormsModule, DataTableComponent, SearchFilterComponent],
+  imports: [CommonModule, FormsModule, DataTableComponent],
   templateUrl: './issues-list.component.html',
   styleUrls: ['./issues-list.component.css']
 })
@@ -26,53 +27,19 @@ export class IssuesListComponent implements OnInit {
   sortColumn = 'createdAt';
   sortDirection: 'asc' | 'desc' = 'desc';
   searchTerm = '';
-  filters: SearchFilters = {};
+
   
   columns: TableColumn[] = [
     { key: 'createdAt', label: 'Created Date', pipe: 'date', sortable: true },
     { key: 'title', label: 'Title', sortable: true },
-    { key: 'priority', label: 'Priority', sortable: true },
-    { key: 'status', label: 'Status', sortable: true },
+    { key: 'priority', label: 'Priority', sortable: true, render: (issue: any) => this.getPriorityBadge(issue.priority) },
+    { key: 'status', label: 'Status', sortable: true, render: (issue: any) => this.getStatusBadge(issue.status) },
     { key: 'assetTag', label: 'Asset' },
     { key: 'reportedByName', label: 'Reported By' },
     { key: 'assignedToName', label: 'Assigned To' }
   ];
 
-  filterOptions: FilterOption[] = [
-    {
-      key: 'status',
-      label: 'Status',
-      type: 'select',
-      options: [
-        { value: 'OPEN', label: 'Open' },
-        { value: 'IN_PROGRESS', label: 'In Progress' },
-        { value: 'RESOLVED', label: 'Resolved' },
-        { value: 'CLOSED', label: 'Closed' }
-      ]
-    },
-    {
-      key: 'priority',
-      label: 'Priority',
-      type: 'select',
-      options: [
-        { value: 'LOW', label: 'Low' },
-        { value: 'MEDIUM', label: 'Medium' },
-        { value: 'HIGH', label: 'High' },
-        { value: 'CRITICAL', label: 'Critical' }
-      ]
-    },
-    {
-      key: 'type',
-      label: 'Type',
-      type: 'select',
-      options: [
-        { value: 'HARDWARE', label: 'Hardware' },
-        { value: 'SOFTWARE', label: 'Software' },
-        { value: 'NETWORK', label: 'Network' },
-        { value: 'OTHER', label: 'Other' }
-      ]
-    }
-  ];
+
 
   actions: TableAction[] = [
 
@@ -110,7 +77,8 @@ export class IssuesListComponent implements OnInit {
     private userService: UserService,
     private router: Router,
     private toastService: ToastService,
-    private confirmDialog: ConfirmDialogService
+    private confirmDialog: ConfirmDialogService,
+    private inputModalService: InputModalService
   ) {}
 
   ngOnInit() {
@@ -119,7 +87,7 @@ export class IssuesListComponent implements OnInit {
 
   loadIssues(page: number = 0) {
     const hasSearch = this.searchTerm && this.searchTerm.trim() !== '';
-    const hasFilters = Object.values(this.filters).some(value => value !== null && value !== undefined && value !== '');
+    const hasFilters = false;
     
     if (hasSearch || hasFilters) {
       this.searchIssues(page);
@@ -171,13 +139,7 @@ export class IssuesListComponent implements OnInit {
       searchParams.description = this.searchTerm.trim();
     }
     
-    // Add individual filters
-    Object.keys(this.filters).forEach(key => {
-      const value = this.filters[key];
-      if (value !== null && value !== undefined && value !== '') {
-        searchParams[key] = value;
-      }
-    });
+
 
     this.issueService.searchIssues(searchParams, page, 10).subscribe({
       next: (response) => {
@@ -202,10 +164,7 @@ export class IssuesListComponent implements OnInit {
     this.loadIssues(0);
   }
 
-  onFiltersChange(filters: SearchFilters) {
-    this.filters = filters;
-    this.loadIssues(0);
-  }
+
 
   onSort(event: {column: string, direction: 'asc' | 'desc'}) {
     this.sortColumn = event.column;
@@ -308,10 +267,21 @@ export class IssuesListComponent implements OnInit {
     return currentUser?.id === issue.assignedToId;
   }
 
-  resolveIssue(id: number) {
-    const resolutionNotes = prompt('Enter resolution notes:');
+  async resolveIssue(id: number) {
+    const resolutionNotes = await this.inputModalService.promptTextarea(
+      'Resolve Issue',
+      'Enter resolution notes:',
+      'Describe how the issue was resolved...'
+    );
+    
     if (resolutionNotes) {
-      const costStr = prompt('Enter approximate cost (optional):');
+      const costStr = await this.inputModalService.promptNumber(
+        'Resolution Cost',
+        'Enter approximate cost (optional):',
+        'Cost (leave empty if no cost)',
+        false
+      );
+      
       const cost = costStr ? parseFloat(costStr) : undefined;
       
       this.issueService.resolveIssueWithCost(id, resolutionNotes, cost).subscribe({
@@ -370,5 +340,25 @@ export class IssuesListComponent implements OnInit {
         });
       }
     });
+  }
+
+  getPriorityBadge(priority: string): string {
+    const badges: { [key: string]: string } = {
+      'CRITICAL': '<span class="badge badge-error">Critical</span>',
+      'HIGH': '<span class="badge badge-warning">High</span>',
+      'MEDIUM': '<span class="badge badge-info">Medium</span>',
+      'LOW': '<span class="badge badge-success">Low</span>'
+    };
+    return badges[priority] || `<span class="badge badge-secondary">${priority}</span>`;
+  }
+
+  getStatusBadge(status: string): string {
+    const badges: { [key: string]: string } = {
+      'OPEN': '<span class="badge badge-warning">Open</span>',
+      'IN_PROGRESS': '<span class="badge badge-info">In Progress</span>',
+      'RESOLVED': '<span class="badge badge-success">Resolved</span>',
+      'CLOSED': '<span class="badge badge-secondary">Closed</span>'
+    };
+    return badges[status] || `<span class="badge badge-secondary">${status}</span>`;
   }
 }

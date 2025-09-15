@@ -10,6 +10,7 @@ import { AssetRequest } from '../../core/models';
 import { DataTableComponent, TableColumn, TableAction } from '../../shared/components/data-table/data-table.component';
 import { ToastService } from '../../shared/components/toast/toast.service';
 import { ConfirmDialogService } from '../../shared/components/confirm-dialog/confirm-dialog.service';
+import { InputModalService } from '../../shared/components/input-modal/input-modal.service';
 
 @Component({
   selector: 'app-asset-requests-list',
@@ -594,7 +595,8 @@ export class AssetRequestsListComponent implements OnInit {
     private authService: AuthService,
     private router: Router,
     private toastService: ToastService,
-    private confirmDialog: ConfirmDialogService
+    private confirmDialog: ConfirmDialogService,
+    private inputModalService: InputModalService
   ) {}
 
   ngOnInit() {
@@ -812,8 +814,13 @@ export class AssetRequestsListComponent implements OnInit {
     });
   }
 
-  rejectRequest(request: AssetRequest) {
-    const reason = prompt('Please provide a reason for rejection:');
+  async rejectRequest(request: AssetRequest) {
+    const reason = await this.inputModalService.promptTextarea(
+      'Reject Request',
+      'Please provide a reason for rejection:',
+      'Enter rejection reason...'
+    );
+    
     if (reason) {
       const currentUser = this.authService.getCurrentUser();
       if (currentUser) {

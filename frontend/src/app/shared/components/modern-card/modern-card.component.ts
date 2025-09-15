@@ -31,12 +31,13 @@ import { CommonModule } from '@angular/common';
       box-shadow: var(--shadow-sm);
       border: 1px solid var(--gray-200);
       overflow: hidden;
-      transition: all 0.2s ease;
+      transition: var(--transition-fast);
     }
 
     .modern-card:hover {
       box-shadow: var(--shadow-md);
-      transform: translateY(-2px);
+      transform: translateY(-1px);
+      border-color: var(--gray-300);
     }
 
     .modern-card.elevated {
@@ -44,7 +45,8 @@ import { CommonModule } from '@angular/common';
     }
 
     .modern-card.bordered {
-      border: 2px solid var(--primary-200);
+      border: 1px solid var(--primary-300);
+      background: var(--primary-25);
     }
 
     .card-header {
@@ -53,18 +55,18 @@ import { CommonModule } from '@angular/common';
       display: flex;
       justify-content: space-between;
       align-items: flex-start;
-      background: var(--gray-50);
+      background: var(--gray-25);
     }
 
     .card-title {
-      font-size: 1.25rem;
-      font-weight: 600;
+      font-size: var(--text-lg);
+      font-weight: var(--font-semibold);
       color: var(--gray-900);
       margin: 0;
     }
 
     .card-subtitle {
-      font-size: 0.875rem;
+      font-size: var(--text-sm);
       color: var(--gray-600);
       margin: var(--space-1) 0 0 0;
     }
@@ -80,7 +82,7 @@ import { CommonModule } from '@angular/common';
 
     .card-footer {
       padding: var(--space-4) var(--space-6);
-      background: var(--gray-50);
+      background: var(--gray-25);
       border-top: 1px solid var(--gray-200);
     }
 

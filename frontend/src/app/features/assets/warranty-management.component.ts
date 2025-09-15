@@ -8,6 +8,7 @@ import { RoleService } from '../../core/services/role.service';
 import { Asset } from '../../core/models';
 import { DataTableComponent, TableColumn, TableAction } from '../../shared/components/data-table/data-table.component';
 import { ToastService } from '../../shared/components/toast/toast.service';
+import { InputModalService } from '../../shared/components/input-modal/input-modal.service';
 
 @Component({
   selector: 'app-warranty-management',
@@ -121,6 +122,7 @@ import { ToastService } from '../../shared/components/toast/toast.service';
             [columns]="getColumnsForTab('expiring')"
             [actions]="actions"
             [pagination]="expiringPagination"
+            [rowClickAction]="viewAsset.bind(this)"
             (pageChange)="onPageChange('expiring', $event)">
           </app-data-table>
         </div>
@@ -135,6 +137,7 @@ import { ToastService } from '../../shared/components/toast/toast.service';
             [columns]="getColumnsForTab('expired')"
             [actions]="actions"
             [pagination]="expiredPagination"
+            [rowClickAction]="viewAsset.bind(this)"
             (pageChange)="onPageChange('expired', $event)">
           </app-data-table>
         </div>
@@ -145,6 +148,7 @@ import { ToastService } from '../../shared/components/toast/toast.service';
             [columns]="getColumnsForTab('valid')"
             [actions]="actions"
             [pagination]="validPagination"
+            [rowClickAction]="viewAsset.bind(this)"
             (pageChange)="onPageChange('valid', $event)">
           </app-data-table>
         </div>
@@ -155,6 +159,7 @@ import { ToastService } from '../../shared/components/toast/toast.service';
             [columns]="getColumnsForTab('all')"
             [actions]="actions"
             [pagination]="allPagination"
+            [rowClickAction]="viewAsset.bind(this)"
             (pageChange)="onPageChange('all', $event)">
           </app-data-table>
         </div>
@@ -174,8 +179,8 @@ import { ToastService } from '../../shared/components/toast/toast.service';
       display: flex;
       justify-content: space-between;
       align-items: flex-start;
-      margin-bottom: var(--space-6);
-      padding: var(--space-6);
+      margin-bottom: var(--space-4);
+      padding: var(--space-4);
       background: white;
       border-radius: var(--radius-lg);
       box-shadow: var(--shadow-sm);
@@ -183,16 +188,16 @@ import { ToastService } from '../../shared/components/toast/toast.service';
     }
     
     .page-title {
-      margin: 0 0 var(--space-2) 0;
+      margin: 0 0 var(--space-1) 0;
       color: var(--gray-900);
-      font-size: 1.875rem;
-      font-weight: 700;
+      font-size: var(--text-xl);
+      font-weight: 600;
     }
     
     .page-description {
       margin: 0;
       color: var(--gray-600);
-      font-size: 1rem;
+      font-size: var(--text-sm);
     }
     
     .header-actions {
@@ -206,22 +211,22 @@ import { ToastService } from '../../shared/components/toast/toast.service';
       border-radius: var(--radius-lg);
       box-shadow: var(--shadow-sm);
       border: 1px solid var(--gray-200);
-      padding: var(--space-6);
-      margin-bottom: var(--space-6);
+      padding: var(--space-4);
+      margin-bottom: var(--space-4);
     }
     
     .stats-grid {
       display: grid;
-      grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
-      gap: var(--space-4);
+      grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+      gap: var(--space-3);
     }
     
     .stat-card {
       display: flex;
       align-items: center;
-      gap: var(--space-4);
-      padding: var(--space-5);
-      border-radius: var(--radius-lg);
+      gap: var(--space-3);
+      padding: var(--space-3);
+      border-radius: var(--radius-md);
       transition: transform var(--transition-fast);
     }
     
@@ -250,12 +255,12 @@ import { ToastService } from '../../shared/components/toast/toast.service';
     }
     
     .stat-icon {
-      font-size: 2.5rem;
+      font-size: 1.5rem;
     }
     
     .stat-value {
-      font-size: 2.5rem;
-      font-weight: 700;
+      font-size: var(--text-xl);
+      font-weight: 600;
       color: var(--gray-900);
       line-height: 1;
       margin-bottom: var(--space-1);
@@ -288,7 +293,7 @@ import { ToastService } from '../../shared/components/toast/toast.service';
       box-shadow: var(--shadow-sm);
       border: 1px solid var(--gray-200);
       overflow: hidden;
-      margin-bottom: var(--space-6);
+      margin-bottom: var(--space-4);
     }
     
     .tabs {
@@ -298,7 +303,7 @@ import { ToastService } from '../../shared/components/toast/toast.service';
     }
     
     .tab {
-      padding: var(--space-4) var(--space-6);
+      padding: var(--space-2-5) var(--space-4);
       border: none;
       background: none;
       cursor: pointer;
@@ -306,7 +311,7 @@ import { ToastService } from '../../shared/components/toast/toast.service';
       color: var(--gray-600);
       border-bottom: 2px solid transparent;
       transition: all var(--transition-fast);
-      font-size: 0.875rem;
+      font-size: var(--text-sm);
       flex: 1;
       text-align: center;
     }
@@ -324,18 +329,18 @@ import { ToastService } from '../../shared/components/toast/toast.service';
     
     .tab-filters {
       display: flex;
-      gap: var(--space-4);
-      padding: var(--space-4);
+      gap: var(--space-3);
+      padding: var(--space-3);
       background: var(--gray-50);
       border-bottom: 1px solid var(--gray-200);
     }
     
     .form-select, .form-control {
-      min-width: 150px;
-      padding: var(--space-2) var(--space-3);
+      min-width: 120px;
+      padding: var(--space-2) var(--space-2-5);
       border: 1px solid var(--gray-300);
       border-radius: var(--radius-md);
-      font-size: 0.875rem;
+      font-size: var(--text-sm);
     }
     
     .warranty-content {
@@ -400,16 +405,16 @@ import { ToastService } from '../../shared/components/toast/toast.service';
     }
     
     .btn {
-      padding: var(--space-3) var(--space-4);
+      padding: var(--space-2) var(--space-3);
       border-radius: var(--radius-md);
       font-weight: 500;
-      font-size: 0.875rem;
+      font-size: var(--text-sm);
       cursor: pointer;
       transition: all var(--transition-fast);
       border: 1px solid transparent;
       display: inline-flex;
       align-items: center;
-      gap: var(--space-2);
+      gap: var(--space-1-5);
     }
     
     .btn-primary {
@@ -498,21 +503,16 @@ export class WarrantyManagementComponent implements OnInit {
 
   actions: TableAction[] = [
     { 
-      label: 'View', 
-      icon: '👁', 
-      action: (asset) => this.viewAsset(asset.id) 
-    },
-    { 
       label: 'Edit', 
       icon: '✏', 
       action: (asset) => this.editAsset(asset.id), 
-      condition: () => this.roleService.canManageAssets() 
+      condition: (asset) => this.roleService.canManageAssets() 
     },
     { 
       label: 'Extend Warranty', 
       icon: '🔄', 
       action: (asset) => this.extendWarranty(asset), 
-      condition: () => this.roleService.canManageAssets() 
+      condition: (asset) => this.roleService.canManageAssets() 
     }
   ];
 
@@ -520,7 +520,8 @@ export class WarrantyManagementComponent implements OnInit {
     private assetService: AssetService,
     private router: Router,
     public roleService: RoleService,
-    private toastService: ToastService
+    private toastService: ToastService,
+    private inputModalService: InputModalService
   ) {}
 
   ngOnInit() {
@@ -772,23 +773,22 @@ export class WarrantyManagementComponent implements OnInit {
     // Implement warranty report export
   }
 
-  viewAsset(id: number) {
-    this.router.navigate(['/assets', id]);
+  viewAsset(asset: any) {
+    this.router.navigate(['/assets', asset.id]);
   }
 
   editAsset(id: number) {
     this.router.navigate(['/assets', id, 'edit']);
   }
 
-  extendWarranty(asset: Asset) {
-    const newDate = prompt('Enter new warranty expiry date (YYYY-MM-DD):', asset.warrantyExpiryDate || '');
-    if (!newDate) return;
+  async extendWarranty(asset: Asset) {
+    const newDate = await this.inputModalService.promptDate(
+      'Extend Warranty',
+      'Enter new warranty expiry date:',
+      asset.warrantyExpiryDate || ''
+    );
     
-    // Validate date format
-    if (!/^\d{4}-\d{2}-\d{2}$/.test(newDate)) {
-      this.toastService.error('Invalid date format. Please use YYYY-MM-DD');
-      return;
-    }
+    if (!newDate) return;
     
     // Update asset warranty
     const updateData = { ...asset, warrantyExpiryDate: newDate };

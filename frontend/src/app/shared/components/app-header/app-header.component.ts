@@ -18,13 +18,10 @@ import { NotificationService } from '../../../core/services/notification.service
               <path fill-rule="evenodd" d="M9.707 16.707a1 1 0 01-1.414 0l-6-6a1 1 0 010-1.414l6-6a1 1 0 011.414 1.414L5.414 9H17a1 1 0 110 2H5.414l4.293 4.293a1 1 0 010 1.414z"/>
             </svg>
           </button>
-          <div class="title-section">
-            <h1 class="page-title">{{ getPageTitle() }}</h1>
-            <div *ngIf="isOnChatPage()" class="chat-meta">
-              <span class="asset-tag">LAP001</span>
-              <span class="status-badge status-open">OPEN</span>
-              <span class="priority-badge priority-medium">MEDIUM</span>
-            </div>
+          <div class="breadcrumbs">
+            <span class="breadcrumb-item">{{ getBreadcrumbs()[0] }}</span>
+            <span *ngIf="getBreadcrumbs().length > 1" class="breadcrumb-separator">&gt;</span>
+            <span *ngIf="getBreadcrumbs().length > 1" class="breadcrumb-item current">{{ getBreadcrumbs()[1] }}</span>
           </div>
         </div>
       </div>
@@ -115,11 +112,27 @@ import { NotificationService } from '../../../core/services/notification.service
       color: var(--gray-900);
     }
 
-    .page-title {
-      font-size: 1.5rem;
+    .breadcrumbs {
+      display: flex;
+      align-items: center;
+      gap: var(--space-2);
+    }
+
+    .breadcrumb-item {
+      font-size: var(--text-lg);
+      color: var(--gray-600);
       font-weight: 600;
+    }
+
+    .breadcrumb-item.current {
       color: var(--gray-900);
-      margin: 0;
+      font-weight: 700;
+    }
+
+    .breadcrumb-separator {
+      color: var(--gray-400);
+      font-size: var(--text-lg);
+      font-weight: 600;
     }
 
     .chat-meta {
@@ -338,8 +351,7 @@ export class AppHeaderComponent implements OnInit {
     if (route.includes('/assets/')) return 'Asset Details';
     if (route.includes('/issues/new')) return 'Report Issue';
     if (route.includes('/issues/') && route.includes('/chat')) {
-      // Get issue title from a service or component communication
-      return this.getChatIssueTitle() || 'Issue Chat';
+      return 'Issue Chat';
     }
     if (route.includes('/issues/')) return 'Issue Details';
     if (route.includes('/users/new')) return 'Add User';
@@ -393,9 +405,28 @@ export class AppHeaderComponent implements OnInit {
     this.router.navigate(['/issues']);
   }
 
-  getChatIssueTitle(): string {
-    // Get issue title from URL or service - simplified approach
-    const issueId = this.router.url.match(/\/issues\/(\d+)\/chat/)?.[1];
-    return issueId ? `Issue #${issueId}` : 'Issue Chat';
+  getBreadcrumbs(): string[] {
+    const route = this.router.url;
+    const segments = route.split('/').filter(s => s);
+    
+    if (segments.length === 0) return ['Dashboard'];
+    if (segments[0] === 'dashboard') return ['Dashboard'];
+    if (segments[0] === 'assets' && segments[1] === 'new') return ['Assets', 'New Asset'];
+    if (segments[0] === 'assets' && segments[2] === 'edit') return ['Assets', 'Edit Asset'];
+    if (segments[0] === 'assets' && segments[1]) return ['Assets', 'Asset Details'];
+    if (segments[0] === 'issues' && segments[1] === 'new') return ['Issues', 'New Issue'];
+    if (segments[0] === 'users' && segments[1] === 'new') return ['Users', 'New User'];
+    
+    const sectionMap: { [key: string]: string } = {
+      'assets': 'Assets',
+      'issues': 'Issues', 
+      'users': 'Users',
+      'vendors': 'Vendors',
+      'reports': 'Reports',
+      'profile': 'Profile',
+      'service-records': 'Service Records'
+    };
+    
+    return [sectionMap[segments[0]] || segments[0]];
   }
 }

@@ -173,6 +173,27 @@ export class DashboardComponent implements OnInit {
     return Object.values(this.dashboardStats.requestsByStatus).reduce((sum, count) => sum + count, 0);
   }
 
+  getAssetCategoriesArray() {
+    if (!this.dashboardStats.assetsByCategory) return [];
+    return Object.entries(this.dashboardStats.assetsByCategory).map(([key, value]) => ({ key, value }));
+  }
+
+  getMyAssetCount(status: string): number {
+    if (status === 'ALLOCATED') return this.dashboardStats.myAssets || 0;
+    if (status === 'MAINTENANCE') return this.dashboardStats.myIssues || 0;
+    return 0;
+  }
+
+  getMyAssetPercentage(status: string): number {
+    const total = this.dashboardStats.myAssets || 1;
+    const count = this.getMyAssetCount(status);
+    return Math.round((count / total) * 100);
+  }
+
+  getActiveUsers(): number {
+    return Math.round((this.dashboardStats.totalUsers || 0) * 0.8);
+  }
+
   navigateToRequests() {
     this.router.navigate(['/requests']);
   }

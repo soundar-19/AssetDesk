@@ -54,13 +54,15 @@ export interface TableAction {
               <span *ngIf="column.render" [innerHTML]="formatColumnValue(item, column)"></span>
             </td>
             <td *ngIf="actions.length > 0" class="actions" (click)="$event.stopPropagation()">
-              <div class="action-dropdown" [class.open]="openDropdown === item.id">
-                <button class="action-trigger" (click)="toggleDropdown(item.id)">
+              <div class="dropdown-container" (click)="$event.stopPropagation()">
+                <button class="dropdown-btn" 
+                        (click)="toggleDropdown(item.id)">
                   ⋯
                 </button>
-                <div class="action-menu" *ngIf="openDropdown === item.id">
+                <div class="dropdown-menu" 
+                     *ngIf="openDropdown === item.id">
                   <button *ngFor="let action of getVisibleActions(item)"
-                          class="action-item"
+                          class="dropdown-item"
                           (click)="executeAction(action, item)">
                     <span *ngIf="action.icon" class="action-icon">{{ action.icon }}</span>
                     {{ action.label }}
@@ -105,7 +107,6 @@ export interface TableAction {
       border-radius: var(--radius-xl);
       box-shadow: var(--shadow-sm);
       border: 1px solid var(--gray-200);
-      overflow: hidden;
       overflow-x: auto;
       width: 100%;
     }
@@ -175,70 +176,73 @@ export interface TableAction {
     }
     
     .actions {
-      white-space: nowrap;
-      position: relative;
+      width: 60px;
+      text-align: center;
     }
     
-    .action-dropdown {
+    .dropdown-container {
       position: relative;
       display: inline-block;
     }
     
-    .action-trigger {
-      background: none;
+    .dropdown-btn {
+      width: 32px;
+      height: 32px;
       border: none;
-      font-size: 1.25rem;
-      font-weight: bold;
-      color: #6b7280;
+      border-radius: 6px;
       cursor: pointer;
-      padding: 0.5rem;
-      border-radius: 0.375rem;
-      transition: all 0.15s ease;
+      font-size: 18px;
+      font-weight: bold;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      background: var(--gray-100);
+      color: var(--gray-600);
+      transition: all 0.2s;
     }
     
-    .action-trigger:hover {
-      background: #f3f4f6;
-      color: #374151;
+    .dropdown-btn:hover,
+    .dropdown-btn.active {
+      background: var(--gray-200);
+      color: var(--gray-800);
     }
     
-    .action-menu {
+    .dropdown-menu {
       position: absolute;
-      right: 0;
       top: 100%;
+      right: 0;
       background: white;
-      border: 1px solid #e5e7eb;
-      border-radius: 0.5rem;
-      box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1);
-      z-index: 50;
+      border: 1px solid var(--gray-200);
+      border-radius: 8px;
+      box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+      z-index: 1000;
       min-width: 150px;
       overflow: hidden;
     }
     
-    .action-item {
+    .dropdown-item {
+      width: 100%;
+      padding: 8px 12px;
+      border: none;
+      background: none;
+      text-align: left;
+      cursor: pointer;
+      font-size: 0.875rem;
+      color: var(--gray-700);
       display: flex;
       align-items: center;
-      gap: 0.5rem;
-      width: 100%;
-      padding: 0.75rem 1rem;
-      background: none;
-      border: none;
-      text-align: left;
-      font-size: 0.875rem;
-      color: #374151;
-      cursor: pointer;
-      transition: background-color 0.15s ease;
+      gap: 8px;
+      transition: background-color 0.15s;
     }
     
-    .action-item:hover {
-      background: #f3f4f6;
-    }
-    
-    .action-item:last-child {
-      border-bottom: none;
+    .dropdown-item:hover {
+      background: var(--gray-50);
     }
     
     .action-icon {
-      font-size: 1rem;
+      font-size: 0.75rem;
+      width: 16px;
+      text-align: center;
     }
     
     .btn {
@@ -405,6 +409,13 @@ export class DataTableComponent {
   
   toggleDropdown(itemId: number) {
     this.openDropdown = this.openDropdown === itemId ? null : itemId;
+    if (this.openDropdown) {
+      setTimeout(() => {
+        document.addEventListener('click', () => {
+          this.openDropdown = null;
+        }, { once: true });
+      }, 100);
+    }
   }
   
   executeAction(action: TableAction, item: any) {

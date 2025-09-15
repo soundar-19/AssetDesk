@@ -24,6 +24,8 @@ public class ServiceRecordResponseDTO {
     // Vendor info
     private VendorInfo vendor;
     
+
+    
     @Data
     @Builder
     public static class AssetInfo {
@@ -32,6 +34,9 @@ public class ServiceRecordResponseDTO {
         private String name;
         private String category;
         private String type;
+        private String model;
+        private String serialNumber;
+        private String status;
     }
     
     @Data

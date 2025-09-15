@@ -13,21 +13,22 @@ import { ToastService } from '../../shared/components/toast/toast.service';
   template: `
     <div class="vendor-detail" *ngIf="vendor">
       <div class="header">
-        <h1>{{ vendor.name }}</h1>
+        <div class="vendor-info">
+          <h1>{{ vendor.name }}</h1>
+          <span class="status-badge" [class]="'status-' + (vendor.status || 'active').toLowerCase()">
+            {{ vendor.status || 'Active' }}
+          </span>
+        </div>
         <div class="actions">
-          <button class="btn btn-outline" (click)="goBack()">Back</button>
+          <button class="btn btn-outline" (click)="goBack()">← Back</button>
           <button *ngIf="roleService.canManageAssets()" class="btn btn-primary" (click)="editVendor()">Edit</button>
         </div>
       </div>
 
       <div class="content">
-        <div class="info-card">
-          <h2>Vendor Information</h2>
+        <div class="info-section">
+          <h2>Contact Information</h2>
           <div class="info-grid">
-            <div class="info-item">
-              <label>Name</label>
-              <span>{{ vendor.name }}</span>
-            </div>
             <div class="info-item">
               <label>Contact Person</label>
               <span>{{ vendor.contactPerson || 'Not provided' }}</span>
@@ -43,10 +44,6 @@ import { ToastService } from '../../shared/components/toast/toast.service';
             <div class="info-item">
               <label>Address</label>
               <span>{{ vendor.address || 'Not provided' }}</span>
-            </div>
-            <div class="info-item">
-              <label>Status</label>
-              <span class="badge" [class]="'badge-' + (vendor.status || 'active').toLowerCase()">{{ vendor.status || 'Active' }}</span>
             </div>
           </div>
         </div>
@@ -71,15 +68,36 @@ import { ToastService } from '../../shared/components/toast/toast.service';
     .header {
       display: flex;
       justify-content: space-between;
-      align-items: center;
-      margin-bottom: var(--space-6);
+      align-items: flex-start;
+      margin-bottom: var(--space-8);
       padding-bottom: var(--space-4);
-      border-bottom: 1px solid var(--gray-200);
+      border-bottom: 2px solid var(--gray-100);
     }
 
-    .header h1 {
-      margin: 0;
+    .vendor-info h1 {
+      margin: 0 0 var(--space-2) 0;
       color: var(--gray-900);
+      font-size: 2rem;
+      font-weight: 700;
+    }
+
+    .status-badge {
+      display: inline-block;
+      padding: var(--space-1) var(--space-3);
+      border-radius: var(--radius-full);
+      font-size: 0.75rem;
+      font-weight: 600;
+      text-transform: uppercase;
+    }
+
+    .status-active {
+      background: var(--success-100);
+      color: var(--success-700);
+    }
+
+    .status-inactive {
+      background: var(--gray-100);
+      color: var(--gray-700);
     }
 
     .actions {
@@ -88,11 +106,6 @@ import { ToastService } from '../../shared/components/toast/toast.service';
     }
 
     .content {
-      display: grid;
-      gap: var(--space-6);
-    }
-
-    .info-card {
       background: white;
       border-radius: var(--radius-lg);
       padding: var(--space-6);
@@ -100,83 +113,36 @@ import { ToastService } from '../../shared/components/toast/toast.service';
       border: 1px solid var(--gray-200);
     }
 
-    .info-card h2 {
-      margin: 0 0 var(--space-4) 0;
+    .info-section h2 {
+      margin: 0 0 var(--space-6) 0;
       color: var(--gray-900);
       font-size: 1.25rem;
+      font-weight: 600;
     }
 
     .info-grid {
       display: grid;
-      grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
-      gap: var(--space-4);
+      grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+      gap: var(--space-6);
     }
 
     .info-item {
       display: flex;
       flex-direction: column;
-      gap: var(--space-1);
+      gap: var(--space-2);
     }
 
     .info-item label {
       font-size: 0.875rem;
-      font-weight: 500;
+      font-weight: 600;
       color: var(--gray-600);
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
     }
 
     .info-item span {
       color: var(--gray-900);
-    }
-
-    .badge {
-      display: inline-block;
-      padding: var(--space-1) var(--space-2);
-      border-radius: var(--radius-md);
-      font-size: 0.75rem;
-      font-weight: 500;
-      text-transform: uppercase;
-      width: fit-content;
-    }
-
-    .badge-active {
-      background: var(--green-100);
-      color: var(--green-700);
-    }
-
-    .badge-inactive {
-      background: var(--gray-100);
-      color: var(--gray-700);
-    }
-
-    .btn {
-      padding: var(--space-3) var(--space-4);
-      border-radius: var(--radius-md);
-      font-size: 0.875rem;
-      font-weight: 500;
-      cursor: pointer;
-      transition: all var(--transition-fast);
-      border: 1px solid transparent;
-      text-decoration: none;
-    }
-
-    .btn-primary {
-      background: var(--primary-600);
-      color: white;
-    }
-
-    .btn-primary:hover {
-      background: var(--primary-700);
-    }
-
-    .btn-outline {
-      background: white;
-      border-color: var(--gray-300);
-      color: var(--gray-700);
-    }
-
-    .btn-outline:hover {
-      background: var(--gray-50);
-      border-color: var(--gray-400);
+      font-size: 1rem;
     }
 
     .loading, .error {
@@ -193,15 +159,11 @@ import { ToastService } from '../../shared/components/toast/toast.service';
       .header {
         flex-direction: column;
         gap: var(--space-4);
-        align-items: stretch;
-      }
-
-      .actions {
-        justify-content: center;
       }
 
       .info-grid {
         grid-template-columns: 1fr;
+        gap: var(--space-4);
       }
     }
   `]
@@ -248,4 +210,6 @@ export class VendorDetailComponent implements OnInit {
       this.router.navigate(['/vendors', this.vendor.id, 'edit']);
     }
   }
+
+
 }

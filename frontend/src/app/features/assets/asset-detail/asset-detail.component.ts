@@ -12,6 +12,7 @@ import { AuthService } from '../../../core/services/auth.service';
 import { ToastService } from '../../../shared/components/toast/toast.service';
 import { ROLE_PERMISSIONS } from '../../../core/constants/role.constants';
 import { UserSelectorDialogComponent } from '../../../shared/components/user-selector-dialog/user-selector-dialog.component';
+import { InputModalService } from '../../../shared/components/input-modal/input-modal.service';
 
 @Component({
   selector: 'app-asset-detail',
@@ -94,18 +95,18 @@ import { UserSelectorDialogComponent } from '../../../shared/components/user-sel
                     </div>
                     <div class="info-item">
                       <label>Useful Life:</label>
-                      <span>{{ asset.usefulLifeYears || 'N/A' }} years</span>
+                      <span>{{ depreciation?.usefulLifeYears || asset.usefulLifeYears || '5 (default)' }} years</span>
                     </div>
-                    <div class="info-item" *ngIf="depreciation">
+                    <div class="info-item" *ngIf="depreciation && depreciation.currentValue !== null && depreciation.currentValue !== undefined">
                       <label>Current Value:</label>
                       <span class="cost">\${{ depreciation.currentValue | number:'1.2-2' }}</span>
                     </div>
-                    <div class="info-item" *ngIf="depreciation">
+                    <div class="info-item" *ngIf="depreciation && depreciation.currentValue !== null && depreciation.currentValue !== undefined && asset.cost">
                       <label>Depreciation:</label>
                       <span class="depreciation">\${{ (asset.cost - depreciation.currentValue) | number:'1.2-2' }}</span>
                     </div>
                   </div>
-                  <div class="depreciation-chart" *ngIf="depreciation">
+                  <div class="depreciation-chart" *ngIf="depreciation && depreciation.currentValue !== null && depreciation.currentValue !== undefined && asset.cost && asset.cost > 0">
                     <div class="chart-header">
                       <span>Asset Value Over Time</span>
                       <span class="percentage">{{ getDepreciationPercentage() }}% depreciated</span>
@@ -369,7 +370,7 @@ import { UserSelectorDialogComponent } from '../../../shared/components/user-sel
               <label>Service Records:</label>
               <span>{{ serviceRecords.length }}</span>
             </div>
-            <div class="stat-item" *ngIf="depreciation && shouldShowFinancialInfo()">
+            <div class="stat-item" *ngIf="depreciation && depreciation.yearsUsed !== null && depreciation.yearsUsed !== undefined && shouldShowFinancialInfo()">
               <label>Age:</label>
               <span>{{ depreciation.yearsUsed }} years</span>
             </div>
@@ -909,7 +910,8 @@ export class AssetDetailComponent implements OnInit {
     private issueService: IssueService,
     private warrantyHistoryService: WarrantyHistoryService,
     private authService: AuthService,
-    private toastService: ToastService
+    private toastService: ToastService,
+    private inputModalService: InputModalService
   ) {}
 
   ngOnInit() {
@@ -994,6 +996,10 @@ export class AssetDetailComponent implements OnInit {
     this.assetService.getDepreciation(assetId).subscribe({
       next: (data) => {
         this.depreciation = data;
+      },
+      error: (error) => {
+        console.error('Error loading depreciation:', error);
+        this.depreciation = null;
       }
     });
   }
@@ -1072,7 +1078,7 @@ export class AssetDetailComponent implements OnInit {
   }
 
   getDepreciationPercentage(): number {
-    if (!this.depreciation || !this.asset) return 0;
+    if (!this.depreciation || !this.asset || !this.asset.cost || this.asset.cost === 0) return 0;
     const depreciated = this.asset.cost - this.depreciation.currentValue;
     return Math.round((depreciated / this.asset.cost) * 100);
   }
@@ -1232,20 +1238,29 @@ export class AssetDetailComponent implements OnInit {
     this.router.navigate(['/service-records', record.id]);
   }
 
-  returnAsset() {
+  async returnAsset() {
     if (!this.canManageAssets() || !this.asset) {
       this.toastService.error('Access denied');
       return;
     }
     
-    const remarks = prompt('Enter return remarks (optional):');
-    this.assetService.returnAsset(this.asset.id, remarks || undefined).subscribe({
-      next: () => {
-        this.toastService.success('Asset returned successfully');
-        this.loadAsset(this.asset!.id);
-      },
-      error: () => this.toastService.error('Failed to return asset')
-    });
+    const remarks = await this.inputModalService.promptText(
+      'Return Asset',
+      'Enter return remarks (optional):',
+      'Optional remarks...',
+      '',
+      false
+    );
+    
+    if (remarks !== null) {
+      this.assetService.returnAsset(this.asset.id, remarks || undefined).subscribe({
+        next: () => {
+          this.toastService.success('Asset returned successfully');
+          this.loadAsset(this.asset!.id);
+        },
+        error: () => this.toastService.error('Failed to return asset')
+      });
+    }
   }
 
   viewAssetHistory() {

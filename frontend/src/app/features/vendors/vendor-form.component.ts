@@ -105,6 +105,19 @@ import { ToastService } from '../../shared/components/toast/toast.service';
                 </div>
               </div>
             </div>
+
+            <div class="form-grid grid-1">
+              <div class="form-group">
+                <label for="status" class="form-label required">Status</label>
+                <select
+                  id="status"
+                  formControlName="status"
+                  class="form-control">
+                  <option value="ACTIVE">Active</option>
+                  <option value="INACTIVE">Inactive</option>
+                </select>
+              </div>
+            </div>
           </div>
 
           <div class="form-actions">
@@ -139,7 +152,8 @@ export class VendorFormComponent implements OnInit {
       name: ['', Validators.required],
       contactPerson: [''],
       email: ['', Validators.email],
-      phoneNumber: ['']
+      phoneNumber: [''],
+      status: ['ACTIVE']
     });
   }
 

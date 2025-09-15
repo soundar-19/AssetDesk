@@ -246,12 +246,11 @@ public class IssueServiceImpl implements IssueService {
             ServiceRecord serviceRecord = new ServiceRecord();
             serviceRecord.setAsset(resolvedIssue.getAsset());
             serviceRecord.setServiceDate(resolvedIssue.getResolvedAt().toLocalDate());
-            serviceRecord.setServiceDescription("Issue resolved: " + resolvedIssue.getTitle() + 
-                (resolutionNotes != null ? ". Resolution: " + resolutionNotes : ""));
+            serviceRecord.setServiceDescription(resolutionNotes != null ? resolutionNotes : "Issue resolution service");
             serviceRecord.setServiceType("ISSUE_RESOLUTION");
             serviceRecord.setPerformedBy(resolvedIssue.getAssignedTo() != null ? resolvedIssue.getAssignedTo().getName() : "IT Support");
             serviceRecord.setStatus("COMPLETED");
-            serviceRecord.setNotes("Resolved issue ID: " + resolvedIssue.getId());
+            serviceRecord.setNotes("Resolved issue: " + resolvedIssue.getTitle() + " (ID: " + resolvedIssue.getId() + ")");
             serviceRecordRepository.save(serviceRecord);
         } catch (Exception e) {
             System.out.println("Failed to create service record: " + e.getMessage());
@@ -293,15 +292,14 @@ public class IssueServiceImpl implements IssueService {
             ServiceRecord serviceRecord = new ServiceRecord();
             serviceRecord.setAsset(resolvedIssue.getAsset());
             serviceRecord.setServiceDate(resolvedIssue.getResolvedAt().toLocalDate());
-            serviceRecord.setServiceDescription("Issue resolved: " + resolvedIssue.getTitle() + 
-                (resolutionNotes != null ? ". Resolution: " + resolutionNotes : ""));
+            serviceRecord.setServiceDescription(resolutionNotes != null ? resolutionNotes : "Issue resolution service");
             serviceRecord.setServiceType("ISSUE_RESOLUTION");
             serviceRecord.setPerformedBy(resolvedIssue.getAssignedTo() != null ? resolvedIssue.getAssignedTo().getName() : "IT Support");
             if (cost != null) {
                 serviceRecord.setServiceCost(java.math.BigDecimal.valueOf(cost));
             }
             serviceRecord.setStatus("COMPLETED");
-            serviceRecord.setNotes("Resolved issue ID: " + resolvedIssue.getId());
+            serviceRecord.setNotes("Resolved issue: " + resolvedIssue.getTitle() + " (ID: " + resolvedIssue.getId() + ")");
             serviceRecordRepository.save(serviceRecord);
             System.out.println("Service record created for issue resolution with cost: " + cost);
         } catch (Exception e) {

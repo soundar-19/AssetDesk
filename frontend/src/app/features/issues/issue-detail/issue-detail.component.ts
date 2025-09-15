@@ -8,6 +8,7 @@ import { Issue, Asset } from '../../../core/models';
 import { AuthService } from '../../../core/services/auth.service';
 import { ToastService } from '../../../shared/components/toast/toast.service';
 import { IssueChatComponent } from '../issue-chat/issue-chat.component';
+import { InputModalService } from '../../../shared/components/input-modal/input-modal.service';
 
 @Component({
   selector: 'app-issue-detail',
@@ -855,7 +856,8 @@ export class IssueDetailComponent implements OnInit {
     private issueService: IssueService,
     private assetService: AssetService,
     private authService: AuthService,
-    private toastService: ToastService
+    private toastService: ToastService,
+    private inputModalService: InputModalService
   ) {}
 
   ngOnInit() {
@@ -970,11 +972,22 @@ export class IssueDetailComponent implements OnInit {
     }
   }
 
-  resolveIssue() {
+  async resolveIssue() {
     if (this.issue) {
-      const resolutionNotes = prompt('Enter resolution notes:');
+      const resolutionNotes = await this.inputModalService.promptTextarea(
+        'Resolve Issue',
+        'Enter resolution notes:',
+        'Describe how the issue was resolved...'
+      );
+      
       if (resolutionNotes) {
-        const costStr = prompt('Enter approximate cost (optional):');
+        const costStr = await this.inputModalService.promptNumber(
+          'Resolution Cost',
+          'Enter approximate cost (optional):',
+          'Cost (leave empty if no cost)',
+          false
+        );
+        
         const cost = costStr ? parseFloat(costStr) : undefined;
         
         this.issueService.resolveIssueWithCost(this.issue.id, resolutionNotes, cost).subscribe({

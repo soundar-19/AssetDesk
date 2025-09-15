@@ -134,30 +134,7 @@ import { RoleService } from '../../core/services/role.service';
           </div>
         </div>
 
-        <!-- Service History -->
-        <div class="history-section">
-          <div class="history-card">
-            <div class="card-header">
-              <h2>Related Service History</h2>
-              <span class="history-count">{{ relatedServices.length }} records</span>
-            </div>
-            
-            <div class="history-list" *ngIf="relatedServices.length > 0">
-              <div *ngFor="let service of relatedServices" class="history-item">
-                <div class="history-date">{{ formatDate(service.serviceDate) }}</div>
-                <div class="history-content">
-                  <div class="history-type">{{ service.serviceType }}</div>
-                  <div class="history-description">{{ service.description }}</div>
-                </div>
-                <div class="history-cost">{{ service.cost ? formatCurrency(service.cost) : '-' }}</div>
-              </div>
-            </div>
-            
-            <div *ngIf="relatedServices.length === 0" class="empty-history">
-              <p>No other service records found for this asset</p>
-            </div>
-          </div>
-        </div>
+
       </div>
 
       <div *ngIf="!loading && !serviceRecord" class="error-state">
@@ -170,10 +147,10 @@ import { RoleService } from '../../core/services/role.service';
   styles: [`
     .detail-container {
       max-width: 1200px;
-      margin: 0 auto;
-      padding: 1.5rem;
+      margin: 2rem auto;
+      padding: 2rem;
       background: linear-gradient(135deg, #f8fafc 0%, #f1f5f9 100%);
-      min-height: 100vh;
+      min-height: calc(100vh - 4rem);
     }
 
     .detail-header {
@@ -202,16 +179,18 @@ import { RoleService } from '../../core/services/role.service';
 
     .detail-content {
       display: grid;
-      gap: 1.5rem;
+      gap: 2rem;
+      padding: 1rem 0;
     }
 
-    .overview-section, .asset-section, .description-section, .notes-section, .history-section {
+    .overview-section, .asset-section, .description-section, .notes-section {
       background: white;
       border-radius: 12px;
       box-shadow: 0 2px 8px rgba(0,0,0,0.06), 0 1px 3px rgba(0,0,0,0.1);
       border: none;
       overflow: hidden;
       transition: transform 0.2s ease, box-shadow 0.2s ease;
+      margin-bottom: 1.5rem;
     }
 
     .overview-section:hover, .asset-section:hover, .description-section:hover, .notes-section:hover, .history-section:hover {
@@ -599,7 +578,7 @@ import { RoleService } from '../../core/services/role.service';
 })
 export class ServiceRecordDetailComponent implements OnInit {
   serviceRecord: ServiceRecord | null = null;
-  relatedServices: ServiceRecord[] = [];
+
   loading = true;
   recordId: number;
 
@@ -621,7 +600,7 @@ export class ServiceRecordDetailComponent implements OnInit {
     this.serviceRecordService.getServiceRecordById(this.recordId).subscribe({
       next: (record) => {
         this.serviceRecord = record;
-        this.loadRelatedServices();
+
         this.loading = false;
       },
       error: () => {
@@ -631,21 +610,7 @@ export class ServiceRecordDetailComponent implements OnInit {
     });
   }
 
-  loadRelatedServices() {
-    if (!this.serviceRecord?.asset?.id) return;
 
-    this.serviceRecordService.getServiceRecordsByAsset(this.serviceRecord.asset.id).subscribe({
-      next: (records) => {
-        this.relatedServices = records
-          .filter(r => r.id !== this.recordId)
-          .sort((a, b) => new Date(b.serviceDate).getTime() - new Date(a.serviceDate).getTime())
-          .slice(0, 10);
-      },
-      error: () => {
-        console.error('Failed to load related services');
-      }
-    });
-  }
 
   formatDate(dateString: string): string {
     return new Date(dateString).toLocaleDateString('en-US', {

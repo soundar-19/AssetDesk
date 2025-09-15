@@ -1,6 +1,8 @@
 @import './styles/globals.scss';
 @import './styles/design-system.css';
 @import './styles/compact.scss';
+@import './styles/table.css';
+@import './styles/professional-cards.css';
 @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap');
 @import url('https://fonts.googleapis.com/icon?family=Material+Icons');
 
@@ -80,6 +82,7 @@
   box-sizing: border-box;
   margin: 0;
   padding: 0;
+  font-family: var(--font-family);
 }
 
 /* Hide all scrollbars but keep scroll functionality */
@@ -132,6 +135,7 @@ body {
   transition: all 0.15s ease;
   text-decoration: none;
   white-space: nowrap;
+  font-family: var(--font-family);
 }
 
 .btn:disabled {
@@ -231,6 +235,7 @@ body {
   border-radius: var(--radius-md);
   font-size: var(--text-sm);
   transition: all 0.15s ease;
+  font-family: var(--font-family);
 }
 
 .form-control:focus {

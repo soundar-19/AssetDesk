@@ -4,40 +4,58 @@ import { Router } from '@angular/router';
 import { VendorService } from '../../core/services/vendor.service';
 import { Vendor } from '../../core/models';
 import { DataTableComponent, TableColumn, TableAction } from '../../shared/components/data-table/data-table.component';
-import { SearchFilterComponent, FilterOption, SearchFilters } from '../../shared/components/search-filter/search-filter.component';
+
 import { ToastService } from '../../shared/components/toast/toast.service';
 import { ConfirmDialogService } from '../../shared/components/confirm-dialog/confirm-dialog.service';
 
 @Component({
   selector: 'app-vendors-list',
   standalone: true,
-  imports: [CommonModule, DataTableComponent, SearchFilterComponent],
+  imports: [CommonModule, DataTableComponent],
   template: `
-    <div class="vendors-list standardized-layout">
-      <div class="header">
-        <button class="btn btn-primary" (click)="createVendor()">
-          Add Vendor
-        </button>
+    <div class="page-container">
+      <div class="page-header">
+        <div>
+          <h1 class="page-title">Vendors</h1>
+          <p class="page-description">Manage vendor information and contacts</p>
+        </div>
+        <div class="header-actions">
+          <button class="btn btn-outline" (click)="loadVendors()">
+            🔄 Refresh
+          </button>
+          <button class="btn btn-primary" (click)="createVendor()">
+            + Add Vendor
+          </button>
+        </div>
       </div>
 
-      <app-search-filter
-        searchPlaceholder="Search vendors by name, email, phone, or contact person..."
-        [filterOptions]="filterOptions"
-        (search)="onSearch($event)"
-        (filtersChange)="onFiltersChange($event)">
-      </app-search-filter>
+      <!-- Table Section -->
+      <div class="table-section">
+        <!-- Vendors Table -->
+        <div class="data-table-container" *ngIf="vendors.length > 0">
+          <app-data-table
+            [data]="vendors"
+            [columns]="columns"
+            [actions]="actions"
+            [pagination]="pagination"
+            [sortColumn]="sortColumn"
+            [sortDirection]="sortDirection"
+            [rowClickAction]="viewVendor.bind(this)"
+            (pageChange)="onPageChange($event)"
+            (sort)="onSort($event)">
+          </app-data-table>
+        </div>
 
-      <app-data-table
-        [data]="vendors"
-        [columns]="columns"
-        [actions]="actions"
-        [pagination]="pagination"
-        [sortColumn]="sortColumn"
-        [sortDirection]="sortDirection"
-        [rowClickAction]="viewVendor.bind(this)"
-        (pageChange)="onPageChange($event)"
-        (sort)="onSort($event)">
-      </app-data-table>
+        <!-- Empty State -->
+        <div *ngIf="vendors.length === 0" class="empty-state">
+          <div class="empty-icon">🏢</div>
+          <h3>No vendors found</h3>
+          <p>No vendors have been added yet.</p>
+          <button class="btn btn-primary" (click)="createVendor()">
+            Add First Vendor
+          </button>
+        </div>
+      </div>
     </div>
   `,
   styleUrls: ['./vendors-list.component.css']
@@ -46,42 +64,21 @@ export class VendorsListComponent implements OnInit {
   vendors: Vendor[] = [];
   pagination: any = null;
   searchTerm = '';
-  filters: SearchFilters = {};
+
   sortColumn = '';
   sortDirection: 'asc' | 'desc' = 'asc';
   
   columns: TableColumn[] = [
-    { key: 'name', label: 'Name', sortable: true },
+    { key: 'name', label: 'Name', sortable: true, render: (vendor: any) => this.getNameBadge(vendor.name) },
     { key: 'contactPerson', label: 'Contact Person', sortable: true },
-    { key: 'email', label: 'Email', sortable: true },
+    { key: 'email', label: 'Email', sortable: true, render: (vendor: any) => this.getEmailBadge(vendor.email) },
     { key: 'phoneNumber', label: 'Phone', sortable: true },
-    { key: 'status', label: 'Status', sortable: true }
+    { key: 'status', label: 'Status', sortable: true, render: (vendor: any) => this.getStatusBadge(vendor.status) }
   ];
 
-  filterOptions: FilterOption[] = [
-    {
-      key: 'contactPerson',
-      label: 'Contact Person',
-      type: 'text',
-      placeholder: 'Filter by contact person'
-    },
-    {
-      key: 'status',
-      label: 'Status',
-      type: 'select',
-      options: [
-        { value: 'ACTIVE', label: 'Active' },
-        { value: 'INACTIVE', label: 'Inactive' }
-      ]
-    }
-  ];
 
-  actions: TableAction[] = [
-    { label: 'Edit', icon: '✏', action: (vendor) => this.editVendor(vendor.id) },
-    { label: 'View Assets', icon: '📦', action: (vendor) => this.viewVendorAssets(vendor.id) },
-    { label: 'View Services', icon: '🔧', action: (vendor) => this.viewVendorServices(vendor.id) },
-    { label: 'Delete', icon: '🗑', action: (vendor) => this.deleteVendor(vendor.id) }
-  ];
+
+  actions: TableAction[] = [];
 
   constructor(
     private vendorService: VendorService,
@@ -96,7 +93,7 @@ export class VendorsListComponent implements OnInit {
 
   loadVendors(page: number = 0) {
     const hasSearch = this.searchTerm && this.searchTerm.trim() !== '';
-    const hasFilters = Object.values(this.filters).some(value => value !== null && value !== undefined && value !== '');
+    const hasFilters = false;
     
     if (hasSearch || hasFilters) {
       this.searchVendors(page);
@@ -133,13 +130,7 @@ export class VendorsListComponent implements OnInit {
       searchParams.phone = this.searchTerm.trim();
     }
     
-    // Add individual filters
-    Object.keys(this.filters).forEach(key => {
-      const value = this.filters[key];
-      if (value !== null && value !== undefined && value !== '') {
-        searchParams[key] = value;
-      }
-    });
+
 
     this.vendorService.searchVendors(searchParams, page, 10).subscribe({
       next: (response) => {
@@ -164,10 +155,7 @@ export class VendorsListComponent implements OnInit {
     this.loadVendors(0);
   }
 
-  onFiltersChange(filters: SearchFilters) {
-    this.filters = filters;
-    this.loadVendors(0);
-  }
+
 
   onSort(event: { column: string; direction: 'asc' | 'desc' }) {
     this.sortColumn = event.column;
@@ -213,5 +201,21 @@ export class VendorsListComponent implements OnInit {
         });
       }
     });
+  }
+
+  getStatusBadge(status: string): string {
+    const badges: { [key: string]: string } = {
+      'ACTIVE': '<span class="badge badge-success">Active</span>',
+      'INACTIVE': '<span class="badge badge-error">Inactive</span>'
+    };
+    return badges[status] || '<span class="badge badge-success">Active</span>';
+  }
+
+  getNameBadge(name: string): string {
+    return `<span class="badge badge-info">${name}</span>`;
+  }
+
+  getEmailBadge(email: string): string {
+    return email ? `<span class="badge badge-secondary">${email}</span>` : '<span class="badge badge-warning">No Email</span>';
   }
 }

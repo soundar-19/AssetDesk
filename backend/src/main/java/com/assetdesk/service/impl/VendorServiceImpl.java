@@ -100,6 +100,9 @@ public class VendorServiceImpl implements VendorService {
         existingVendor.setEmail(vendorRequestDTO.getEmail());
         existingVendor.setPhoneNumber(vendorRequestDTO.getPhoneNumber());
         existingVendor.setAddress(vendorRequestDTO.getAddress());
+        if (vendorRequestDTO.getStatus() != null) {
+            existingVendor.setStatus(vendorRequestDTO.getStatus());
+        }
         
         Vendor updatedVendor = vendorRepository.save(existingVendor);
         return VendorResponseDTO.fromEntity(updatedVendor);

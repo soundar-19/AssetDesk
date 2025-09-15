@@ -1,0 +1,180 @@
+<main class="page-container" role="main">
+  <div class="form-container">
+    <div class="form-header">
+      <div>
+        <h1 class="form-title">{{ isEditMode ? 'Edit Asset Request' : 'Request New Asset' }}</h1>
+        <p class="form-subtitle">{{ isEditMode ? 'Update your asset request details' : 'Submit a request for new equipment or resources' }}</p>
+      </div>
+      <button class="btn btn-outline" (click)="goBack()" type="button">
+        <svg width="16" height="16" viewBox="0 0 20 20" fill="currentColor">
+          <path fill-rule="evenodd" d="M9.707 16.707a1 1 0 01-1.414 0l-6-6a1 1 0 010-1.414l6-6a1 1 0 011.414 1.414L5.414 9H17a1 1 0 110 2H5.414l4.293 4.293a1 1 0 010 1.414z" clip-rule="evenodd" />
+        </svg>
+        Back
+      </button>
+    </div>
+
+    <form [formGroup]="requestForm" (ngSubmit)="onSubmit()" class="form" novalidate>
+      <div class="form-section">
+        <h2 class="section-title">Request Information</h2>
+        <div class="form-grid grid-1">
+          <div class="form-group">
+            <label for="requestType" class="form-label required">Type of Request</label>
+            <select id="requestType" 
+                    class="form-control" 
+                    formControlName="requestType"
+                    [class.error]="isFieldInvalid('requestType')">
+              <option value="">Select request type...</option>
+              <option value="NEW_ASSET">New Asset</option>
+              <option value="REPLACEMENT">Replacement</option>
+              <option value="UPGRADE">Upgrade</option>
+              <option value="ADDITIONAL">Additional Asset</option>
+            </select>
+            <div class="form-error" *ngIf="isFieldInvalid('requestType')">
+              Request type is required
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div class="form-section">
+        <h2 class="section-title">Asset Details</h2>
+        <div class="form-grid grid-2">
+          <div class="form-group">
+            <label for="category" class="form-label required">Category</label>
+            <select id="category" 
+                    class="form-control" 
+                    formControlName="category"
+                    [class.error]="isFieldInvalid('category')"
+                    (change)="onCategoryChange()">
+              <option value="">Select category...</option>
+              <option value="HARDWARE">Hardware</option>
+              <option value="SOFTWARE">Software</option>
+              <option value="ACCESSORIES">Accessories</option>
+            </select>
+            <div class="form-error" *ngIf="isFieldInvalid('category')">
+              Category is required
+            </div>
+          </div>
+
+          <div class="form-group">
+            <label for="assetType" class="form-label required">Asset Type</label>
+            <select id="assetType" 
+                    class="form-control" 
+                    formControlName="assetType"
+                    [class.error]="isFieldInvalid('assetType')"
+                    [disabled]="!availableTypes.length">
+              <option value="">Select type...</option>
+              <option *ngFor="let type of availableTypes" [value]="type">{{ type }}</option>
+            </select>
+            <div class="form-error" *ngIf="isFieldInvalid('assetType')">
+              Asset type is required
+            </div>
+          </div>
+        </div>
+
+        <div class="form-grid grid-2">
+          <div class="form-group">
+            <label for="assetName" class="form-label required">Asset Name</label>
+            <input type="text" 
+                   id="assetName" 
+                   class="form-control" 
+                   formControlName="assetName"
+                   [class.error]="isFieldInvalid('assetName')"
+                   placeholder="e.g., Dell Laptop, Microsoft Office License">
+            <div class="form-error" *ngIf="isFieldInvalid('assetName')">
+              Asset name is required
+            </div>
+          </div>
+
+          <div class="form-group">
+            <label for="preferredModel" class="form-label optional">Preferred Model/Brand</label>
+            <input type="text" 
+                   id="preferredModel" 
+                   class="form-control" 
+                   formControlName="preferredModel"
+                   placeholder="e.g., Dell XPS 13, MacBook Pro">
+          </div>
+        </div>
+      </div>
+
+      <div class="form-section">
+        <h2 class="section-title">Business Justification</h2>
+        <div class="form-grid grid-1">
+          <div class="form-group">
+            <label for="businessJustification" class="form-label required">Justification</label>
+            <textarea id="businessJustification" 
+                      class="form-control" 
+                      formControlName="businessJustification"
+                      [class.error]="isFieldInvalid('businessJustification')"
+                      rows="4"
+                      placeholder="Explain why this asset is needed, how it will be used, and the business impact..."></textarea>
+            <div class="form-error" *ngIf="isFieldInvalid('businessJustification')">
+              Business justification is required
+            </div>
+          </div>
+        </div>
+
+        <div class="form-grid grid-2">
+          <div class="form-group">
+            <label for="priority" class="form-label required">Priority</label>
+            <select id="priority" 
+                    class="form-control" 
+                    formControlName="priority"
+                    [class.error]="isFieldInvalid('priority')">
+              <option value="">Select priority...</option>
+              <option value="LOW">Low - Can wait 30+ days</option>
+              <option value="MEDIUM">Medium - Needed within 2-4 weeks</option>
+              <option value="HIGH">High - Needed within 1-2 weeks</option>
+              <option value="URGENT">Urgent - Needed immediately</option>
+            </select>
+            <div class="form-error" *ngIf="isFieldInvalid('priority')">
+              Priority is required
+            </div>
+          </div>
+
+          <div class="form-group">
+            <label for="requiredDate" class="form-label optional">Required By Date</label>
+            <input type="date" 
+                   id="requiredDate" 
+                   class="form-control" 
+                   formControlName="requiredDate"
+                   [min]="minDate">
+          </div>
+        </div>
+      </div>
+
+      <div class="form-section">
+        <h2 class="section-title">Additional Information</h2>
+        <div class="form-grid grid-1">
+          <div class="form-group">
+            <label for="specifications" class="form-label optional">Technical Specifications</label>
+            <textarea id="specifications" 
+                      class="form-control" 
+                      formControlName="specifications"
+                      rows="3"
+                      placeholder="Any specific technical requirements, configurations, or features needed..."></textarea>
+          </div>
+
+          <div class="form-group">
+            <label for="additionalNotes" class="form-label optional">Additional Notes</label>
+            <textarea id="additionalNotes" 
+                      class="form-control" 
+                      formControlName="additionalNotes"
+                      rows="3"
+                      placeholder="Any other relevant information..."></textarea>
+          </div>
+        </div>
+      </div>
+
+      <div class="form-actions">
+        <button type="button" class="btn btn-outline" (click)="goBack()" [disabled]="loading">
+          Cancel
+        </button>
+        <button type="submit" class="btn btn-primary" [disabled]="requestForm.invalid || loading">
+          <span *ngIf="loading" class="loading-spinner"></span>
+          {{ loading ? 'Saving...' : (isEditMode ? 'Update Request' : 'Submit Request') }}
+        </button>
+      </div>
+    </form>
+  </div>
+</main>

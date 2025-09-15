@@ -163,6 +163,9 @@ public class ServiceRecordServiceImpl implements ServiceRecordService {
                 .name(asset.getName())
                 .category(asset.getCategory() != null ? asset.getCategory().toString() : null)
                 .type(asset.getType() != null ? asset.getType().toString() : null)
+                .model(asset.getModel())
+                .serialNumber(asset.getSerialNumber())
+                .status(asset.getStatus() != null ? asset.getStatus().toString() : null)
                 .build());
         }
         
@@ -173,6 +176,8 @@ public class ServiceRecordServiceImpl implements ServiceRecordService {
                 .name(vendor.getName())
                 .build());
         }
+        
+
         
         return builder.build();
     }

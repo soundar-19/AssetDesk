@@ -1,5 +1,6 @@
 import { Component, OnInit } from '@angular/core';
 import { CommonModule } from '@angular/common';
+import { FormsModule } from '@angular/forms';
 import { Router } from '@angular/router';
 import { AuthService } from '../../core/services/auth.service';
 import { UserService } from '../../core/services/user.service';
@@ -8,7 +9,7 @@ import { User } from '../../core/models';
 @Component({
   selector: 'app-profile',
   standalone: true,
-  imports: [CommonModule],
+  imports: [CommonModule, FormsModule],
   template: `
     <div class="profile standardized-layout">
       <div class="header">
@@ -41,15 +42,18 @@ import { User } from '../../core/models';
             </div>
             <div class="info-row">
               <label>Department</label>
-              <span [class.empty]="!user.department">{{ user.department || 'Not specified' }}</span>
+              <input *ngIf="isEditing" type="text" [(ngModel)]="editUser.department" class="form-input">
+              <span *ngIf="!isEditing" [class.empty]="!user.department">{{ user.department || 'Not specified' }}</span>
             </div>
             <div class="info-row">
               <label>Designation</label>
-              <span [class.empty]="!user.designation">{{ user.designation || 'Not specified' }}</span>
+              <input *ngIf="isEditing" type="text" [(ngModel)]="editUser.designation" class="form-input">
+              <span *ngIf="!isEditing" [class.empty]="!user.designation">{{ user.designation || 'Not specified' }}</span>
             </div>
             <div class="info-row">
               <label>Phone Number</label>
-              <span [class.empty]="!user.phoneNumber">{{ user.phoneNumber || 'Not specified' }}</span>
+              <input *ngIf="isEditing" type="tel" [(ngModel)]="editUser.phoneNumber" class="form-input">
+              <span *ngIf="!isEditing" [class.empty]="!user.phoneNumber">{{ user.phoneNumber || 'Not specified' }}</span>
             </div>
             <div class="info-row">
               <label>Status</label>
@@ -63,6 +67,9 @@ import { User } from '../../core/models';
         </div>
         
         <div class="profile-actions">
+          <button *ngIf="!isEditing" class="btn btn-secondary" (click)="startEdit()">Edit Profile</button>
+          <button *ngIf="isEditing" class="btn btn-primary" (click)="saveProfile()" [disabled]="saving">{{ saving ? 'Saving...' : 'Save' }}</button>
+          <button *ngIf="isEditing" class="btn btn-secondary" (click)="cancelEdit()">Cancel</button>
           <button class="btn btn-primary" (click)="changePassword()">Change Password</button>
         </div>
       </div>
@@ -72,7 +79,10 @@ import { User } from '../../core/models';
 })
 export class ProfileComponent implements OnInit {
   user: User | null = null;
+  editUser: any = {};
   loading = true;
+  isEditing = false;
+  saving = false;
 
   constructor(
     private authService: AuthService,
@@ -107,5 +117,33 @@ export class ProfileComponent implements OnInit {
 
   getInitials(name: string): string {
     return name?.split(' ').map(n => n[0]).join('').toUpperCase() || 'U';
+  }
+
+  startEdit() {
+    this.isEditing = true;
+    this.editUser = { ...this.user };
+  }
+
+  cancelEdit() {
+    this.isEditing = false;
+    this.editUser = {};
+  }
+
+  saveProfile() {
+    if (!this.user?.id) return;
+    
+    this.saving = true;
+    this.userService.updateUser(this.user.id, this.editUser).subscribe({
+      next: (updatedUser) => {
+        this.user = updatedUser;
+        this.authService.updateCurrentUser(updatedUser);
+        this.isEditing = false;
+        this.saving = false;
+      },
+      error: (error) => {
+        console.error('Error updating profile:', error);
+        this.saving = false;
+      }
+    });
   }
 }

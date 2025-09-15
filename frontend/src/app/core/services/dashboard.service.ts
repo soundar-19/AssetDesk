@@ -7,6 +7,7 @@ export interface DashboardStats {
   // Common stats
   totalAssets?: number;
   totalIssues?: number;
+  totalServiceRecords?: number;
   
   // Role-specific stats
   myAssets?: number;

@@ -1,0 +1,110 @@
+// Dashboard-specific compact styles
+
+// Additional compact overrides for dashboard
+.dashboard-container {
+  // Ensure consistent spacing
+  .card {
+    min-height: 200px;
+    
+    &.overview-card {
+      min-height: 150px;
+    }
+  }
+  
+  // Compact metric cards
+  .metric-card, .stat-card, .summary-card {
+    &:hover {
+      transform: translateY(-1px);
+      box-shadow: var(--shadow-sm);
+    }
+  }
+  
+  // Improved action buttons
+  .action-btn, .admin-action {
+    min-height: 60px;
+    
+    &:hover {
+      transform: translateY(-1px);
+    }
+  }
+  
+  // Better chart spacing
+  .chart-container {
+    .chart-item {
+      margin-bottom: var(--space-1-5);
+      
+      &:last-child {
+        margin-bottom: 0;
+      }
+    }
+  }
+  
+  // Compact activities
+  .activities-list {
+    max-height: 180px;
+    overflow-y: auto;
+    
+    .activity-item {
+      &:last-child {
+        margin-bottom: 0;
+      }
+    }
+  }
+  
+  // Compact issues list
+  .issues-list {
+    max-height: 180px;
+    overflow-y: auto;
+    
+    .issue-item {
+      &:last-child {
+        margin-bottom: 0;
+      }
+    }
+  }
+}
+
+// Mobile-first responsive improvements
+@media (max-width: 640px) {
+  .dashboard-container {
+    .card {
+      min-height: auto;
+    }
+    
+    .stat-card, .metric-card, .summary-card {
+      min-height: 60px;
+      padding: var(--space-2);
+      
+      .stat-icon, .metric-icon, .summary-icon {
+        width: 24px;
+        height: 24px;
+        font-size: 1rem;
+      }
+      
+      .stat-value, .metric-value, .summary-value {
+        font-size: var(--text-sm);
+      }
+    }
+    
+    .action-btn, .admin-action {
+      min-height: 50px;
+      padding: var(--space-1-5);
+      font-size: 0.625rem;
+    }
+  }
+}
+
+// Print styles for dashboard
+@media print {
+  .dashboard-container {
+    .action-btn, .admin-action {
+      display: none;
+    }
+    
+    .card {
+      break-inside: avoid;
+      box-shadow: none;
+      border: 1px solid var(--gray-300);
+    }
+  }
+}

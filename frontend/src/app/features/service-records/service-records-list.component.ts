@@ -50,7 +50,7 @@ export class ServiceRecordsListComponent implements OnInit {
     { key: 'asset', label: 'Asset', render: (record: ServiceRecord) => `${record.asset?.assetTag}<br><small>${record.asset?.name}</small>` },
     { key: 'issue', label: 'Issue', render: (record: ServiceRecord) => (record as any).issueTitle || record.description || 'No issue title' },
     { key: 'provider', label: 'Provider', render: (record: ServiceRecord) => `${record.vendor?.name || 'Internal'}<br><small>${record.performedBy || 'Not specified'}</small>` },
-    { key: 'cost', label: 'Cost', render: (record: ServiceRecord) => record.cost ? `$${record.cost.toFixed(2)}` : 'No cost' }
+    { key: 'cost', label: 'Cost', render: (record: ServiceRecord) => record.cost ? `<span class="badge badge-success">$${record.cost.toFixed(2)}</span>` : '<span class="badge badge-secondary">No cost</span>' }
   ];
 
   actions: TableAction[] = [];
@@ -407,6 +407,12 @@ export class ServiceRecordsListComponent implements OnInit {
 
   getCostByMonthArray(): { key: string, value: number }[] {
     return Object.entries(this.analytics.costByMonth).map(([key, value]) => ({ key, value: value as number }));
+  }
+
+  getBarHeight(value: number): number {
+    const monthlyValues = this.getCostByMonthArray().map(item => item.value);
+    const maxValue = Math.max(...monthlyValues);
+    return maxValue > 0 ? (value / maxValue) * 100 : 0;
   }
 
   getServiceTypeArray(): { key: string, value: number }[] {

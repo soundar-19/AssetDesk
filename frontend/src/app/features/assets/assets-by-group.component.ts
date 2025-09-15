@@ -9,6 +9,7 @@ import { Asset } from '../../core/models';
 import { DataTableComponent, TableColumn, TableAction } from '../../shared/components/data-table/data-table.component';
 import { ToastService } from '../../shared/components/toast/toast.service';
 import { AssetAllocationDialogComponent } from '../../shared/components/asset-allocation-dialog/asset-allocation-dialog.component';
+import { InputModalService } from '../../shared/components/input-modal/input-modal.service';
 
 @Component({
   selector: 'app-assets-by-group',
@@ -582,7 +583,8 @@ export class AssetsByGroupComponent implements OnInit {
     private router: Router,
     private assetService: AssetService,
     public roleService: RoleService,
-    private toastService: ToastService
+    private toastService: ToastService,
+    private inputModalService: InputModalService
   ) {}
 
   ngOnInit() {
@@ -680,8 +682,13 @@ export class AssetsByGroupComponent implements OnInit {
     // Implement group-specific export
   }
 
-  quickAllocate() {
-    const userIdStr = prompt('Enter user ID to allocate an available asset:');
+  async quickAllocate() {
+    const userIdStr = await this.inputModalService.promptNumber(
+      'Quick Allocate Asset',
+      'Enter user ID to allocate an available asset:',
+      'User ID'
+    );
+    
     if (!userIdStr) return;
     
     const userId = Number(userIdStr);
@@ -721,8 +728,13 @@ export class AssetsByGroupComponent implements OnInit {
     this.router.navigate(['/assets', id, 'edit']);
   }
 
-  allocateAsset(asset: Asset) {
-    const userIdStr = prompt('Enter user ID to allocate this asset:');
+  async allocateAsset(asset: Asset) {
+    const userIdStr = await this.inputModalService.promptNumber(
+      'Allocate Asset',
+      'Enter user ID to allocate this asset:',
+      'User ID'
+    );
+    
     if (!userIdStr) return;
     
     const userId = Number(userIdStr);

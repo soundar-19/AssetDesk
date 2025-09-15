@@ -10,6 +10,7 @@ import { AuthService } from '../../core/services/auth.service';
 import { AssetRequest, Asset } from '../../core/models';
 import { ToastService } from '../../shared/components/toast/toast.service';
 import { ConfirmDialogService } from '../../shared/components/confirm-dialog/confirm-dialog.service';
+import { InputModalService } from '../../shared/components/input-modal/input-modal.service';
 
 @Component({
   selector: 'app-asset-request-detail',
@@ -571,7 +572,8 @@ export class AssetRequestDetailComponent implements OnInit {
     public roleService: RoleService,
     private authService: AuthService,
     private toastService: ToastService,
-    private confirmDialog: ConfirmDialogService
+    private confirmDialog: ConfirmDialogService,
+    private inputModalService: InputModalService
   ) {}
 
   ngOnInit() {
@@ -664,10 +666,15 @@ export class AssetRequestDetailComponent implements OnInit {
     });
   }
 
-  rejectRequest() {
+  async rejectRequest() {
     if (!this.request) return;
 
-    const reason = prompt('Please provide a reason for rejection:');
+    const reason = await this.inputModalService.promptTextarea(
+      'Reject Request',
+      'Please provide a reason for rejection:',
+      'Enter rejection reason...'
+    );
+    
     if (reason) {
       const currentUser = this.authService.getCurrentUser();
       if (currentUser) {
@@ -724,28 +731,36 @@ export class AssetRequestDetailComponent implements OnInit {
     this.selectedAsset = asset;
   }
 
-  confirmFulfillment() {
+  async confirmFulfillment() {
     if (!this.request || !this.selectedAsset) return;
 
     const currentUser = this.authService.getCurrentUser();
     if (currentUser) {
-      const remarks = prompt('Add any remarks for the fulfillment (optional):');
+      const remarks = await this.inputModalService.promptText(
+        'Fulfill Request',
+        'Add any remarks for the fulfillment (optional):',
+        'Optional remarks...',
+        '',
+        false
+      );
       
-      this.requestService.fulfillRequest(
-        this.request.id, 
-        this.selectedAsset.id, 
-        currentUser.id, 
-        remarks || undefined
-      ).subscribe({
-        next: () => {
-          this.toastService.success('Request fulfilled successfully');
-          this.closeAssetSelector();
-          this.loadRequest(this.request!.id);
-        },
-        error: () => {
-          this.toastService.error('Failed to fulfill request');
-        }
-      });
+      if (remarks !== null) {
+        this.requestService.fulfillRequest(
+          this.request.id, 
+          this.selectedAsset.id, 
+          currentUser.id, 
+          remarks || undefined
+        ).subscribe({
+          next: () => {
+            this.toastService.success('Request fulfilled successfully');
+            this.closeAssetSelector();
+            this.loadRequest(this.request!.id);
+          },
+          error: () => {
+            this.toastService.error('Failed to fulfill request');
+          }
+        });
+      }
     }
   }
 

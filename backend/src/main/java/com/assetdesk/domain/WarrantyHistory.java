@@ -1,5 +1,6 @@
 package com.assetdesk.domain;
 
+import com.fasterxml.jackson.annotation.JsonIgnore;
 import jakarta.persistence.*;
 import lombok.Data;
 import java.time.LocalDate;
@@ -15,6 +16,7 @@ public class WarrantyHistory {
 
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "asset_id", nullable = false)
+    @JsonIgnore
     private Asset asset;
 
     private LocalDate oldExpiryDate;

@@ -1,4 +1,4 @@
-<div class="service-records-container standardized-layout">
+<div class="page-container">
   <!-- Header -->
   <div class="page-header">
     <div class="header-content">
@@ -6,9 +6,13 @@
       <p class="page-description">Comprehensive maintenance tracking and cost analysis</p>
     </div>
     <div class="header-actions">
-      <button class="btn btn-outline" (click)="exportRecords()">📊 Export</button>
-      <button class="btn btn-outline" (click)="refreshRecords()">🔄 Refresh</button>
-      <button *ngIf="roleService.canManageAssets()" class="btn btn-primary" (click)="createRecord()">
+      <button class="btn btn-outline" (click)="exportRecords()" title="Export service records">
+        📊 Export
+      </button>
+      <button class="btn btn-outline" (click)="refreshRecords()" title="Refresh data">
+        🔄 Refresh
+      </button>
+      <button *ngIf="roleService.canManageAssets()" class="btn btn-primary" (click)="createRecord()" title="Create new service record">
         + New Record
       </button>
     </div>
@@ -16,19 +20,34 @@
 
   <!-- View Mode Tabs -->
   <div class="view-tabs">
-    <button class="tab-btn" [class.active]="viewMode === 'overview'" (click)="setViewMode('overview')">
+    <button class="tab-btn" 
+            [class.active]="viewMode === 'overview'" 
+            (click)="setViewMode('overview')"
+            [attr.aria-selected]="viewMode === 'overview'"
+            role="tab">
       📊 Overview
     </button>
-    <button class="tab-btn" [class.active]="viewMode === 'records'" (click)="setViewMode('records')">
+    <button class="tab-btn" 
+            [class.active]="viewMode === 'records'" 
+            (click)="setViewMode('records')"
+            [attr.aria-selected]="viewMode === 'records'"
+            role="tab">
       📋 Records
     </button>
-    <button class="tab-btn" [class.active]="viewMode === 'assets'" (click)="setViewMode('assets')">
+    <button class="tab-btn" 
+            [class.active]="viewMode === 'assets'" 
+            (click)="setViewMode('assets')"
+            [attr.aria-selected]="viewMode === 'assets'"
+            role="tab">
       📦 By Assets
     </button>
-    <button class="tab-btn" [class.active]="viewMode === 'vendors'" (click)="setViewMode('vendors')">
+    <button class="tab-btn" 
+            [class.active]="viewMode === 'vendors'" 
+            (click)="setViewMode('vendors')"
+            [attr.aria-selected]="viewMode === 'vendors'"
+            role="tab">
       🏢 By Vendors
     </button>
-
   </div>
 
   <div *ngIf="loading" class="loading-state">
@@ -85,7 +104,7 @@
               <div *ngFor="let item of getCostByMonthArray()" class="bar-item">
                 <div class="bar-label">{{ item.key }}</div>
                 <div class="bar-container">
-                  <div class="bar-fill" [style.height.%]="(item.value / analytics.totalCost) * 100 * 6"></div>
+                  <div class="bar-fill" [style.height.%]="getBarHeight(item.value)"></div>
                 </div>
                 <div class="bar-value">{{ formatCurrency(item.value) }}</div>
               </div>
@@ -149,18 +168,16 @@
         <section class="chart-card">
           <h3 class="chart-title">Quick Actions</h3>
           <div class="quick-actions">
-            <button class="action-btn primary" (click)="createRecord()">
+            <button class="action-btn primary" (click)="createRecord()" title="Create new service record">
               📝 New Service Record
             </button>
-
-            <button class="action-btn info" (click)="exportRecords()">
+            <button class="action-btn info" (click)="exportRecords()" title="Export data to CSV">
               📊 Export CSV
             </button>
-            <button class="action-btn secondary" (click)="generateMaintenanceReport()">
+            <button class="action-btn secondary" (click)="generateMaintenanceReport()" title="Generate maintenance report">
               📋 Generate Report
             </button>
-
-            <button class="action-btn info" (click)="setViewMode('assets')">
+            <button class="action-btn info" (click)="setViewMode('assets')" title="View asset analysis">
               📦 Asset Analysis
             </button>
           </div>
@@ -170,56 +187,70 @@
 
     <!-- Records Tab -->
     <div *ngIf="viewMode === 'records'" class="records-content">
-      <!-- Filters -->
-      <div class="filters-section">
+      <!-- Professional Filters -->
+      <div class="filters-container">
+        <div class="filters-header">
+          <h3>Service Records</h3>
+          <span class="record-count">{{ serviceRecords.length }} records</span>
+        </div>
         <div class="filters-grid">
-          <select class="form-select" [(ngModel)]="serviceTypeFilter" (change)="applyFilters()">
-            <option value="">All Service Types</option>
-            <option *ngFor="let type of getUniqueServiceTypes()" [value]="type">{{ type }}</option>
-          </select>
+          <div class="filter-item">
+            <label for="serviceTypeFilter" class="sr-only">Service Type</label>
+            <select id="serviceTypeFilter" class="form-select" [(ngModel)]="serviceTypeFilter" (change)="applyFilters()">
+              <option value="">All Service Types</option>
+              <option *ngFor="let type of getUniqueServiceTypes()" [value]="type">{{ type }}</option>
+            </select>
+          </div>
           
-          <select class="form-select" [(ngModel)]="statusFilter" (change)="applyFilters()">
-            <option value="">All Statuses</option>
-            <option value="COMPLETED">Completed</option>
-            <option value="PENDING">Pending</option>
-            <option value="CANCELLED">Cancelled</option>
-          </select>
+          <div class="filter-item">
+            <label for="statusFilter" class="sr-only">Status</label>
+            <select id="statusFilter" class="form-select" [(ngModel)]="statusFilter" (change)="applyFilters()">
+              <option value="">All Statuses</option>
+              <option value="COMPLETED">Completed</option>
+              <option value="PENDING">Pending</option>
+              <option value="CANCELLED">Cancelled</option>
+            </select>
+          </div>
           
-          <select class="form-select" [(ngModel)]="vendorFilter" (change)="applyFilters()">
-            <option value="">All Vendors</option>
-            <option *ngFor="let vendor of getUniqueVendors()" [value]="vendor">{{ vendor }}</option>
-          </select>
+          <div class="filter-item">
+            <label for="vendorFilter" class="sr-only">Vendor</label>
+            <select id="vendorFilter" class="form-select" [(ngModel)]="vendorFilter" (change)="applyFilters()">
+              <option value="">All Vendors</option>
+              <option *ngFor="let vendor of getUniqueVendors()" [value]="vendor">{{ vendor }}</option>
+            </select>
+          </div>
           
-          <select class="form-select" [(ngModel)]="dateRangeFilter" (change)="applyFilters()">
-            <option value="">All Time</option>
-            <option value="week">This Week</option>
-            <option value="month">This Month</option>
-            <option value="quarter">This Quarter</option>
-            <option value="year">This Year</option>
-          </select>
+          <div class="filter-item search-item">
+            <label for="searchInput" class="sr-only">Search</label>
+            <input id="searchInput"
+                   type="text" 
+                   class="form-control" 
+                   placeholder="Search records..." 
+                   [(ngModel)]="searchTerm"
+                   (input)="onSearchChange()"
+                   autocomplete="off">
+          </div>
           
-          <input type="text" 
-                 class="form-control" 
-                 placeholder="Search records..." 
-                 [(ngModel)]="searchTerm"
-                 (input)="onSearchChange()">
-          
-          <button class="btn btn-outline btn-sm" (click)="clearFilters()" *ngIf="hasActiveFilters()">
-            Clear Filters
-          </button>
+          <div class="filter-item" *ngIf="hasActiveFilters()">
+            <button class="btn btn-secondary" (click)="clearFilters()" title="Clear all filters">
+              Clear Filters
+            </button>
+          </div>
         </div>
       </div>
 
-      <!-- Service Records Table -->
-      <div class="table-section">
-        <app-data-table
-          [data]="serviceRecords"
-          [columns]="columns"
-          [actions]="actions"
-          [pagination]="pagination"
-          [rowClickAction]="viewRecord.bind(this)"
-          (pageChange)="onPageChange($event)">
-        </app-data-table>
+      <!-- Professional Table -->
+      <div class="table-container">
+        <div class="data-table-container">
+          <app-data-table
+            [data]="serviceRecords"
+            [columns]="columns"
+            [actions]="actions"
+            [pagination]="pagination"
+            [rowClickAction]="viewRecord.bind(this)"
+            (pageChange)="onPageChange($event)">
+          </app-data-table>
+        </div>
       </div>
     </div>
 
@@ -293,6 +324,8 @@
       <div class="vendor-performance">
         <h3>Vendor Performance Analysis</h3>
         
+
+        
         <!-- Vendor Summary Stats -->
         <div class="vendor-summary-stats">
           <div class="summary-stat">
@@ -307,27 +340,14 @@
             <div class="stat-value">{{ getAvgCompletionRate().toFixed(1) }}%</div>
             <div class="stat-label">Avg Completion Rate</div>
           </div>
-          <div class="summary-stat">
-            <div class="stat-value">{{ getAvgVendorRating().toFixed(1) }}</div>
-            <div class="stat-label">Avg Rating</div>
-          </div>
+
         </div>
         
         <!-- Detailed Vendor Cards -->
         <div class="vendor-stats" *ngIf="getVendorAnalytics().length > 0">
           <div *ngFor="let vendor of getVendorAnalytics()" class="vendor-card detailed">
             <div class="vendor-header">
-              <div class="vendor-title">
-                <h4>{{ vendor.name }}</h4>
-                <div class="vendor-rating">
-                  <span class="rating-stars">
-                    <span *ngFor="let star of [1,2,3,4,5]" 
-                          class="star" 
-                          [class.filled]="star <= vendor.rating">★</span>
-                  </span>
-                  <span class="rating-value">({{ vendor.rating.toFixed(1) }})</span>
-                </div>
-              </div>
+              <h4>{{ vendor.name }}</h4>
               <div class="vendor-total">
                 <span class="total-cost">{{ formatCurrency(vendor.totalCost) }}</span>
                 <span class="cost-label">Total Cost</span>

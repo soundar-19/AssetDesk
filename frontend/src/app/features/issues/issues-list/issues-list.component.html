@@ -1,48 +1,68 @@
-<main class="issues-list standardized-layout" role="main">
-  <header class="header">
-    <div class="header-content">
-      <p class="header-description">Manage and track support issues</p>
+<div class="page-container">
+  <div class="page-header">
+    <div>
+      <h1 class="page-title">Issues</h1>
+      <p class="page-description">Manage and track support issues</p>
     </div>
     <div class="header-actions">
-      <button class="btn btn-primary" (click)="createIssue()" [attr.aria-label]="'Create new issue'">
-        <svg width="16" height="16" viewBox="0 0 20 20" fill="currentColor" aria-hidden="true">
-          <path fill-rule="evenodd" d="M10 3a1 1 0 011 1v5h5a1 1 0 110 2h-5v5a1 1 0 11-2 0v-5H4a1 1 0 110-2h5V4a1 1 0 011-1z"/>
-        </svg>
-        Report Issue
+      <button class="btn btn-outline" (click)="loadIssues()">
+        🔄 Refresh
+      </button>
+      <button class="btn btn-primary" (click)="createIssue()">
+        + New Issue
       </button>
     </div>
-  </header>
+  </div>
 
-  <app-search-filter
-    searchPlaceholder="Search issues by title, description, asset, or reporter..."
-    [filterOptions]="filterOptions"
-    (search)="onSearch($event)"
-    (filtersChange)="onFiltersChange($event)">
-  </app-search-filter>
-
-  <section class="additional-filters" aria-label="Additional filter options">
-    <div class="filter-group">
-      <label class="checkbox-label">
-        <input type="checkbox" [(ngModel)]="showClosedIssues" (change)="toggleClosedIssues()" aria-describedby="closedIssuesHelp">
-        Show Closed Issues
-      </label>
-      <span id="closedIssuesHelp" class="help-text">Include resolved and closed issues in the list</span>
+  <!-- Table Section with Filters -->
+  <div class="table-section">
+    <!-- Filters -->
+    <div class="filters-section">
+      <div class="filters">
+        <select class="form-select" [(ngModel)]="statusFilter" (change)="onStatusFilterChange()">
+          <option value="">All Statuses</option>
+          <option value="OPEN">Open</option>
+          <option value="IN_PROGRESS">In Progress</option>
+          <option value="RESOLVED">Resolved</option>
+          <option value="CLOSED">Closed</option>
+        </select>
+        
+        <input type="text" 
+               class="form-control" 
+               placeholder="Search issues..." 
+               [(ngModel)]="searchTerm"
+               (input)="onSearch(searchTerm)">
+               
+        <label class="checkbox-label">
+          <input type="checkbox" [(ngModel)]="showClosedIssues" (change)="toggleClosedIssues()">
+          Show Closed
+        </label>
+      </div>
     </div>
-  </section>
 
-  <section class="issues-container" aria-label="Issues list">
-    <app-data-table
-      [data]="issues"
-      [columns]="columns"
-      [actions]="actions"
-      [pagination]="pagination"
-      [sortColumn]="sortColumn"
-      [sortDirection]="sortDirection"
-      [rowClickAction]="viewIssue.bind(this)"
-      (pageChange)="onPageChange($event)"
-      (sort)="onSort($event)"
-      role="table"
-      [attr.aria-label]="'Issues table with ' + (pagination?.totalElements || 0) + ' total issues'">
-    </app-data-table>
-  </section>
-</main>
+    <!-- Issues Table -->
+    <div class="data-table-container" *ngIf="issues.length > 0">
+      <app-data-table
+        [data]="issues"
+        [columns]="columns"
+        [actions]="actions"
+        [pagination]="pagination"
+        [sortColumn]="sortColumn"
+        [sortDirection]="sortDirection"
+        [rowClickAction]="viewIssue.bind(this)"
+        (pageChange)="onPageChange($event)"
+        (sort)="onSort($event)">
+      </app-data-table>
+    </div>
+
+    <!-- Empty State -->
+    <div *ngIf="issues.length === 0" class="empty-state">
+      <div class="empty-icon">🎫</div>
+      <h3>No issues found</h3>
+      <p>No support issues have been reported yet.</p>
+      <button class="btn btn-primary" (click)="createIssue()">
+        Report First Issue
+      </button>
+    </div>
+  </div>
+</div>

@@ -52,4 +52,34 @@ export class ServiceRecordService {
     }
     return this.api.delete<void>(`${this.endpoint}/${id}`);
   }
+
+  exportToCsv(filters?: any): Observable<Blob> {
+    const params = new URLSearchParams();
+    if (filters) {
+      Object.keys(filters).forEach(key => {
+        const value = filters[key];
+        if (value !== null && value !== undefined && value !== '') {
+          params.append(key, value.toString());
+        }
+      });
+    }
+    const queryString = params.toString();
+    const url = queryString ? `${this.endpoint}/export/csv?${queryString}` : `${this.endpoint}/export/csv`;
+    return this.api.getBlob(url);
+  }
+
+  exportToPdf(filters?: any): Observable<Blob> {
+    const params = new URLSearchParams();
+    if (filters) {
+      Object.keys(filters).forEach(key => {
+        const value = filters[key];
+        if (value !== null && value !== undefined && value !== '') {
+          params.append(key, value.toString());
+        }
+      });
+    }
+    const queryString = params.toString();
+    const url = queryString ? `${this.endpoint}/export/pdf?${queryString}` : `${this.endpoint}/export/pdf`;
+    return this.api.getBlob(url);
+  }
 }

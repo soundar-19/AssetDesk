@@ -16,10 +16,12 @@ public class VendorRequestDTO {
     @Email(message = "Invalid email format")
     private String email;
     
-    @Pattern(regexp = "^\\+?[1-9]\\d{1,14}$", message = "Invalid phone number format")
+    @Pattern(regexp = "^[\\+]?[0-9\\s\\-\\(\\)\\.\\_A-Za-z]{0,20}$", message = "Invalid phone number format")
     private String phoneNumber;
     
     private String address;
+    
+    private Vendor.Status status;
     
     public Vendor toEntity() {
         Vendor vendor = new Vendor();
@@ -28,6 +30,7 @@ public class VendorRequestDTO {
         vendor.setEmail(this.email);
         vendor.setPhoneNumber(this.phoneNumber);
         vendor.setAddress(this.address);
+        vendor.setStatus(this.status != null ? this.status : Vendor.Status.ACTIVE);
         return vendor;
     }
 }

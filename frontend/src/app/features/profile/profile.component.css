@@ -1,6 +1,6 @@
 .standardized-layout {
-  padding: var(--space-6) var(--space-6) var(--space-6) var(--space-6);
-  max-width: 800px;
+  padding: var(--space-4);
+  max-width: 600px;
   margin: 0 auto;
   min-height: 100vh;
   box-sizing: border-box;
@@ -11,7 +11,7 @@
 }
 
 .header {
-  margin-bottom: var(--space-8);
+  margin-bottom: var(--space-4);
   text-align: center;
 }
 
@@ -41,23 +41,23 @@
 
 .profile-header {
   background: linear-gradient(135deg, var(--primary-50), var(--primary-100));
-  padding: var(--space-8);
+  padding: var(--space-6);
   text-align: center;
   border-bottom: 1px solid var(--primary-200);
 }
 
 .profile-avatar {
-  width: 120px;
-  height: 120px;
+  width: 80px;
+  height: 80px;
   border-radius: var(--radius-full);
   background: var(--primary-600);
   color: white;
   display: flex;
   align-items: center;
   justify-content: center;
-  font-size: var(--text-4xl);
+  font-size: var(--text-2xl);
   font-weight: var(--font-bold);
-  margin: 0 auto var(--space-4);
+  margin: 0 auto var(--space-3);
   box-shadow: var(--shadow-lg);
 }
 
@@ -75,13 +75,13 @@
 }
 
 .profile-info {
-  padding: var(--space-8);
+  padding: var(--space-6);
 }
 
 .info-grid {
   display: grid;
   grid-template-columns: 1fr;
-  gap: var(--space-6);
+  gap: var(--space-4);
   
   @media (min-width: 640px) {
     grid-template-columns: 1fr 1fr;
@@ -115,7 +115,7 @@
 }
 
 .profile-actions {
-  padding: var(--space-6) var(--space-8);
+  padding: var(--space-4) var(--space-6);
   border-top: 1px solid var(--gray-200);
   background-color: var(--gray-25);
   display: flex;
@@ -144,6 +144,22 @@
   background-color: var(--error-100);
   color: var(--error-700);
   border: 1px solid var(--error-200);
+}
+
+.form-input {
+  width: 100%;
+  padding: var(--space-2);
+  border: 1px solid var(--gray-300);
+  border-radius: var(--radius-md);
+  font-size: var(--text-base);
+  color: var(--gray-900);
+  background-color: white;
+}
+
+.form-input:focus {
+  outline: none;
+  border-color: var(--primary-500);
+  box-shadow: 0 0 0 3px var(--primary-100);
 }
 
 @media (max-width: 1024px) {
