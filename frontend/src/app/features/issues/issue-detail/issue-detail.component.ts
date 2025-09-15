@@ -7,11 +7,12 @@ import { AssetService } from '../../../core/services/asset.service';
 import { Issue, Asset } from '../../../core/models';
 import { AuthService } from '../../../core/services/auth.service';
 import { ToastService } from '../../../shared/components/toast/toast.service';
+import { IssueChatComponent } from '../issue-chat/issue-chat.component';
 
 @Component({
   selector: 'app-issue-detail',
   standalone: true,
-  imports: [CommonModule, FormsModule],
+  imports: [CommonModule, FormsModule, IssueChatComponent],
   template: `
     <div class="issue-detail" *ngIf="issue">
       <div class="header">
@@ -26,8 +27,9 @@ import { ToastService } from '../../../shared/components/toast/toast.service';
           <button class="btn btn-secondary" (click)="goBack()">
             <i class="icon-arrow-left"></i> Back
           </button>
+
           <button *ngIf="canAssign()" class="btn btn-primary" (click)="assignIssue()">
-            <i class="icon-user"></i> Assign
+            <i class="icon-play"></i> Start Work
           </button>
           <button *ngIf="canResolve()" class="btn btn-success" (click)="resolveIssue()">
             <i class="icon-check"></i> Resolve
@@ -43,7 +45,7 @@ import { ToastService } from '../../../shared/components/toast/toast.service';
           <div class="tabs">
             <button class="tab" [class.active]="activeTab === 'overview'" (click)="setActiveTab('overview')">Overview</button>
             <button class="tab" [class.active]="activeTab === 'messages'" (click)="setActiveTab('messages')">Messages</button>
-            <button class="tab" [class.active]="activeTab === 'history'" (click)="setActiveTab('history')">History</button>
+            <button *ngIf="!isEmployee()" class="tab" [class.active]="activeTab === 'history'" (click)="setActiveTab('history')">History</button>
           </div>
 
           <div class="tab-content">
@@ -67,7 +69,10 @@ import { ToastService } from '../../../shared/components/toast/toast.service';
                     </div>
                     <div class="info-item">
                       <label>Assigned To:</label>
-                      <span>{{ issue.assignedToName || 'Unassigned' }}</span>
+                      <span class="assigned-info">
+                        <span class="assigned-name">{{ issue.assignedToName || 'Unassigned' }}</span>
+                        <span *ngIf="issue.assignedToName" class="assigned-status">• Solving</span>
+                      </span>
                     </div>
                     <div class="info-item">
                       <label>Reported Date:</label>
@@ -83,6 +88,9 @@ import { ToastService } from '../../../shared/components/toast/toast.service';
                 <div class="info-section" *ngIf="relatedAsset">
                   <h3><i class="icon-monitor"></i> Related Asset</h3>
                   <div class="asset-card">
+                    <div class="asset-icon">
+                      <span class="icon">{{ getAssetIcon(relatedAsset.type) }}</span>
+                    </div>
                     <div class="asset-info">
                       <div class="asset-name">{{ relatedAsset.name }}</div>
                       <div class="asset-details">{{ relatedAsset.assetTag }} • {{ relatedAsset.category }}</div>
@@ -116,25 +124,20 @@ import { ToastService } from '../../../shared/components/toast/toast.service';
             </div>
 
             <!-- Messages Tab -->
-            <div *ngIf="activeTab === 'messages'" class="tab-panel">
-              <div class="section-header">
-                <h3><i class="icon-message-circle"></i> Messages</h3>
-                <button class="btn btn-primary" (click)="goToMessages()">
-                  <i class="icon-external-link"></i> View Messages
-                </button>
-              </div>
-              <div class="empty-state">
-                <i class="icon-message-circle"></i>
-                <h4>Issue Messages</h4>
-                <p>View and manage messages related to this issue in the dedicated messages section.</p>
-                <button class="btn btn-primary" (click)="goToMessages()">
-                  <i class="icon-external-link"></i> Go to Messages
-                </button>
+            <div *ngIf="activeTab === 'messages'" class="tab-panel messages-tab">
+              <div class="chat-container" [class.fullscreen]="isFullscreen">
+                <div class="chat-header">
+                  <button class="fullscreen-btn" (click)="toggleFullscreen()">
+                    <span *ngIf="!isFullscreen">⛶</span>
+                    <span *ngIf="isFullscreen">⛶</span>
+                  </button>
+                </div>
+                <app-issue-chat [issueId]="issue.id"></app-issue-chat>
               </div>
             </div>
 
             <!-- History Tab -->
-            <div *ngIf="activeTab === 'history'" class="tab-panel">
+            <div *ngIf="activeTab === 'history' && !isEmployee()" class="tab-panel">
               <div class="section-header">
                 <h3><i class="icon-clock"></i> Issue History</h3>
               </div>
@@ -177,8 +180,8 @@ import { ToastService } from '../../../shared/components/toast/toast.service';
             <button class="action-btn" *ngIf="canClose()" (click)="closeIssue()">
               <i class="icon-x"></i> Close Issue
             </button>
-            <button class="action-btn" (click)="goToMessages()">
-              <i class="icon-message-circle"></i> View Messages
+            <button class="action-btn" (click)="printIssue()">
+              <i class="icon-printer"></i> Print Issue
             </button>
             <button class="action-btn" *ngIf="relatedAsset" (click)="viewAsset()">
               <i class="icon-monitor"></i> View Asset
@@ -427,6 +430,29 @@ import { ToastService } from '../../../shared/components/toast/toast.service';
       background: white; 
       border-radius: var(--radius-md); 
       border: 1px solid var(--gray-200);
+    }
+
+    .asset-icon {
+      width: 48px;
+      height: 48px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      background: var(--gray-100);
+      border-radius: var(--radius-md);
+      font-size: 1.5rem;
+    }
+
+    .assigned-info {
+      display: flex;
+      align-items: center;
+      gap: var(--space-2);
+    }
+
+    .assigned-status {
+      color: var(--success-600);
+      font-size: 0.75rem;
+      font-weight: 500;
     }
     
     .asset-info { 
@@ -770,12 +796,58 @@ import { ToastService } from '../../../shared/components/toast/toast.service';
         grid-template-columns: 1fr;
       }
     }
+
+    .messages-tab {
+      padding: 0 !important;
+    }
+
+    .chat-container {
+      height: 600px;
+      border-radius: var(--radius-md);
+      overflow: hidden;
+      position: relative;
+    }
+
+    .chat-container.fullscreen {
+      position: fixed;
+      top: 80px;
+      left: 280px;
+      right: 0;
+      bottom: 0;
+      z-index: 1000;
+      border-radius: 0;
+      background: white;
+      height: auto;
+    }
+
+    .chat-header {
+      position: absolute;
+      top: 0.5rem;
+      right: 0.5rem;
+      z-index: 10;
+    }
+
+    .fullscreen-btn {
+      background: rgba(0, 0, 0, 0.1);
+      border: none;
+      border-radius: 4px;
+      padding: 0.5rem;
+      cursor: pointer;
+      font-size: 1rem;
+      color: #666;
+      transition: background 0.2s;
+    }
+
+    .fullscreen-btn:hover {
+      background: rgba(0, 0, 0, 0.2);
+    }
   `]
 })
 export class IssueDetailComponent implements OnInit {
   issue: Issue | null = null;
   relatedAsset: Asset | null = null;
   activeTab = 'overview';
+  isFullscreen = false;
 
   constructor(
     private route: ActivatedRoute,
@@ -847,7 +919,10 @@ export class IssueDetailComponent implements OnInit {
   }
 
   canAssign(): boolean {
-    return this.authService.isAdmin() && this.issue?.status !== 'RESOLVED' && !this.issue?.assignedToName;
+    const user = this.authService.getCurrentUser();
+    return user?.role === 'IT_SUPPORT' && 
+           this.issue?.status === 'OPEN' && 
+           !this.issue?.assignedToName;
   }
 
   canResolve(): boolean {
@@ -864,21 +939,56 @@ export class IssueDetailComponent implements OnInit {
   }
 
   assignIssue() {
-    this.router.navigate(['/issues', this.issue?.id, 'assign']);
+    if (this.issue) {
+      const user = this.authService.getCurrentUser();
+      if (user?.role === 'IT_SUPPORT') {
+        const issueId = this.issue.id;
+        console.log('=== FRONTEND ASSIGN DEBUG ===');
+        console.log('Issue ID:', issueId);
+        console.log('User ID:', user.id);
+        console.log('User Name:', user.name);
+        console.log('Current issue assigned to:', this.issue.assignedToName);
+        
+        // Backend assignIssue already updates status to IN_PROGRESS
+        this.issueService.assignIssue(issueId, user.id).subscribe({
+          next: (updatedIssue) => {
+            console.log('Response from backend:', updatedIssue);
+            console.log('Updated issue assigned to name:', updatedIssue.assignedToName);
+            console.log('Updated issue assigned to ID:', updatedIssue.assignedToId);
+            
+            this.issue = updatedIssue;
+            console.log('Frontend issue after assignment:', this.issue.assignedToName);
+            
+            this.toastService.success('Issue assigned and status updated to In Progress');
+          },
+          error: (error) => {
+            console.error('Assignment error:', error);
+            this.toastService.error('Failed to assign issue');
+          }
+        });
+      }
+    }
   }
 
   resolveIssue() {
-    const resolutionNotes = prompt('Enter resolution notes:');
-    if (resolutionNotes && this.issue) {
-      this.issueService.resolveIssue(this.issue.id, resolutionNotes).subscribe({
-        next: () => {
-          this.toastService.success('Issue resolved successfully');
-          this.loadIssue(this.issue!.id);
-        },
-        error: (error) => {
-          this.toastService.error(error.error?.message || 'Failed to resolve issue');
-        }
-      });
+    if (this.issue) {
+      const resolutionNotes = prompt('Enter resolution notes:');
+      if (resolutionNotes) {
+        const costStr = prompt('Enter approximate cost (optional):');
+        const cost = costStr ? parseFloat(costStr) : undefined;
+        
+        this.issueService.resolveIssueWithCost(this.issue.id, resolutionNotes, cost).subscribe({
+          next: () => {
+            this.toastService.success('Issue resolved successfully');
+            if (this.issue) {
+              this.loadIssue(this.issue.id);
+            }
+          },
+          error: (error) => {
+            this.toastService.error(error.error?.message || 'Failed to resolve issue');
+          }
+        });
+      }
     }
   }
 
@@ -897,8 +1007,8 @@ export class IssueDetailComponent implements OnInit {
     }
   }
 
-  goToMessages() {
-    this.router.navigate(['/messages']);
+  printIssue() {
+    window.print();
   }
 
   viewAsset() {
@@ -909,5 +1019,42 @@ export class IssueDetailComponent implements OnInit {
 
   goBack() {
     this.router.navigate(['/issues']);
+  }
+
+  isITSupport(): boolean {
+    const user = this.authService.getCurrentUser();
+    return user?.role === 'IT_SUPPORT' || user?.role === 'ADMIN';
+  }
+
+  isEmployee(): boolean {
+    const user = this.authService.getCurrentUser();
+    return user?.role === 'EMPLOYEE';
+  }
+
+  toggleFullscreen() {
+    this.isFullscreen = !this.isFullscreen;
+  }
+
+
+
+  getAssetIcon(type: string): string {
+    const icons: { [key: string]: string } = {
+      'LAPTOP': '💻',
+      'DESKTOP': '🖥️',
+      'MONITOR': '🖥️',
+      'KEYBOARD': '⌨️',
+      'MOUSE': '🖱️',
+      'PRINTER': '🖨️',
+      'PHONE': '📱',
+      'TABLET': '📱',
+      'SERVER': '🖥️',
+      'ROUTER': '📡',
+      'SWITCH': '📡',
+      'CABLE': '🔌',
+      'HEADSET': '🎧',
+      'WEBCAM': '📹',
+      'SPEAKER': '🔊'
+    };
+    return icons[type?.toUpperCase()] || '📦';
   }
 }

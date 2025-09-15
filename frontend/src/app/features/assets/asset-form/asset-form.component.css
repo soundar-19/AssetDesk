@@ -88,7 +88,7 @@
   }
 }
 
-// Enhanced Select Styling
+/* Enhanced Select Styling */
 select.form-control {
   background-image: url("data:image/svg+xml,%3csvg xmlns='http://www.w3.org/2000/svg' fill='none' viewBox='0 0 20 20'%3e%3cpath stroke='%236b7280' stroke-linecap='round' stroke-linejoin='round' stroke-width='1.5' d='m6 8 4 4 4-4'/%3e%3c/svg%3e");
   background-position: right var(--space-3) center;
@@ -102,14 +102,14 @@ select.form-control {
   }
 }
 
-// Enhanced Textarea
+/* Enhanced Textarea */
 textarea.form-control {
   resize: vertical;
   min-height: 100px;
   line-height: var(--leading-relaxed);
 }
 
-// Input with Icon
+/* Input with Icon */
 .input-with-icon {
   position: relative;
   
@@ -159,7 +159,7 @@ textarea.form-control {
   }
 }
 
-// Enhanced Loading Spinner
+/* Enhanced Loading Spinner */
 .loading-spinner {
   display: inline-block;
   width: 16px;
@@ -171,7 +171,7 @@ textarea.form-control {
   margin-right: var(--space-2);
 }
 
-// Form Validation States
+/* Form Validation States */
 .form-group.has-error {
   .form-control {
     border-color: var(--error-500);
@@ -198,7 +198,7 @@ textarea.form-control {
   }
 }
 
-// Field Groups
+/* Field Groups */
 .field-group {
   padding: var(--space-6);
   border: 1px solid var(--gray-200);
@@ -223,7 +223,7 @@ textarea.form-control {
   }
 }
 
-// Conditional Fields Animation
+/* Conditional Fields Animation */
 .conditional-field {
   overflow: hidden;
   transition: all var(--transition-normal);
@@ -253,7 +253,7 @@ textarea.form-control {
   }
 }
 
-// Form Progress Indicator
+/* Form Progress Indicator */
 .form-progress {
   display: flex;
   align-items: center;
@@ -275,7 +275,7 @@ textarea.form-control {
   }
 }
 
-// Responsive Form Layout
+/* Responsive Form Layout */
 @media (max-width: 640px) {
   .form {
     gap: var(--space-4);
@@ -309,13 +309,13 @@ textarea.form-control {
   }
 }
 
-// Focus Management
+/* Focus Management */
 .form-control:focus-visible {
   outline: 2px solid var(--primary-500);
   outline-offset: 2px;
 }
 
-// High Contrast Mode Support
+/* High Contrast Mode Support */
 @media (prefers-contrast: high) {
   .form-control {
     border-width: 2px;
@@ -330,7 +330,7 @@ textarea.form-control {
   }
 }
 
-// Reduced Motion Support
+/* Reduced Motion Support */
 @media (prefers-reduced-motion: reduce) {
   .form-control,
   .loading-spinner,

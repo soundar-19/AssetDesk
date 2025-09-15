@@ -12,12 +12,21 @@ import { NotificationService } from '../../../core/services/notification.service
   template: `
     <header class="topbar">
       <div class="topbar-left">
-        <button class="sidebar-toggle" (click)="toggleSidebar()">
-          <svg width="20" height="20" viewBox="0 0 20 20" fill="currentColor">
-            <path fill-rule="evenodd" d="M3 5a1 1 0 011-1h12a1 1 0 110 2H4a1 1 0 01-1-1zM3 10a1 1 0 011-1h12a1 1 0 110 2H4a1 1 0 01-1-1zM3 15a1 1 0 011-1h12a1 1 0 110 2H4a1 1 0 01-1-1z"/>
-          </svg>
-        </button>
-        <h1 class="page-title">{{ getPageTitle() }}</h1>
+        <div class="page-info">
+          <button *ngIf="isOnChatPage()" class="back-btn" (click)="goBack()">
+            <svg width="20" height="20" viewBox="0 0 20 20" fill="currentColor">
+              <path fill-rule="evenodd" d="M9.707 16.707a1 1 0 01-1.414 0l-6-6a1 1 0 010-1.414l6-6a1 1 0 011.414 1.414L5.414 9H17a1 1 0 110 2H5.414l4.293 4.293a1 1 0 010 1.414z"/>
+            </svg>
+          </button>
+          <div class="title-section">
+            <h1 class="page-title">{{ getPageTitle() }}</h1>
+            <div *ngIf="isOnChatPage()" class="chat-meta">
+              <span class="asset-tag">LAP001</span>
+              <span class="status-badge status-open">OPEN</span>
+              <span class="priority-badge priority-medium">MEDIUM</span>
+            </div>
+          </div>
+        </div>
       </div>
       <div class="topbar-right">
         <button class="notification-btn" (click)="openNotifications()">
@@ -69,11 +78,41 @@ import { NotificationService } from '../../../core/services/notification.service
       color: var(--gray-500);
       cursor: pointer;
       transition: all var(--transition-fast);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      min-width: 40px;
+      height: 40px;
 
       &:hover {
         background-color: var(--gray-100);
         color: var(--gray-700);
       }
+    }
+
+    .page-info {
+      display: flex;
+      align-items: center;
+      gap: var(--space-3);
+    }
+
+    .back-btn {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      width: 40px;
+      height: 40px;
+      border: none;
+      background: var(--gray-100);
+      border-radius: var(--radius-full);
+      color: var(--gray-600);
+      cursor: pointer;
+      transition: all var(--transition-fast);
+    }
+
+    .back-btn:hover {
+      background: var(--gray-200);
+      color: var(--gray-900);
     }
 
     .page-title {
@@ -82,6 +121,39 @@ import { NotificationService } from '../../../core/services/notification.service
       color: var(--gray-900);
       margin: 0;
     }
+
+    .chat-meta {
+      display: flex;
+      align-items: center;
+      gap: var(--space-3);
+      margin-top: var(--space-1);
+    }
+
+    .asset-tag {
+      font-size: 0.875rem;
+      color: var(--gray-600);
+      font-family: monospace;
+      background: var(--gray-100);
+      padding: 0.25rem 0.5rem;
+      border-radius: 4px;
+    }
+
+    .status-badge, .priority-badge {
+      padding: 0.25rem 0.5rem;
+      border-radius: var(--radius-full);
+      font-size: 0.75rem;
+      font-weight: 500;
+      text-transform: uppercase;
+    }
+
+    .status-open { background: #dbeafe; color: #1e40af; }
+    .status-in_progress { background: #fef3c7; color: #92400e; }
+    .status-resolved { background: #dcfce7; color: #166534; }
+    .status-closed { background: #f3f4f6; color: #374151; }
+
+    .priority-low { background: #dcfce7; color: #166534; }
+    .priority-medium { background: #fef3c7; color: #92400e; }
+    .priority-high { background: #fee2e2; color: #991b1b; }
 
     .notification-btn {
       position: relative;
@@ -172,6 +244,61 @@ import { NotificationService } from '../../../core/services/notification.service
         color: var(--gray-700);
       }
     }
+    
+    @media (max-width: 1024px) {
+      .topbar {
+        padding: 0 var(--space-4);
+      }
+      
+      .page-title {
+        font-size: 1.25rem;
+      }
+    }
+    
+    @media (max-width: 768px) {
+      .topbar {
+        height: 60px;
+        padding: 0 var(--space-3);
+      }
+      
+      .topbar-left {
+        gap: var(--space-2);
+      }
+      
+      .page-title {
+        font-size: 1.125rem;
+      }
+      
+      .user-info {
+        display: none;
+      }
+      
+      .chat-meta {
+        flex-wrap: wrap;
+        gap: var(--space-2);
+      }
+    }
+    
+    @media (max-width: 480px) {
+      .topbar {
+        height: 56px;
+        padding: 0 var(--space-2);
+      }
+      
+      .page-title {
+        font-size: 1rem;
+      }
+      
+      .topbar-right {
+        gap: var(--space-2);
+      }
+      
+      .user-avatar {
+        width: 32px;
+        height: 32px;
+        font-size: 0.75rem;
+      }
+    }
   `]
 })
 export class AppHeaderComponent implements OnInit {
@@ -210,6 +337,10 @@ export class AppHeaderComponent implements OnInit {
     if (route.includes('/assets/edit')) return 'Edit Asset';
     if (route.includes('/assets/')) return 'Asset Details';
     if (route.includes('/issues/new')) return 'Report Issue';
+    if (route.includes('/issues/') && route.includes('/chat')) {
+      // Get issue title from a service or component communication
+      return this.getChatIssueTitle() || 'Issue Chat';
+    }
     if (route.includes('/issues/')) return 'Issue Details';
     if (route.includes('/users/new')) return 'Add User';
     if (route.includes('/users/edit')) return 'Edit User';
@@ -252,5 +383,19 @@ export class AppHeaderComponent implements OnInit {
   logout() {
     this.authService.logout();
     this.router.navigate(['/login']);
+  }
+
+  isOnChatPage(): boolean {
+    return this.router.url.includes('/issues/') && this.router.url.includes('/chat');
+  }
+
+  goBack() {
+    this.router.navigate(['/issues']);
+  }
+
+  getChatIssueTitle(): string {
+    // Get issue title from URL or service - simplified approach
+    const issueId = this.router.url.match(/\/issues\/(\d+)\/chat/)?.[1];
+    return issueId ? `Issue #${issueId}` : 'Issue Chat';
   }
 }

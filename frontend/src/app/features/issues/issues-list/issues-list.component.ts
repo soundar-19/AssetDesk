@@ -257,7 +257,10 @@ export class IssuesListComponent implements OnInit {
   }
 
   viewIssueDetails(issue: Issue) {
-    if (issue.status === 'IN_PROGRESS' && (this.isITSupport() || this.isIssueReporter(issue))) {
+    const currentUser = this.authService.getCurrentUser();
+    if (currentUser?.role === 'EMPLOYEE') {
+      this.router.navigate(['/issues', issue.id]);
+    } else if (issue.status === 'IN_PROGRESS' && this.isITSupport()) {
       this.router.navigate(['/issues', issue.id, 'chat']);
     } else {
       this.router.navigate(['/issues', issue.id]);
@@ -268,15 +271,24 @@ export class IssuesListComponent implements OnInit {
 
   startWork(id: number) {
     const currentUser = this.authService.getCurrentUser();
-    this.issueService.updateIssueStatus(id, 'IN_PROGRESS', currentUser?.id).subscribe({
-      next: () => {
+    console.log('=== START WORK DEBUG ===');
+    console.log('Issue ID:', id);
+    console.log('Current User:', currentUser);
+    
+    // First assign the issue to the current user
+    this.issueService.assignIssue(id, currentUser?.id || 0).subscribe({
+      next: (updatedIssue) => {
+        console.log('Issue assigned successfully:', updatedIssue);
+        console.log('Assigned to name:', updatedIssue.assignedToName);
+        
         this.toastService.success('Issue assigned to you and status changed to In Progress');
         // Send notification to issue reporter
         this.issueService.sendIssueNotification(id, 'Issue In Progress', 
           'Your issue is now being worked on by IT Support.', 'ISSUE_UPDATED').subscribe();
         this.loadIssues();
       },
-      error: () => {
+      error: (error) => {
+        console.error('Failed to assign issue:', error);
         this.toastService.error('Failed to start work on issue');
       }
     });
@@ -299,7 +311,10 @@ export class IssuesListComponent implements OnInit {
   resolveIssue(id: number) {
     const resolutionNotes = prompt('Enter resolution notes:');
     if (resolutionNotes) {
-      this.issueService.resolveIssue(id, resolutionNotes).subscribe({
+      const costStr = prompt('Enter approximate cost (optional):');
+      const cost = costStr ? parseFloat(costStr) : undefined;
+      
+      this.issueService.resolveIssueWithCost(id, resolutionNotes, cost).subscribe({
         next: () => {
           this.toastService.success('Issue resolved successfully');
           // Send notification to issue reporter

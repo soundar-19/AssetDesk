@@ -114,7 +114,7 @@ public class IssueServiceImpl implements IssueService {
     @Override
     @Transactional(readOnly = true)
     public Page<IssueResponseDTO> getIssuesByReportedBy(Long userId, Pageable pageable) {
-        return issueRepository.findByReportedByIdExcludingClosed(userId, pageable)
+        return issueRepository.findByReportedById(userId, pageable)
             .map(IssueResponseDTO::fromEntity);
     }
     
@@ -156,14 +156,32 @@ public class IssueServiceImpl implements IssueService {
     
     @Override
     public IssueResponseDTO assignIssue(Long issueId, Long assignedToId) {
+        System.out.println("=== ASSIGN ISSUE DEBUG ===");
+        System.out.println("Issue ID: " + issueId + ", Assigned To ID: " + assignedToId);
+        
         Issue issue = issueRepository.findById(issueId)
             .orElseThrow(() -> new ResourceNotFoundException("Issue", "id", issueId));
         
-        issue.setAssignedTo(userRepository.findById(assignedToId)
-            .orElseThrow(() -> new ResourceNotFoundException("User", "id", assignedToId)));
+        System.out.println("Found issue: " + issue.getTitle());
+        System.out.println("Current assigned to: " + (issue.getAssignedTo() != null ? issue.getAssignedTo().getName() : "null"));
+        
+        var assignedUser = userRepository.findById(assignedToId)
+            .orElseThrow(() -> new ResourceNotFoundException("User", "id", assignedToId));
+        
+        System.out.println("Found user to assign: " + assignedUser.getName());
+        
+        issue.setAssignedTo(assignedUser);
         issue.setStatus(Issue.Status.IN_PROGRESS);
         
+        System.out.println("Before save - assigned to: " + issue.getAssignedTo().getName());
+        
         Issue updatedIssue = issueRepository.save(issue);
+        
+        System.out.println("After save - assigned to: " + (updatedIssue.getAssignedTo() != null ? updatedIssue.getAssignedTo().getName() : "null"));
+        
+        IssueResponseDTO dto = IssueResponseDTO.fromEntity(updatedIssue);
+        System.out.println("DTO assigned to name: " + dto.getAssignedToName());
+        System.out.println("DTO assigned to ID: " + dto.getAssignedToId());
         
         // Create notification for assignment
         try {
@@ -179,7 +197,7 @@ public class IssueServiceImpl implements IssueService {
             System.out.println("Failed to create assignment notification: " + e.getMessage());
         }
         
-        return IssueResponseDTO.fromEntity(updatedIssue);
+        return dto;
     }
     
     @Override
@@ -230,9 +248,65 @@ public class IssueServiceImpl implements IssueService {
             serviceRecord.setServiceDate(resolvedIssue.getResolvedAt().toLocalDate());
             serviceRecord.setServiceDescription("Issue resolved: " + resolvedIssue.getTitle() + 
                 (resolutionNotes != null ? ". Resolution: " + resolutionNotes : ""));
+            serviceRecord.setServiceType("ISSUE_RESOLUTION");
+            serviceRecord.setPerformedBy(resolvedIssue.getAssignedTo() != null ? resolvedIssue.getAssignedTo().getName() : "IT Support");
+            serviceRecord.setStatus("COMPLETED");
+            serviceRecord.setNotes("Resolved issue ID: " + resolvedIssue.getId());
             serviceRecordRepository.save(serviceRecord);
         } catch (Exception e) {
             System.out.println("Failed to create service record: " + e.getMessage());
+        }
+        
+        // Create notification for resolution
+        try {
+            if (resolvedIssue.getReportedBy() != null) {
+                notificationService.createNotification(
+                    resolvedIssue.getReportedBy().getId(),
+                    "Issue Resolved",
+                    "Your issue '" + resolvedIssue.getTitle() + "' has been resolved",
+                    com.assetdesk.domain.Notification.Type.SUCCESS,
+                    resolvedIssue.getId(),
+                    resolvedIssue.getAsset().getId()
+                );
+            }
+        } catch (Exception e) {
+            System.out.println("Failed to create resolution notification: " + e.getMessage());
+        }
+        
+        return IssueResponseDTO.fromEntity(resolvedIssue);
+    }
+    
+    @Override
+    public IssueResponseDTO resolveIssue(Long issueId, String resolutionNotes, Double cost) {
+        Issue issue = issueRepository.findById(issueId)
+            .orElseThrow(() -> new ResourceNotFoundException("Issue", "id", issueId));
+        
+        issue.setStatus(Issue.Status.RESOLVED);
+        issue.setResolutionNotes(resolutionNotes);
+        issue.setResolutionCost(cost);
+        issue.setResolvedAt(LocalDateTime.now());
+        
+        Issue resolvedIssue = issueRepository.save(issue);
+        
+        // Create service record for issue resolution
+        try {
+            ServiceRecord serviceRecord = new ServiceRecord();
+            serviceRecord.setAsset(resolvedIssue.getAsset());
+            serviceRecord.setServiceDate(resolvedIssue.getResolvedAt().toLocalDate());
+            serviceRecord.setServiceDescription("Issue resolved: " + resolvedIssue.getTitle() + 
+                (resolutionNotes != null ? ". Resolution: " + resolutionNotes : ""));
+            serviceRecord.setServiceType("ISSUE_RESOLUTION");
+            serviceRecord.setPerformedBy(resolvedIssue.getAssignedTo() != null ? resolvedIssue.getAssignedTo().getName() : "IT Support");
+            if (cost != null) {
+                serviceRecord.setServiceCost(java.math.BigDecimal.valueOf(cost));
+            }
+            serviceRecord.setStatus("COMPLETED");
+            serviceRecord.setNotes("Resolved issue ID: " + resolvedIssue.getId());
+            serviceRecordRepository.save(serviceRecord);
+            System.out.println("Service record created for issue resolution with cost: " + cost);
+        } catch (Exception e) {
+            System.out.println("Failed to create service record: " + e.getMessage());
+            e.printStackTrace();
         }
         
         // Create notification for resolution

@@ -22,6 +22,7 @@ public interface IssueService {
     IssueResponseDTO updateStatus(Long issueId, String status);
     IssueResponseDTO updatePriority(Long issueId, String priority);
     IssueResponseDTO resolveIssue(Long issueId, String resolutionNotes);
+    IssueResponseDTO resolveIssue(Long issueId, String resolutionNotes, Double cost);
     IssueResponseDTO closeIssue(Long issueId, Long userId);
     IssueResponseDTO updateIssue(Long id, IssueRequestDTO issueRequestDTO);
     void deleteIssue(Long id);

@@ -327,6 +327,95 @@ import { ConfirmDialogService } from '../../shared/components/confirm-dialog/con
       overflow: hidden;
     }
     
+    .requests-table :deep(.data-table) {
+      width: 100%;
+      table-layout: fixed;
+      font-size: 0.875rem;
+    }
+    
+    .requests-table :deep(.data-table th),
+    .requests-table :deep(.data-table td) {
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+      padding: 0.5rem 0.25rem;
+      max-width: 0;
+    }
+    
+    .requests-table :deep(.data-table th:nth-child(1)),
+    .requests-table :deep(.data-table td:nth-child(1)) {
+      width: 60px;
+    }
+    
+    .requests-table :deep(.data-table th:nth-child(2)),
+    .requests-table :deep(.data-table td:nth-child(2)) {
+      width: 150px;
+    }
+    
+    .requests-table :deep(.data-table th:nth-child(3)),
+    .requests-table :deep(.data-table td:nth-child(3)) {
+      width: 80px;
+    }
+    
+    .requests-table :deep(.data-table th:nth-child(4)),
+    .requests-table :deep(.data-table td:nth-child(4)) {
+      width: 80px;
+    }
+    
+    .requests-table :deep(.data-table th:nth-child(5)),
+    .requests-table :deep(.data-table td:nth-child(5)) {
+      width: 80px;
+    }
+    
+    .requests-table :deep(.data-table th:nth-child(6)),
+    .requests-table :deep(.data-table td:nth-child(6)) {
+      width: 90px;
+    }
+    
+    .requests-table :deep(.data-table th:nth-child(7)),
+    .requests-table :deep(.data-table td:nth-child(7)) {
+      width: 90px;
+    }
+    
+    .requests-table :deep(.data-table th:nth-child(8)),
+    .requests-table :deep(.data-table td:nth-child(8)) {
+      width: 90px;
+    }
+    
+    .requests-table :deep(.badge) {
+      display: inline-block;
+      padding: 0.25rem 0.5rem;
+      border-radius: 12px;
+      font-size: 0.75rem;
+      font-weight: 500;
+      text-transform: uppercase;
+    }
+    
+    .requests-table :deep(.badge-warning) {
+      background: #fef3c7;
+      color: #92400e;
+    }
+    
+    .requests-table :deep(.badge-success) {
+      background: #dcfce7;
+      color: #166534;
+    }
+    
+    .requests-table :deep(.badge-error) {
+      background: #fee2e2;
+      color: #991b1b;
+    }
+    
+    .requests-table :deep(.badge-info) {
+      background: #dbeafe;
+      color: #1e40af;
+    }
+    
+    .requests-table :deep(.badge-secondary) {
+      background: #f3f4f6;
+      color: #374151;
+    }
+    
     .empty-state, .loading-state {
       text-align: center;
       padding: var(--space-12);
@@ -441,14 +530,14 @@ export class AssetRequestsListComponent implements OnInit {
   
   // Table configuration
   columns: TableColumn[] = [
-    { key: 'id', label: 'Request ID', sortable: true },
-    { key: 'assetName', label: 'Asset Name', sortable: true },
+    { key: 'id', label: 'ID', sortable: true },
+    { key: 'assetName', label: 'Asset', sortable: true, render: (request: AssetRequest) => this.truncateText(request.assetName, 25) },
     { key: 'category', label: 'Category' },
     { key: 'assetType', label: 'Type' },
     { key: 'priority', label: 'Priority', render: (request: AssetRequest) => this.getPriorityBadge(request.priority) },
     { key: 'status', label: 'Status', render: (request: AssetRequest) => this.getStatusBadge(request.status) },
     { key: 'requestedDate', label: 'Requested', pipe: 'date' },
-    { key: 'requiredDate', label: 'Required By', pipe: 'date' }
+    { key: 'requiredDate', label: 'Required', pipe: 'date' }
   ];
 
   actions: TableAction[] = [
@@ -747,5 +836,10 @@ export class AssetRequestsListComponent implements OnInit {
 
   onRequestClick = (request: AssetRequest) => {
     this.viewRequest(request.id);
+  }
+  
+  truncateText(text: string, maxLength: number): string {
+    if (!text) return '';
+    return text.length > maxLength ? text.substring(0, maxLength) + '...' : text;
   }
 }

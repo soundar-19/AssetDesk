@@ -47,21 +47,13 @@ export class ServiceRecordsListComponent implements OnInit {
   // Table configuration
   columns: TableColumn[] = [
     { key: 'serviceDate', label: 'Date', pipe: 'date', sortable: true },
-    { key: 'asset', label: 'Asset', render: (record: ServiceRecord) => `${record.asset?.assetTag} - ${record.asset?.name}` },
-    { key: 'serviceType', label: 'Type', sortable: true },
-    { key: 'description', label: 'Description' },
-    { key: 'performedBy', label: 'Performed By' },
-    { key: 'vendor', label: 'Vendor', render: (record: ServiceRecord) => record.vendor?.name || 'Internal' },
-    { key: 'cost', label: 'Cost', pipe: 'currency' },
-    { key: 'status', label: 'Status', render: (record: ServiceRecord) => record.status || 'COMPLETED' }
+    { key: 'asset', label: 'Asset', render: (record: ServiceRecord) => `${record.asset?.assetTag}<br><small>${record.asset?.name}</small>` },
+    { key: 'issue', label: 'Issue', render: (record: ServiceRecord) => (record as any).issueTitle || record.description || 'No issue title' },
+    { key: 'provider', label: 'Provider', render: (record: ServiceRecord) => `${record.vendor?.name || 'Internal'}<br><small>${record.performedBy || 'Not specified'}</small>` },
+    { key: 'cost', label: 'Cost', render: (record: ServiceRecord) => record.cost ? `$${record.cost.toFixed(2)}` : 'No cost' }
   ];
 
-  actions: TableAction[] = [
-    { label: 'Edit', icon: '✏', action: (record) => this.editRecord(record.id), condition: () => this.roleService.canManageAssets() },
-    { label: 'Complete', icon: '✅', action: (record) => this.markServiceComplete(record.id), condition: (record) => (record.status || 'COMPLETED') === 'PENDING' && this.roleService.canManageAssets() },
-    { label: 'View Asset', icon: '📦', action: (record) => this.viewAsset(record.asset?.id), condition: (record) => !!record.asset?.id },
-    { label: 'Print', icon: '🖨', action: (record) => this.printServiceRecord(record) }
-  ];
+  actions: TableAction[] = [];
 
   constructor(
     private serviceRecordService: ServiceRecordService,
@@ -85,7 +77,9 @@ export class ServiceRecordsListComponent implements OnInit {
     } else {
       this.serviceRecordService.getServiceRecords(page, 100).subscribe({
         next: (response) => {
-          this.allServiceRecords = response.content || [];
+          this.allServiceRecords = (response.content || []).filter(record => 
+            record.serviceType && record.serviceType !== 'ASSET_ALLOCATION'
+          );
           this.serviceRecords = this.allServiceRecords;
           this.calculateAnalytics();
           this.pagination = {
@@ -143,7 +137,9 @@ export class ServiceRecordsListComponent implements OnInit {
     // For now, use client-side filtering until backend search is implemented
     this.serviceRecordService.getServiceRecords(page, 100).subscribe({
       next: (response) => {
-        this.allServiceRecords = response.content || [];
+        this.allServiceRecords = (response.content || []).filter(record => 
+          record.serviceType && record.serviceType !== 'ASSET_ALLOCATION'
+        );
         this.applyClientSideFilters();
         this.calculateAnalytics();
         this.pagination = {
@@ -165,7 +161,7 @@ export class ServiceRecordsListComponent implements OnInit {
       const typeMatch = !this.serviceTypeFilter || record.serviceType === this.serviceTypeFilter;
       const statusMatch = !this.statusFilter || (record.status || 'COMPLETED') === this.statusFilter;
       const vendorMatch = !this.vendorFilter || record.vendor?.name === this.vendorFilter;
-      const assetMatch = !this.assetFilter || record.asset?.assetTag?.includes(this.assetFilter) || record.asset?.name?.includes(this.assetFilter);
+      const assetMatch = !this.assetFilter || record.asset?.id?.toString() === this.assetFilter || record.asset?.assetTag?.includes(this.assetFilter) || record.asset?.name?.includes(this.assetFilter);
       
       let dateMatch = true;
       if (this.dateRangeFilter) {
@@ -671,7 +667,7 @@ export class ServiceRecordsListComponent implements OnInit {
   }
 
   applyAssetFilters() {
-    this.filteredAssets = this.getFilteredAssets();
+    // Asset filters are applied in getFilteredAssets() method
   }
 
   getAvgCompletionRate(): number {
@@ -766,5 +762,17 @@ export class ServiceRecordsListComponent implements OnInit {
   refreshRecords() {
     this.loadServiceRecords();
     this.toastService.success('Service records refreshed');
+  }
+
+  viewAssetServices(assetId: number) {
+    this.setViewMode('records');
+    this.assetFilter = assetId.toString();
+    this.applyFilters();
+  }
+
+  viewVendorServices(vendorName: string) {
+    this.setViewMode('records');
+    this.vendorFilter = vendorName;
+    this.applyFilters();
   }
 }

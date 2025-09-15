@@ -38,7 +38,7 @@ import { ConfirmDialogService } from '../../../shared/components/confirm-dialog/
         [sortDirection]="sortDirection"
         (pageChange)="onPageChange($event)"
         (sort)="onSort($event)"
-        [rowClickAction]="viewAsset.bind(this)">
+        [rowClickAction]="onAssetClick">
       </app-data-table>
     </div>
   `,
@@ -218,6 +218,8 @@ export class AssetsTableComponent implements OnInit {
     }
   ];
 
+
+
   constructor(
     private assetService: AssetService,
     private router: Router,
@@ -356,5 +358,9 @@ export class AssetsTableComponent implements OnInit {
         });
       }
     });
+  }
+
+  onAssetClick = (asset: Asset) => {
+    this.viewAsset(asset);
   }
 }

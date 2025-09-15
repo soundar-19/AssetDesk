@@ -24,7 +24,7 @@ import { DataTableComponent, TableColumn, TableAction } from '../../../shared/co
         [pagination]="pagination"
         [sortColumn]="sortColumn"
         [sortDirection]="sortDirection"
-        [rowClickAction]="openChat.bind(this)"
+        [rowClickAction]="viewIssueDetail.bind(this)"
         (pageChange)="onPageChange($event)"
         (sort)="onSort($event)">
       </app-data-table>
@@ -48,7 +48,8 @@ export class MyIssuesComponent implements OnInit {
     { key: 'assetTag', label: 'Asset' },
     { key: 'type', label: 'Type' },
     { key: 'priority', label: 'Priority' },
-    { key: 'status', label: 'Status' }
+    { key: 'status', label: 'Status' },
+    { key: 'assignedToName', label: 'Assigned To' }
   ];
 
   actions: TableAction[] = [];
@@ -120,7 +121,7 @@ export class MyIssuesComponent implements OnInit {
     this.loadMyIssues(page);
   }
 
-  openChat(issue: Issue) {
-    this.router.navigate(['/issues', issue.id, 'chat']);
+  viewIssueDetail(issue: Issue) {
+    this.router.navigate(['/issues', issue.id]);
   }
 }

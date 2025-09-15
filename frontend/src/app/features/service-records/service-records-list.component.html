@@ -300,7 +300,7 @@
             
             <div class="asset-actions">
               <button class="btn btn-sm btn-outline" (click)="viewAsset(asset.asset.id)">View Asset</button>
-
+              <button class="btn btn-sm btn-primary" (click)="viewAssetServices(asset.asset.id)">View Services</button>
             </div>
           </div>
         </div>
@@ -398,8 +398,7 @@
             </div>
             
             <div class="vendor-actions">
-              <button class="btn btn-sm btn-outline">View Services</button>
-
+              <button class="btn btn-sm btn-outline" (click)="viewVendorServices(vendor.name)">View Services</button>
             </div>
           </div>
         </div>

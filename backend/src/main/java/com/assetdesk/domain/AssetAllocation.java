@@ -3,10 +3,12 @@ package com.assetdesk.domain;
 import jakarta.persistence.*;
 import lombok.Data;
 import java.time.LocalDate;
+import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 
 @Entity
 @Table(name = "asset_allocations")
 @Data
+@JsonIgnoreProperties({"hibernateLazyInitializer", "handler"})
 public class AssetAllocation {
     
     @Id

@@ -148,7 +148,7 @@ public class ServiceRecordServiceImpl implements ServiceRecordService {
             .id(record.getId())
             .serviceDate(record.getServiceDate())
             .description(record.getServiceDescription())
-            .cost(record.getCost())
+            .cost(record.getServiceCost() != null ? record.getServiceCost() : record.getCost())
             .nextServiceDate(record.getNextServiceDate())
             .serviceType(record.getServiceType())
             .performedBy(record.getPerformedBy())

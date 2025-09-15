@@ -38,10 +38,47 @@ import { AppSidenavComponent } from '../../shared/components/app-sidenav/app-sid
       overflow-y: auto;
       padding: var(--space-8);
     }
+    
+    @media (max-width: 1024px) {
+      .page-content {
+        padding: var(--space-4);
+      }
+    }
+    
+    @media (max-width: 768px) {
+      .app-layout {
+        position: relative;
+      }
+      
+      .page-content {
+        padding: var(--space-3);
+      }
+    }
+    
+    @media (max-width: 480px) {
+      .page-content {
+        padding: var(--space-2);
+      }
+    }
   `]
 })
 export class AdminLayoutComponent {
   sidebarCollapsed = false;
+  isMobile = false;
+
+  constructor() {
+    this.checkScreenSize();
+    window.addEventListener('resize', () => this.checkScreenSize());
+    window.addEventListener('closeSidebar', () => this.sidebarCollapsed = true);
+    window.addEventListener('toggleSidebar', () => this.toggleSidebar());
+  }
+
+  checkScreenSize() {
+    this.isMobile = window.innerWidth <= 768;
+    if (this.isMobile) {
+      this.sidebarCollapsed = true;
+    }
+  }
 
   toggleSidebar() {
     this.sidebarCollapsed = !this.sidebarCollapsed;

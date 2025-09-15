@@ -186,9 +186,9 @@ public class IssueController {
     
     @PutMapping("/{issueId}/resolve")
     @PreAuthorize("hasRole('IT_SUPPORT')")
-    public ResponseEntity<IssueResponseDTO> resolveIssue(@PathVariable @Min(1) Long issueId, @RequestParam String resolutionNotes) {
+    public ResponseEntity<IssueResponseDTO> resolveIssue(@PathVariable @Min(1) Long issueId, @RequestParam String resolutionNotes, @RequestParam(required = false) Double cost) {
         String sanitizedNotes = HtmlUtils.htmlEscape(resolutionNotes);
-        IssueResponseDTO resolvedIssue = issueService.resolveIssue(issueId, sanitizedNotes);
+        IssueResponseDTO resolvedIssue = issueService.resolveIssue(issueId, sanitizedNotes, cost);
         return ResponseEntity.ok(resolvedIssue);
     }
     

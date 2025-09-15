@@ -13,6 +13,7 @@ export interface Issue {
   createdAt: string;
   resolvedAt?: string;
   resolutionNotes?: string;
+  resolutionCost?: number;
   replacementOffered?: boolean;
 }
 

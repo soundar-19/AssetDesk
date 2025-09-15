@@ -4,6 +4,16 @@
   margin: 0 auto;
 }
 
+/* Hide scrollbars but keep scroll functionality */
+::-webkit-scrollbar {
+  display: none;
+}
+
+* {
+  -ms-overflow-style: none;
+  scrollbar-width: none;
+}
+
 .header {
   display: flex;
   justify-content: space-between;
@@ -24,8 +34,26 @@
   margin: 0;
 }
 
-@media (max-width: 640px) {
+@media (max-width: 1024px) {
   .users-list {
     padding: var(--space-4);
+  }
+}
+
+@media (max-width: 768px) {
+  .users-list {
+    padding: var(--space-3);
+  }
+  
+  .header {
+    flex-direction: column;
+    align-items: stretch;
+    gap: var(--space-3);
+  }
+}
+
+@media (max-width: 480px) {
+  .users-list {
+    padding: var(--space-2);
   }
 }

@@ -6,13 +6,13 @@ import { FormsModule } from '@angular/forms';
 import { AssetService } from '../../core/services/asset.service';
 import { AuthService } from '../../core/services/auth.service';
 import { Asset } from '../../core/models';
-import { DataTableComponent, TableColumn, TableAction } from '../../shared/components/data-table/data-table.component';
+
 import { ToastService } from '../../shared/components/toast/toast.service';
 
 @Component({
   selector: 'app-user-assets-page',
   standalone: true,
-  imports: [CommonModule, FormsModule, DataTableComponent],
+  imports: [CommonModule, FormsModule],
   template: `
     <div class="page-container">
       <div class="page-header">
@@ -32,13 +32,56 @@ import { ToastService } from '../../shared/components/toast/toast.service';
 
       <!-- Assets List -->
       <div *ngIf="!loading" class="assets-list">
-        <app-data-table
-          [data]="assets"
-          [columns]="columns"
-          [actions]="actions"
-          [pagination]="pagination"
-          (pageChange)="onPageChange($event)">
-        </app-data-table>
+        <div class="assets-grid">
+          <div *ngFor="let asset of assets" class="asset-card" (click)="onAssetClick(asset)">
+            <div class="asset-header">
+              <div class="asset-info">
+                <h3 class="asset-name">{{ asset.name }}</h3>
+                <span class="asset-tag">{{ asset.assetTag }}</span>
+              </div>
+
+            </div>
+            
+            <div class="asset-details">
+              <div class="detail-item">
+                <span class="detail-label">Category</span>
+                <span class="detail-value">{{ asset.category }}</span>
+              </div>
+              <div class="detail-item">
+                <span class="detail-label">Type</span>
+                <span class="detail-value">{{ asset.type }}</span>
+              </div>
+              <div class="detail-item" *ngIf="asset.model">
+                <span class="detail-label">Model</span>
+                <span class="detail-value">{{ asset.model }}</span>
+              </div>
+              <div class="detail-item" *ngIf="asset.warrantyExpiryDate">
+                <span class="detail-label">Warranty</span>
+                <span class="detail-value" [class.expired]="isWarrantyExpired(asset.warrantyExpiryDate)">{{ formatDate(asset.warrantyExpiryDate) }}</span>
+              </div>
+            </div>
+            
+            <div class="asset-actions">
+              <button class="action-btn primary" (click)="viewAsset(asset.id); $event.stopPropagation()">
+                <i class="icon">👁</i> View Details
+              </button>
+              <button class="action-btn warning" (click)="reportIssue(asset.id); $event.stopPropagation()">
+                <i class="icon">⚠</i> Report Issue
+              </button>
+            </div>
+          </div>
+        </div>
+        
+        <!-- Pagination -->
+        <div class="pagination" *ngIf="pagination && pagination.totalPages > 1">
+          <button class="pagination-btn" [disabled]="pagination.page === 0" (click)="onPageChange(pagination.page - 1)">
+            ← Previous
+          </button>
+          <span class="pagination-info">Page {{ pagination.page + 1 }} of {{ pagination.totalPages }}</span>
+          <button class="pagination-btn" [disabled]="pagination.page >= pagination.totalPages - 1" (click)="onPageChange(pagination.page + 1)">
+            Next →
+          </button>
+        </div>
       </div>
 
       <!-- Empty State -->
@@ -95,6 +138,195 @@ import { ToastService } from '../../shared/components/toast/toast.service';
     @keyframes spin {
       to { transform: rotate(360deg); }
     }
+
+    .assets-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(350px, 1fr));
+      gap: 1.5rem;
+      margin-bottom: 2rem;
+    }
+
+    .asset-card {
+      background: white;
+      border-radius: 12px;
+      padding: 1.5rem;
+      box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+      border: 1px solid var(--gray-200);
+      cursor: pointer;
+      transition: all 0.3s ease;
+    }
+
+    .asset-card:hover {
+      transform: translateY(-4px);
+      box-shadow: 0 8px 25px rgba(0, 0, 0, 0.15);
+      border-color: var(--primary-300);
+    }
+
+    .asset-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: flex-start;
+      margin-bottom: 1rem;
+    }
+
+    .asset-name {
+      font-size: 1.125rem;
+      font-weight: 600;
+      color: var(--gray-900);
+      margin: 0 0 0.25rem 0;
+    }
+
+    .asset-tag {
+      font-family: var(--font-family-mono);
+      font-size: 0.875rem;
+      color: var(--gray-600);
+      background: var(--gray-100);
+      padding: 0.25rem 0.5rem;
+      border-radius: 4px;
+    }
+
+    .asset-status {
+      padding: 0.375rem 0.75rem;
+      border-radius: 20px;
+      font-size: 0.75rem;
+      font-weight: 500;
+      text-transform: uppercase;
+      letter-spacing: 0.025em;
+    }
+
+    .status-available {
+      background: var(--success-100);
+      color: var(--success-700);
+    }
+
+    .status-allocated {
+      background: var(--primary-100);
+      color: var(--primary-700);
+    }
+
+    .status-maintenance {
+      background: var(--warning-100);
+      color: var(--warning-700);
+    }
+
+    .asset-details {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 0.75rem;
+      margin-bottom: 1.5rem;
+    }
+
+    .detail-item {
+      display: flex;
+      flex-direction: column;
+      gap: 0.25rem;
+    }
+
+    .detail-label {
+      font-size: 0.75rem;
+      font-weight: 500;
+      color: var(--gray-500);
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+    }
+
+    .detail-value {
+      font-size: 0.875rem;
+      font-weight: 500;
+      color: var(--gray-900);
+    }
+
+    .detail-value.expired {
+      color: var(--error-600);
+      font-weight: 600;
+    }
+
+    .asset-actions {
+      display: flex;
+      gap: 0.75rem;
+    }
+
+    .action-btn {
+      flex: 1;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 0.5rem;
+      padding: 0.75rem 1rem;
+      border: none;
+      border-radius: 8px;
+      font-size: 0.875rem;
+      font-weight: 500;
+      cursor: pointer;
+      transition: all 0.2s ease;
+    }
+
+    .action-btn.primary {
+      background: var(--primary-600);
+      color: white;
+    }
+
+    .action-btn.primary:hover {
+      background: var(--primary-700);
+      transform: translateY(-1px);
+    }
+
+    .action-btn.warning {
+      background: var(--warning-600);
+      color: white;
+    }
+
+    .action-btn.warning:hover {
+      background: var(--warning-700);
+      transform: translateY(-1px);
+    }
+
+    .pagination {
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      gap: 1rem;
+      margin-top: 2rem;
+    }
+
+    .pagination-btn {
+      padding: 0.5rem 1rem;
+      border: 1px solid var(--gray-300);
+      background: white;
+      color: var(--gray-700);
+      border-radius: 6px;
+      cursor: pointer;
+      transition: all 0.2s ease;
+    }
+
+    .pagination-btn:hover:not(:disabled) {
+      border-color: var(--primary-500);
+      color: var(--primary-600);
+    }
+
+    .pagination-btn:disabled {
+      opacity: 0.5;
+      cursor: not-allowed;
+    }
+
+    .pagination-info {
+      color: var(--gray-600);
+      font-size: 0.875rem;
+    }
+
+    @media (max-width: 768px) {
+      .assets-grid {
+        grid-template-columns: 1fr;
+      }
+      
+      .asset-details {
+        grid-template-columns: 1fr;
+      }
+      
+      .asset-actions {
+        flex-direction: column;
+      }
+    }
   `]
 })
 export class UserAssetsPageComponent implements OnInit {
@@ -104,27 +336,9 @@ export class UserAssetsPageComponent implements OnInit {
   searchTerm = '';
   searchTimeout: any;
 
-  columns: TableColumn[] = [
-    { key: 'assetTag', label: 'Asset Tag', sortable: true },
-    { key: 'name', label: 'Name', sortable: true },
-    { key: 'category', label: 'Category' },
-    { key: 'type', label: 'Type' },
-    { key: 'model', label: 'Model' },
-    { key: 'warrantyExpiryDate', label: 'Warranty Expires', pipe: 'date' }
-  ];
 
-  actions: TableAction[] = [
-    { 
-      label: 'View Details', 
-      icon: '👁', 
-      action: (asset) => this.viewAsset(asset.id) 
-    },
-    { 
-      label: 'Report Issue', 
-      icon: '⚠', 
-      action: (asset) => this.reportIssue(asset.id) 
-    }
-  ];
+
+
 
   constructor(
     private assetService: AssetService,
@@ -202,4 +416,17 @@ export class UserAssetsPageComponent implements OnInit {
   reportIssue(assetId: number) {
     this.router.navigate(['/assets', assetId, 'issue']);
   }
+
+  onAssetClick = (asset: Asset) => {
+    this.viewAsset(asset.id);
+  }
+
+  formatDate(date: string): string {
+    return new Date(date).toLocaleDateString();
+  }
+
+  isWarrantyExpired(warrantyDate: string): boolean {
+    return new Date(warrantyDate) < new Date();
+  }
+
 }

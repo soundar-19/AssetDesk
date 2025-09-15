@@ -22,6 +22,7 @@ public class IssueResponseDTO {
     private LocalDateTime resolvedAt;
     private String resolutionNotes;
     private Boolean replacementOffered;
+    private Double resolutionCost;
     
     public static IssueResponseDTO fromEntity(Issue issue) {
         IssueResponseDTO dto = new IssueResponseDTO();
@@ -40,6 +41,7 @@ public class IssueResponseDTO {
         dto.setResolvedAt(issue.getResolvedAt());
         dto.setResolutionNotes(issue.getResolutionNotes());
         dto.setReplacementOffered(issue.getReplacementOffered());
+        dto.setResolutionCost(issue.getResolutionCost());
         return dto;
     }
 }

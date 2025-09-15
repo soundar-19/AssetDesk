@@ -61,7 +61,7 @@
           <h3 class="card-title">Quick Actions</h3>
           <div class="actions-grid">
             <a routerLink="/requests/new" class="action-btn primary">📝 Request Asset</a>
-            <a routerLink="/issues/new" class="action-btn warning">🐛 Report Issue</a>
+            <button (click)="showAssetSelectionForIssue()" class="action-btn warning">🐛 Report Issue</button>
             <a routerLink="/profile" class="action-btn info">👤 My Profile</a>
           </div>
         </section>
@@ -266,6 +266,37 @@
             <a routerLink="/system/settings" class="admin-action warning">⚙️ Settings</a>
           </div>
         </section>
+      </div>
+    </div>
+  </div>
+
+  <!-- Asset Selection Modal -->
+  <div class="modal-overlay" *ngIf="showAssetSelection" (click)="closeAssetSelection()">
+    <div class="modal-content" (click)="$event.stopPropagation()">
+      <div class="modal-header">
+        <h3>Select Asset to Report Issue</h3>
+        <button class="close-btn" (click)="closeAssetSelection()">×</button>
+      </div>
+      
+      <div class="modal-body">
+        <div class="assets-list" *ngIf="userAssets.length > 0; else noAssets">
+          <div 
+            *ngFor="let asset of userAssets" 
+            class="asset-item"
+            (click)="selectAssetForIssue(asset)">
+            <div class="asset-info">
+              <div class="asset-name">{{ asset.name }}</div>
+              <div class="asset-tag">{{ asset.assetTag }}</div>
+            </div>
+
+          </div>
+        </div>
+        
+        <ng-template #noAssets>
+          <div class="no-assets">
+            <p>You have no assets assigned to report issues for.</p>
+          </div>
+        </ng-template>
       </div>
     </div>
   </div>

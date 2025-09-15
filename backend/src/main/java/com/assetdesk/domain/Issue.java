@@ -3,10 +3,12 @@ package com.assetdesk.domain;
 import jakarta.persistence.*;
 import lombok.Data;
 import java.time.LocalDateTime;
+import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 
 @Entity
 @Table(name = "issues")
 @Data
+@JsonIgnoreProperties({"hibernateLazyInitializer", "handler"})
 public class Issue {
     
     @Id
@@ -51,6 +53,8 @@ public class Issue {
     private String imageUrl;
     
     private Boolean replacementOffered;
+    
+    private Double resolutionCost;
     
     public enum IssueType {
         HARDWARE_MALFUNCTION,

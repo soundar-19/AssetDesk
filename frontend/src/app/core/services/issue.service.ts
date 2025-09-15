@@ -72,6 +72,14 @@ export class IssueService {
     return this.api.put<Issue>(`${this.endpoint}/${issueId}/resolve?resolutionNotes=${encodeURIComponent(resolutionNotes)}`, null);
   }
 
+  resolveIssueWithCost(issueId: number, resolutionNotes: string, cost?: number): Observable<Issue> {
+    let params = `resolutionNotes=${encodeURIComponent(resolutionNotes)}`;
+    if (cost !== undefined) {
+      params += `&cost=${cost}`;
+    }
+    return this.api.put<Issue>(`${this.endpoint}/${issueId}/resolve?${params}`, null);
+  }
+
   closeIssue(issueId: number, userId: number): Observable<Issue> {
     return this.api.put<Issue>(`${this.endpoint}/${issueId}/close?userId=${userId}`, null);
   }

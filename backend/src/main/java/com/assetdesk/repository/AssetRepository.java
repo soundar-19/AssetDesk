@@ -25,13 +25,13 @@ public interface AssetRepository extends JpaRepository<Asset, Long>, JpaSpecific
     List<Asset> findByVendorId(Long vendorId);
     Page<Asset> findByVendorId(Long vendorId, Pageable pageable);
     
-    @Query("SELECT a FROM Asset a WHERE a.status = 'AVAILABLE'")
+    @Query("SELECT a FROM Asset a LEFT JOIN FETCH a.vendor WHERE a.status = 'AVAILABLE'")
     List<Asset> findAvailableAssets();
     
-    @Query("SELECT a FROM Asset a WHERE a.status = 'AVAILABLE'")
+    @Query("SELECT a FROM Asset a LEFT JOIN FETCH a.vendor WHERE a.status = 'AVAILABLE'")
     Page<Asset> findAvailableAssets(Pageable pageable);
     
-    @Query("SELECT a FROM Asset a JOIN AssetAllocation al ON a.id = al.asset.id WHERE al.user.id = ?1 AND al.returnedDate IS NULL")
+    @Query("SELECT a FROM Asset a LEFT JOIN FETCH a.vendor JOIN AssetAllocation al ON a.id = al.asset.id WHERE al.user.id = ?1 AND al.returnedDate IS NULL")
     Page<Asset> findAssetsByUserId(Long userId, Pageable pageable);
     
     @Query("SELECT a.name as name, COUNT(a) as count FROM Asset a GROUP BY a.name ORDER BY COUNT(a) DESC")
@@ -71,7 +71,7 @@ public interface AssetRepository extends JpaRepository<Asset, Long>, JpaSpecific
     Page<Asset> findValidWarranties(Pageable pageable);
     
     // Dashboard specific queries
-    @Query("SELECT a FROM Asset a JOIN AssetAllocation al ON a.id = al.asset.id WHERE al.user.id = ?1 AND al.returnedDate IS NULL")
+    @Query("SELECT a FROM Asset a LEFT JOIN FETCH a.vendor JOIN AssetAllocation al ON a.id = al.asset.id WHERE al.user.id = ?1 AND al.returnedDate IS NULL")
     List<Asset> findByCurrentUserId(Long userId);
     
     @Query("SELECT COUNT(a) FROM Asset a JOIN AssetAllocation al ON a.id = al.asset.id WHERE al.user.id = ?1 AND al.returnedDate IS NULL")
@@ -82,4 +82,7 @@ public interface AssetRepository extends JpaRepository<Asset, Long>, JpaSpecific
     
     @Query("SELECT COUNT(a) FROM Asset a WHERE a.purchaseDate BETWEEN ?1 AND ?2")
     Long countByPurchaseDateBetween(LocalDate start, LocalDate end);
+    
+    @Query("SELECT a FROM Asset a LEFT JOIN FETCH a.vendor WHERE a.id = ?1")
+    Optional<Asset> findByIdWithVendor(Long id);
 }

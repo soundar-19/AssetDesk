@@ -106,12 +106,16 @@ export interface TableAction {
       box-shadow: var(--shadow-sm);
       border: 1px solid var(--gray-200);
       overflow: hidden;
+      overflow-x: auto;
+      width: 100%;
     }
     
     .table {
       width: 100%;
+      min-width: 800px;
       border-collapse: collapse;
       margin: 0;
+      table-layout: fixed;
     }
     
     .table th, .table td {
@@ -119,6 +123,9 @@ export interface TableAction {
       border-bottom: 1px solid var(--gray-100);
       text-align: left;
       vertical-align: middle;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
     }
     
     .table th {

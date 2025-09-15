@@ -4,6 +4,8 @@ import { RouterModule, Router } from '@angular/router';
 import { AuthService } from '../../core/services/auth.service';
 import { RoleService } from '../../core/services/role.service';
 import { DashboardService, DashboardStats } from '../../core/services/dashboard.service';
+import { AssetService } from '../../core/services/asset.service';
+import { Asset } from '../../core/models';
 import { LoadingSpinnerComponent } from '../../shared/ui/loading-spinner.component';
 
 @Component({
@@ -17,11 +19,14 @@ export class DashboardComponent implements OnInit {
   dashboardStats: DashboardStats = {};
   loading = true;
   currentUser: any = null;
+  showAssetSelection = false;
+  userAssets: Asset[] = [];
 
   constructor(
     private authService: AuthService,
     public roleService: RoleService,
     private dashboardService: DashboardService,
+    private assetService: AssetService,
     private router: Router
   ) {}
 
@@ -170,5 +175,33 @@ export class DashboardComponent implements OnInit {
 
   navigateToRequests() {
     this.router.navigate(['/requests']);
+  }
+
+  showAssetSelectionForIssue() {
+    this.loadUserAssets();
+    this.showAssetSelection = true;
+  }
+
+  loadUserAssets() {
+    if (this.currentUser?.id) {
+      this.assetService.getAssetsByUser(this.currentUser.id, 0, 100).subscribe({
+        next: (response) => {
+          this.userAssets = response.content || [];
+        },
+        error: (error) => {
+          console.error('Error loading user assets:', error);
+          this.userAssets = [];
+        }
+      });
+    }
+  }
+
+  selectAssetForIssue(asset: Asset) {
+    this.showAssetSelection = false;
+    this.router.navigate(['/assets', asset.id, 'issue']);
+  }
+
+  closeAssetSelection() {
+    this.showAssetSelection = false;
   }
 }

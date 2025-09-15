@@ -454,7 +454,7 @@ import { ToastService } from '../../shared/components/toast/toast.service';
 export class NotificationsListComponent implements OnInit {
   notifications: Notification[] = [];
   pagination: PaginationInfo | null = null;
-  showUnreadOnly = false;
+  showUnreadOnly = true;
   totalNotifications = 0;
   unreadCount = 0;
 

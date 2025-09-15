@@ -9,15 +9,15 @@ import java.time.LocalDate;
 @Entity
 @Table(name = "service_records")
 @Data
+@JsonIgnoreProperties({"hibernateLazyInitializer", "handler"})
 public class ServiceRecord {
     
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
-    @ManyToOne(fetch = FetchType.LAZY)
+    @ManyToOne(fetch = FetchType.EAGER)
     @JoinColumn(name = "asset_id", nullable = false)
-    @JsonIgnoreProperties({"hibernateLazyInitializer", "handler", "serviceRecords", "assetAllocations", "issues", "warrantyHistories"})
     private Asset asset;
 
     @Column(nullable = false)
@@ -28,6 +28,9 @@ public class ServiceRecord {
 
     private BigDecimal cost;
     
+    @Column(name = "service_cost")
+    private BigDecimal serviceCost;
+    
     private LocalDate nextServiceDate;
     
     @Column(name = "service_type")
@@ -36,9 +39,8 @@ public class ServiceRecord {
     @Column(name = "performed_by")
     private String performedBy;
     
-    @ManyToOne(fetch = FetchType.LAZY)
+    @ManyToOne(fetch = FetchType.EAGER)
     @JoinColumn(name = "vendor_id")
-    @JsonIgnoreProperties({"hibernateLazyInitializer", "handler", "serviceRecords", "assets"})
     private Vendor vendor;
     
     @Column(name = "status")

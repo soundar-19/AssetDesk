@@ -174,10 +174,7 @@ export const routes: Routes = [
         path: 'notifications',
         loadComponent: () => import('./features/notifications/notifications-list.component').then(m => m.NotificationsListComponent)
       },
-      {
-        path: 'messages',
-        loadComponent: () => import('./features/messages/messages-list.component').then(m => m.MessagesListComponent)
-      },
+
 
       {
         path: 'service-records',

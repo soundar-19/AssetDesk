@@ -3,7 +3,7 @@ import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { ActivatedRoute, Router } from '@angular/router';
 import { AssetService } from '../../../core/services/asset.service';
-import { Asset, ServiceRecord, User, UserRole } from '../../../core/models';
+import { Asset, ServiceRecord, User, UserRole, AssetAllocation } from '../../../core/models';
 import { AllocationService } from '../../../core/services/allocation.service';
 import { ServiceRecordService } from '../../../core/services/service-record.service';
 import { WarrantyHistoryService, WarrantyHistoryItem } from '../../../core/services/warranty-history.service';
@@ -11,11 +11,12 @@ import { IssueService } from '../../../core/services/issue.service';
 import { AuthService } from '../../../core/services/auth.service';
 import { ToastService } from '../../../shared/components/toast/toast.service';
 import { ROLE_PERMISSIONS } from '../../../core/constants/role.constants';
+import { UserSelectorDialogComponent } from '../../../shared/components/user-selector-dialog/user-selector-dialog.component';
 
 @Component({
   selector: 'app-asset-detail',
   standalone: true,
-  imports: [CommonModule, FormsModule],
+  imports: [CommonModule, FormsModule, UserSelectorDialogComponent],
   template: `
     <div class="asset-detail" *ngIf="asset">
       <div class="header">
@@ -40,10 +41,10 @@ import { ROLE_PERMISSIONS } from '../../../core/constants/role.constants';
         <div class="main-content">
           <div class="tabs">
             <button class="tab" [class.active]="activeTab === 'overview'" (click)="setActiveTab('overview')">Overview</button>
-            <button class="tab" [class.active]="activeTab === 'ownership'" (click)="setActiveTab('ownership')">Ownership History</button>
-            <button class="tab" [class.active]="activeTab === 'service'" (click)="setActiveTab('service')">Service History</button>
-            <button class="tab" [class.active]="activeTab === 'issues'" (click)="setActiveTab('issues')">Issues</button>
-            <button class="tab" [class.active]="activeTab === 'warranty'" (click)="setActiveTab('warranty')">Warranty</button>
+            <button class="tab" [class.active]="activeTab === 'ownership'" (click)="setActiveTab('ownership')" *ngIf="canManageAssets()">Ownership History</button>
+            <button class="tab" [class.active]="activeTab === 'service'" (click)="setActiveTab('service')">{{ canManageAssets() ? 'Service History' : 'Service Requests' }}</button>
+
+            <button class="tab" [class.active]="activeTab === 'warranty'" (click)="setActiveTab('warranty')" *ngIf="canManageAssets()">Warranty</button>
           </div>
 
           <div class="tab-content">
@@ -168,7 +169,6 @@ import { ROLE_PERMISSIONS } from '../../../core/constants/role.constants';
                     <div class="user-info">
                       <div class="user-name" (click)="viewUserDetails(currentAllocation.userId)" style="cursor: pointer; color: var(--primary-600);">{{ currentAllocation.userName }}</div>
                       <div class="user-details">{{ currentAllocation.userEmail }}</div>
-                      <div class="user-department" *ngIf="currentAllocation.user?.department">{{ currentAllocation.user?.department }}</div>
                     </div>
                     <div class="allocation-details">
                       <div class="detail-item">
@@ -211,16 +211,7 @@ import { ROLE_PERMISSIONS } from '../../../core/constants/role.constants';
                     </div>
                   </div>
                   
-                  <div class="period-services" *ngIf="period.serviceRecords?.length">
-                    <h4>Service Records During This Period</h4>
-                    <div class="service-list">
-                      <div *ngFor="let service of period.serviceRecords" class="service-item" (click)="viewServiceRecord(service)" style="cursor: pointer;">
-                        <div class="service-date">{{ formatDate(service.serviceDate) }}</div>
-                        <div class="service-description">{{ service.description || service.serviceDescription }}</div>
-                        <div class="service-cost" *ngIf="shouldShowFinancialInfo()">{{ service.cost | currency }}</div>
-                      </div>
-                    </div>
-                  </div>
+
                   
                   <div class="period-remarks" *ngIf="period.remarks">
                     <strong>Remarks:</strong> {{ period.remarks }}
@@ -242,7 +233,7 @@ import { ROLE_PERMISSIONS } from '../../../core/constants/role.constants';
                 <h3><i class="icon-tool"></i> Service History Log</h3>
                 <div class="service-actions">
                   <div class="service-summary">
-                    <span class="summary-item">Total Services: {{ getFilteredServiceRecords().length }}</span>
+                    <span class="summary-item">Total Services: {{ serviceRecords.length }}</span>
                     <span class="summary-item" *ngIf="getTotalServiceCost() > 0 && shouldShowFinancialInfo()">Total Cost: \${{ getTotalServiceCost() | number:'1.2-2' }}</span>
                   </div>
                   <button class="btn btn-primary" (click)="addServiceRecord()" *ngIf="canManageAssets()">
@@ -250,34 +241,8 @@ import { ROLE_PERMISSIONS } from '../../../core/constants/role.constants';
                   </button>
                 </div>
               </div>
-              <div class="service-filters" *ngIf="serviceRecords.length > 0">
-                <div class="filter-group">
-                  <label>Filter by Performer:</label>
-                  <select [(ngModel)]="performerFilter" (change)="applyFilters()">
-                    <option value="">All Performers</option>
-                    <option *ngFor="let performer of getUniquePerformers()" [value]="performer">{{ performer }}</option>
-                  </select>
-                </div>
-                <div class="filter-group">
-                  <label>Filter by Vendor:</label>
-                  <select [(ngModel)]="vendorFilter" (change)="applyFilters()">
-                    <option value="">All Vendors</option>
-                    <option *ngFor="let vendor of getUniqueVendors()" [value]="vendor">{{ vendor }}</option>
-                  </select>
-                </div>
-                <div class="filter-group">
-                  <label>Filter by Service Type:</label>
-                  <select [(ngModel)]="serviceTypeFilter" (change)="applyFilters()">
-                    <option value="">All Types</option>
-                    <option *ngFor="let type of getUniqueServiceTypes()" [value]="type">{{ type }}</option>
-                  </select>
-                </div>
-                <button class="btn-clear" (click)="clearFilters()" *ngIf="hasActiveFilters()">
-                  <i class="icon-x"></i> Clear Filters
-                </button>
-              </div>
-              <div class="service-records" *ngIf="getFilteredServiceRecords().length > 0; else noServiceRecords">
-                <div *ngFor="let record of getFilteredServiceRecords(); trackBy: trackByServiceId" class="service-record-card">
+              <div class="service-records" *ngIf="serviceRecords.length > 0; else noServiceRecords">
+                <div *ngFor="let record of serviceRecords" class="service-record-card" (click)="openIssueFromService(record)" style="cursor: pointer;">
                   <div class="record-header">
                     <div class="service-info">
                       <div class="service-type-badge" [class]="'type-' + (record.serviceType || 'general').toLowerCase().replace(' ', '-')">{{ record.serviceType || 'Service' }}</div>
@@ -294,14 +259,14 @@ import { ROLE_PERMISSIONS } from '../../../core/constants/role.constants';
                     </div>
                   </div>
                   <div class="record-body">
-                    <div class="description" *ngIf="record.description">
-                      <strong>Description:</strong> {{ record.description }}
+                    <div class="description" *ngIf="getServiceDescription(record)">
+                      <strong>Description:</strong> {{ getServiceDescription(record) }}
                     </div>
                     <div class="service-details">
                       <div class="detail-row">
-                        <div class="detail-item" *ngIf="shouldShowFinancialInfo()">
+                        <div class="detail-item" *ngIf="getServiceCost(record) > 0">
                           <label>Cost:</label>
-                          <span class="cost">\${{ (record.cost || 0) | number:'1.2-2' }}</span>
+                          <span class="cost">\${{ getServiceCost(record) | number:'1.2-2' }}</span>
                         </div>
                         <div class="detail-item" *ngIf="record.vendor">
                           <label>Vendor:</label>
@@ -337,44 +302,7 @@ import { ROLE_PERMISSIONS } from '../../../core/constants/role.constants';
               </ng-template>
             </div>
 
-            <!-- Issues Tab -->
-            <div *ngIf="activeTab === 'issues'" class="tab-panel">
-              <div class="section-header">
-                <h3><i class="icon-alert"></i> Issues</h3>
-                <button class="btn btn-primary" (click)="reportIssue()" *ngIf="canCreateIssues()">
-                  <i class="icon-plus"></i> Report Issue
-                </button>
-              </div>
-              <div class="issues-list" *ngIf="recentIssues && recentIssues.length > 0; else noIssues">
-                <div *ngFor="let issue of recentIssues" class="issue-card" (click)="viewIssueDetails(issue.id)" style="cursor: pointer;">
-                  <div class="issue-header">
-                    <div class="issue-title">{{ issue.title }}</div>
-                    <span class="issue-status" [class]="'status-' + issue.status.toLowerCase()">{{ issue.status }}</span>
-                  </div>
-                  <div class="issue-meta">
-                    <span class="priority" [class]="'priority-' + issue.priority?.toLowerCase()">{{ issue.priority }}</span>
-                    <span class="created-date">{{ formatDate(issue.createdAt || issue.createdDate) }}</span>
-                    <span class="reporter" *ngIf="issue.reportedBy">by {{ issue.reportedBy.name }}</span>
-                  </div>
-                  <div class="issue-description" *ngIf="issue.description">
-                    {{ issue.description }}
-                  </div>
-                  <div class="issue-resolution" *ngIf="issue.status === 'CLOSED' && issue.resolution">
-                    <strong>Resolution:</strong> {{ issue.resolution }}
-                  </div>
-                </div>
-              </div>
-              <ng-template #noIssues>
-                <div class="empty-state">
-                  <i class="icon-alert"></i>
-                  <h4>No Issues</h4>
-                  <p>No issues reported for this asset.</p>
-                  <button class="btn btn-primary" (click)="reportIssue()" *ngIf="canCreateIssues()">
-                    <i class="icon-plus"></i> Report First Issue
-                  </button>
-                </div>
-              </ng-template>
-            </div>
+
 
             <!-- Warranty Tab -->
             <div *ngIf="activeTab === 'warranty'" class="tab-panel">
@@ -436,13 +364,10 @@ import { ROLE_PERMISSIONS } from '../../../core/constants/role.constants';
 
           <div class="asset-stats">
             <h4>Statistics</h4>
-            <div class="stat-item">
-              <label>Total Issues:</label>
-              <span>{{ recentIssues.length }}</span>
-            </div>
+
             <div class="stat-item">
               <label>Service Records:</label>
-              <span>{{ getFilteredServiceRecords().length }}{{ hasActiveFilters() ? ' / ' + serviceRecords.length : '' }}</span>
+              <span>{{ serviceRecords.length }}</span>
             </div>
             <div class="stat-item" *ngIf="depreciation && shouldShowFinancialInfo()">
               <label>Age:</label>
@@ -452,6 +377,14 @@ import { ROLE_PERMISSIONS } from '../../../core/constants/role.constants';
         </div>
       </div>
     </div>
+
+    <app-user-selector-dialog 
+      *ngIf="showUserSelector"
+      [singleUser]="true"
+      [licenseName]="asset?.name || 'Asset'"
+      (onConfirm)="onUserSelected($event)"
+      (onCancel)="showUserSelector = false">
+    </app-user-selector-dialog>
   `,
   styles: [`
     .asset-detail { 
@@ -953,22 +886,19 @@ import { ROLE_PERMISSIONS } from '../../../core/constants/role.constants';
 })
 export class AssetDetailComponent implements OnInit {
   asset: Asset | null = null;
-  currentAllocation: any = null;
-  recentIssues: any[] = [];
+  currentAllocation: AssetAllocation | null = null;
   serviceRecords: ServiceRecord[] = [];
-  depreciation: any = null;
+  ownershipHistory: AssetAllocation[] = [];
   warrantyHistory: WarrantyHistoryItem[] = [];
+  recentIssues: any[] = [];
+  depreciation: any = null;
 
   activeTab = 'overview';
   showLicenseKey = false;
-  performerFilter = '';
-  vendorFilter = '';
-  serviceTypeFilter = '';
-  filteredServiceRecords: ServiceRecord[] = [];
+  showUserSelector = false;
   currentUser: User | null = null;
   userRole: UserRole | null = null;
   permissions: any = {};
-  ownershipHistory: any[] = [];
 
   constructor(
     private route: ActivatedRoute,
@@ -1008,6 +938,7 @@ export class AssetDetailComponent implements OnInit {
     
     this.assetService.getAssetById(id).subscribe({
       next: (asset) => {
+        console.log('Asset loaded:', asset);
         this.asset = asset;
         this.loadAssetData(id);
       },
@@ -1020,22 +951,15 @@ export class AssetDetailComponent implements OnInit {
   }
 
   private loadAssetData(id: number) {
-    // Load service records (which will then load ownership history)
-    this.loadServiceRecords(id);
-    
-    // Load other data
     this.loadCurrentAllocation(id);
+    this.loadOwnershipHistory(id);
+    this.loadServiceRecords(id);
+    this.loadWarrantyHistory(id);
     this.loadRecentIssues(id);
     
-    // Only load financial data for authorized roles
     if (this.permissions.canManageAssets || this.permissions.canManageSystem) {
       this.loadDepreciation(id);
     }
-    
-    // Load warranty history for all users
-    this.loadWarrantyHistory(id);
-    
-
   }
 
   loadWarrantyHistory(assetId: number) {
@@ -1047,15 +971,21 @@ export class AssetDetailComponent implements OnInit {
   loadServiceRecords(assetId: number) {
     this.serviceRecordService.getServiceRecordsByAsset(assetId).subscribe({
       next: (response) => {
-        this.serviceRecords = response || [];
-        this.filteredServiceRecords = [...this.serviceRecords];
-        this.loadOwnershipHistory(assetId);
+        const allRecords = response || [];
+        console.log('All service records full data:', allRecords);
+        // Filter out allocation/return events, keep only actual service records
+        this.serviceRecords = allRecords.filter(record => {
+          const description = this.getServiceDescription(record).toLowerCase();
+          return !description.includes('allocated to') && 
+                 !description.includes('returned by') &&
+                 !description.includes('asset allocated') &&
+                 !description.includes('asset returned');
+        }).sort((a, b) => b.id - a.id);
+        console.log('Filtered service records:', this.serviceRecords);
       },
       error: (error) => {
         console.error('Error loading service records:', error);
         this.serviceRecords = [];
-        this.filteredServiceRecords = [];
-        this.loadOwnershipHistory(assetId);
       }
     });
   }
@@ -1071,10 +1001,18 @@ export class AssetDetailComponent implements OnInit {
   loadCurrentAllocation(assetId: number) {
     this.allocationService.getCurrentAllocationByAsset(assetId).subscribe({
       next: (allocation) => {
-        this.currentAllocation = allocation;
+        if (allocation) {
+          const alloc = allocation as any;
+          this.currentAllocation = {
+            ...allocation,
+            userId: alloc.user?.id || allocation.userId,
+            userName: alloc.user?.name || allocation.userName,
+            userEmail: alloc.user?.email || allocation.userEmail,
+            daysAllocated: Math.ceil((new Date().getTime() - new Date(allocation.allocatedDate).getTime()) / (1000 * 60 * 60 * 24))
+          };
+        }
       },
       error: (error) => {
-        console.error('Error loading current allocation:', error);
         this.currentAllocation = null;
       }
     });
@@ -1160,7 +1098,11 @@ export class AssetDetailComponent implements OnInit {
       this.toastService.error('Access denied');
       return;
     }
-    this.router.navigate(['/issues/new'], { queryParams: { assetId: this.asset?.id } });
+    if (!this.asset?.id) {
+      this.toastService.error('Asset ID not available');
+      return;
+    }
+    this.router.navigate(['/assets', this.asset.id, 'issue']);
   }
 
   isServiceOverdue(nextServiceDate: string | null | undefined): boolean {
@@ -1173,39 +1115,40 @@ export class AssetDetailComponent implements OnInit {
   }
 
   getFilteredServiceRecords(): ServiceRecord[] {
-    return this.filteredServiceRecords || [];
+    return this.serviceRecords || [];
   }
 
-  getUniquePerformers(): string[] {
-    return [...new Set((this.serviceRecords || []).filter(r => r.performedBy).map(r => r.performedBy!))];
+  getServiceDescription(record: ServiceRecord): string {
+    return (record as any).serviceDescription || record.description || '';
   }
 
-  getUniqueVendors(): string[] {
-    return [...new Set((this.serviceRecords || []).filter(r => r.vendor?.name).map(r => r.vendor!.name))];
+  getServiceCost(record: ServiceRecord): number {
+    const serviceRecord = record as any;
+    const cost = serviceRecord.serviceCost || serviceRecord.resolutionCost || record.cost || 0;
+    console.log('Service record cost check:', {id: record.id, serviceCost: serviceRecord.serviceCost, finalCost: cost});
+    return cost;
   }
 
-  getUniqueServiceTypes(): string[] {
-    return [...new Set((this.serviceRecords || []).map(r => r.serviceType))];
-  }
-
-  applyFilters() {
-    this.filteredServiceRecords = (this.serviceRecords || []).filter(record => {
-      const performerMatch = !this.performerFilter || record.performedBy === this.performerFilter;
-      const vendorMatch = !this.vendorFilter || record.vendor?.name === this.vendorFilter;
-      const typeMatch = !this.serviceTypeFilter || record.serviceType === this.serviceTypeFilter;
-      return performerMatch && vendorMatch && typeMatch;
-    });
-  }
-
-  clearFilters() {
-    this.performerFilter = '';
-    this.vendorFilter = '';
-    this.serviceTypeFilter = '';
-    this.filteredServiceRecords = [...(this.serviceRecords || [])];
-  }
-
-  hasActiveFilters(): boolean {
-    return !!(this.performerFilter || this.vendorFilter || this.serviceTypeFilter);
+  openIssueFromService(record: ServiceRecord) {
+    const serviceRecord = record as any;
+    
+    // Check if service record has issue ID
+    if (serviceRecord.issueId) {
+      this.router.navigate(['/issues', serviceRecord.issueId]);
+      return;
+    }
+    
+    // Try to extract issue ID from description
+    const description = this.getServiceDescription(record);
+    const issueIdMatch = description.match(/#(\d+)/); // Look for #123 pattern
+    
+    if (issueIdMatch) {
+      const issueId = parseInt(issueIdMatch[1]);
+      this.router.navigate(['/issues', issueId]);
+    } else if (description.toLowerCase().includes('issue')) {
+      // If it's issue-related but no ID found, go to issues list
+      this.router.navigate(['/issues']);
+    }
   }
 
 
@@ -1221,18 +1164,18 @@ export class AssetDetailComponent implements OnInit {
       return;
     }
     
-    const userIdStr = prompt('Enter user ID to allocate this asset:');
-    if (!userIdStr) return;
+    this.showUserSelector = true;
+  }
+
+  onUserSelected(users: User[]) {
+    this.showUserSelector = false;
     
-    const userId = Number(userIdStr);
-    if (isNaN(userId)) {
-      this.toastService.error('Invalid user ID');
-      return;
-    }
+    if (!users.length || !this.asset) return;
     
-    this.assetService.allocateAsset(this.asset.id, userId).subscribe({
+    const user = users[0];
+    this.assetService.allocateAsset(this.asset.id, user.id).subscribe({
       next: () => {
-        this.toastService.success('Asset allocated successfully');
+        this.toastService.success(`Asset allocated to ${user.name} successfully`);
         this.loadAsset(this.asset!.id);
       },
       error: () => this.toastService.error('Failed to allocate asset')
@@ -1316,16 +1259,27 @@ export class AssetDetailComponent implements OnInit {
 
   getTotalServiceCost(): number {
     if (!this.shouldShowFinancialInfo()) return 0;
-    return (this.serviceRecords || []).reduce((total, record) => total + (record.cost || 0), 0);
+    return this.serviceRecords.reduce((total, record) => total + (record.cost || 0), 0);
   }
 
   loadOwnershipHistory(assetId: number) {
     this.allocationService.getAllocationsByAsset(assetId).subscribe({
       next: (allocations) => {
-        this.ownershipHistory = (allocations || []).map(allocation => ({
-          ...allocation,
-          serviceRecords: this.getServiceRecordsForPeriod(allocation)
-        })).sort((a, b) => new Date(b.allocatedDate).getTime() - new Date(a.allocatedDate).getTime());
+        this.ownershipHistory = (allocations || []).map(allocation => {
+          const alloc = allocation as any;
+          return {
+            ...allocation,
+            userId: alloc.user?.id || allocation.userId,
+            userName: alloc.user?.name || allocation.userName,
+            userEmail: alloc.user?.email || allocation.userEmail,
+            assetId: alloc.asset?.id || allocation.assetId,
+            assetName: alloc.asset?.name || allocation.assetName,
+            assetTag: alloc.asset?.assetTag || allocation.assetTag,
+            daysAllocated: allocation.returnedDate ? 
+              Math.ceil((new Date(allocation.returnedDate).getTime() - new Date(allocation.allocatedDate).getTime()) / (1000 * 60 * 60 * 24)) :
+              Math.ceil((new Date().getTime() - new Date(allocation.allocatedDate).getTime()) / (1000 * 60 * 60 * 24))
+          };
+        }).sort((a, b) => b.id - a.id);
         
         if (!this.currentAllocation && this.ownershipHistory.length > 0) {
           const current = this.ownershipHistory.find(h => !h.returnedDate);
@@ -1335,21 +1289,12 @@ export class AssetDetailComponent implements OnInit {
         }
       },
       error: (error) => {
-        console.error('Error loading ownership history:', error);
         this.ownershipHistory = [];
       }
     });
   }
 
-  getServiceRecordsForPeriod(allocation: any): any[] {
-    if (!this.serviceRecords) return [];
-    return this.serviceRecords.filter(service => {
-      const serviceDate = new Date(service.serviceDate);
-      const allocatedDate = new Date(allocation.allocatedDate);
-      const returnedDate = allocation.returnedDate ? new Date(allocation.returnedDate) : new Date();
-      return serviceDate >= allocatedDate && serviceDate <= returnedDate;
-    });
-  }
+
 
   viewUserDetails(userId: number) {
     this.router.navigate(['/users', userId]);

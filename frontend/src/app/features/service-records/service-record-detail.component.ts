@@ -160,6 +160,8 @@ import { RoleService } from '../../core/services/role.service';
       max-width: 1200px;
       margin: 0 auto;
       padding: 2rem;
+      background: #f9fafb;
+      min-height: 100vh;
     }
 
     .detail-header {
@@ -406,12 +408,16 @@ import { RoleService } from '../../core/services/role.service';
       display: inline-flex;
       align-items: center;
       gap: 0.5rem;
+      border: none;
     }
 
     .btn-primary {
       background: #3b82f6;
       color: white;
-      border: none;
+    }
+
+    .btn-primary:hover {
+      background: #2563eb;
     }
 
     .btn-outline {
@@ -420,12 +426,30 @@ import { RoleService } from '../../core/services/role.service';
       border: 1px solid #d1d5db;
     }
 
+    .btn-outline:hover {
+      background: #f9fafb;
+    }
+
     .btn-sm {
       padding: 0.375rem 0.75rem;
       font-size: 0.875rem;
     }
 
+    @media (max-width: 1024px) {
+      .detail-container {
+        padding: 1.5rem;
+      }
+      
+      .overview-grid {
+        grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+      }
+    }
+
     @media (max-width: 768px) {
+      .detail-container {
+        padding: 1rem;
+      }
+      
       .detail-header {
         flex-direction: column;
         gap: 1rem;
@@ -434,15 +458,35 @@ import { RoleService } from '../../core/services/role.service';
 
       .overview-grid {
         grid-template-columns: 1fr;
+        gap: 1rem;
       }
 
       .asset-info {
         grid-template-columns: 1fr;
+        gap: 1rem;
       }
 
       .history-item {
         grid-template-columns: 1fr;
         gap: 0.5rem;
+      }
+      
+      .card-header {
+        padding: 1rem;
+      }
+    }
+    
+    @media (max-width: 480px) {
+      .detail-container {
+        padding: 0.5rem;
+      }
+      
+      .overview-grid {
+        padding: 1rem;
+      }
+      
+      .asset-info {
+        padding: 1rem;
       }
     }
   `]

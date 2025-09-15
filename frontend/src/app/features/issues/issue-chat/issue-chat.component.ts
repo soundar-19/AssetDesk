@@ -1,4 +1,4 @@
-import { Component, OnInit } from '@angular/core';
+import { Component, OnInit, Input } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { ReactiveFormsModule, FormBuilder, FormGroup, Validators } from '@angular/forms';
 import { ActivatedRoute, Router } from '@angular/router';
@@ -13,24 +13,7 @@ import { ToastService } from '../../../shared/components/toast/toast.service';
   imports: [CommonModule, ReactiveFormsModule],
   template: `
     <div class="chat-layout">
-      <!-- Header -->
-      <div class="chat-header">
-        <div class="header-left">
-          <button class="back-btn" (click)="goBack()">
-            <svg width="20" height="20" viewBox="0 0 20 20" fill="currentColor">
-              <path fill-rule="evenodd" d="M9.707 16.707a1 1 0 01-1.414 0l-6-6a1 1 0 010-1.414l6-6a1 1 0 011.414 1.414L5.414 9H17a1 1 0 110 2H5.414l4.293 4.293a1 1 0 010 1.414z"/>
-            </svg>
-          </button>
-          <div class="issue-details" *ngIf="issue">
-            <h1 class="issue-title">{{ issue.title }}</h1>
-            <div class="issue-meta">
-              <span class="asset-tag">{{ issue.assetTag }}</span>
-              <span class="status-badge" [class]="'status-' + issue.status?.toLowerCase()">{{ issue.status }}</span>
-              <span class="priority-badge" [class]="'priority-' + issue.priority?.toLowerCase()">{{ issue.priority }}</span>
-            </div>
-          </div>
-        </div>
-      </div>
+
 
       <!-- Messages Area -->
       <div class="messages-container" #messagesContainer>
@@ -159,140 +142,51 @@ import { ToastService } from '../../../shared/components/toast/toast.service';
       display: flex;
       flex-direction: column;
       height: 100vh;
-      background: var(--gray-50);
-    }
-
-    .chat-header {
       background: white;
-      border-bottom: 1px solid var(--gray-200);
-      padding: var(--space-4) var(--space-6);
-      display: flex;
-      align-items: center;
-      justify-content: space-between;
     }
 
-    .header-left {
-      display: flex;
-      align-items: center;
-      gap: var(--space-4);
-    }
 
-    .back-btn {
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      width: 40px;
-      height: 40px;
-      border: none;
-      background: var(--gray-100);
-      border-radius: var(--radius-full);
-      color: var(--gray-600);
-      cursor: pointer;
-      transition: all var(--transition-fast);
-    }
-
-    .back-btn:hover {
-      background: var(--gray-200);
-      color: var(--gray-900);
-    }
-
-    .issue-title {
-      font-size: 1.25rem;
-      font-weight: 600;
-      color: var(--gray-900);
-      margin: 0;
-    }
-
-    .issue-meta {
-      display: flex;
-      align-items: center;
-      gap: var(--space-3);
-      margin-top: var(--space-1);
-    }
-
-    .asset-tag {
-      font-size: 0.875rem;
-      color: var(--gray-600);
-      font-family: monospace;
-    }
-
-    .status-badge, .priority-badge {
-      padding: 2px 8px;
-      border-radius: var(--radius-full);
-      font-size: 0.75rem;
-      font-weight: 500;
-      text-transform: uppercase;
-    }
-
-    .status-open { background: var(--blue-100); color: var(--blue-800); }
-    .status-in_progress { background: var(--yellow-100); color: var(--yellow-800); }
-    .status-resolved { background: var(--green-100); color: var(--green-800); }
-    .status-closed { background: var(--gray-100); color: var(--gray-800); }
-
-    .priority-low { background: var(--green-100); color: var(--green-800); }
-    .priority-medium { background: var(--yellow-100); color: var(--yellow-800); }
-    .priority-high { background: var(--red-100); color: var(--red-800); }
 
     .messages-container {
       flex: 1;
       overflow-y: auto;
-      padding: var(--space-6);
-      background: linear-gradient(to bottom, #f8fafc, #f1f5f9);
+      padding: 1rem 1rem 6rem 1rem;
+      background: #f8fafc;
+      min-height: 0;
     }
 
     .messages-list {
-      max-width: 800px;
-      margin: 0 auto;
+      max-width: 100%;
+      display: flex;
+      flex-direction: column;
+      gap: 0.75rem;
     }
 
     .message-wrapper {
-      margin-bottom: var(--space-4);
       display: flex;
+      align-items: flex-end;
+      gap: 0.75rem;
     }
 
     .message-wrapper.own-message {
-      justify-content: flex-end;
+      flex-direction: row-reverse;
     }
 
     .message-bubble {
-      max-width: 70%;
+      max-width: 65%;
       background: white;
-      border-radius: 18px;
-      padding: 12px 16px;
-      box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
-      border: 1px solid var(--gray-100);
+      border-radius: 1.25rem;
+      padding: 1rem 1.25rem;
+      box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1), 0 1px 2px rgba(0, 0, 0, 0.06);
+      border: 1px solid #e5e7eb;
       position: relative;
     }
 
-    .message-bubble::before {
-      content: '';
-      position: absolute;
-      bottom: 0;
-      width: 0;
-      height: 0;
-      border: 8px solid transparent;
-    }
-
-    .message-wrapper:not(.own-message) .message-bubble::before {
-      left: -7px;
-      border-right-color: white;
-      border-bottom-color: white;
-      border-left: none;
-      border-top: none;
-    }
-
     .own-message .message-bubble {
-      background: linear-gradient(135deg, var(--primary-500), var(--primary-600));
+      background: linear-gradient(135deg, #3b82f6, #2563eb);
       color: white;
-      border: 1px solid var(--primary-400);
-    }
-
-    .own-message .message-bubble::before {
-      right: -7px;
-      border-left-color: var(--primary-500);
-      border-bottom-color: var(--primary-500);
-      border-right: none;
-      border-top: none;
+      border: 1px solid #2563eb;
+      box-shadow: 0 4px 6px -1px rgba(59, 130, 246, 0.1), 0 2px 4px -1px rgba(59, 130, 246, 0.06);
     }
 
     .message-header {
@@ -388,9 +282,14 @@ import { ToastService } from '../../../shared/components/toast/toast.service';
     }
 
     .chat-input-area {
-      background: white;
-      border-top: 1px solid var(--gray-200);
       padding: var(--space-4) var(--space-6);
+      position: fixed;
+      bottom: 1rem;
+      left: 50%;
+      transform: translateX(-50%);
+      max-width: 800px;
+      width: calc(100% - 2rem);
+      z-index: 10;
     }
 
     .chat-disabled {
@@ -480,18 +379,18 @@ import { ToastService } from '../../../shared/components/toast/toast.service';
     .input-container {
       display: flex;
       align-items: center;
-      gap: var(--space-2);
-      padding: var(--space-2);
+      gap: 0.75rem;
+      padding: 0.75rem 1rem;
       background: white;
-      border-radius: 25px;
-      border: 2px solid var(--gray-200);
-      box-shadow: 0 2px 12px rgba(0, 0, 0, 0.05);
-      transition: border-color var(--transition-fast);
+      border-radius: 1.5rem;
+      border: 2px solid #e5e7eb;
+      box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
+      transition: all 0.2s ease;
     }
 
     .input-container:focus-within {
-      border-color: var(--primary-300);
-      box-shadow: 0 2px 12px rgba(59, 130, 246, 0.15);
+      border-color: #3b82f6;
+      box-shadow: 0 4px 6px -1px rgba(59, 130, 246, 0.1), 0 2px 4px -1px rgba(59, 130, 246, 0.06), 0 0 0 3px rgba(59, 130, 246, 0.1);
     }
 
     .attach-btn {
@@ -605,10 +504,10 @@ import { ToastService } from '../../../shared/components/toast/toast.service';
   `]
 })
 export class IssueChatComponent implements OnInit {
+  @Input() issueId: number = 0;
   messageForm: FormGroup;
   issue: any = null;
   messages: any[] = [];
-  issueId: number;
   currentUserId: number;
   selectedFile: File | null = null;
   filePreview: string | null = null;
@@ -625,7 +524,6 @@ export class IssueChatComponent implements OnInit {
     private messageService: MessageService,
     private toastService: ToastService
   ) {
-    this.issueId = Number(this.route.snapshot.paramMap.get('id'));
     this.currentUserId = Number(this.authService.getCurrentUser()?.id) || 0;
     this.messageForm = this.fb.group({
       message: ['']
@@ -633,6 +531,9 @@ export class IssueChatComponent implements OnInit {
   }
 
   ngOnInit() {
+    if (!this.issueId) {
+      this.issueId = Number(this.route.snapshot.paramMap.get('id')) || 0;
+    }
     this.loadIssue();
     this.loadMessages();
   }

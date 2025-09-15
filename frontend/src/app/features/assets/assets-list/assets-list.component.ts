@@ -403,6 +403,21 @@ interface AssetGroup {
       width: 100%;
       overflow-x: auto;
     }
+    
+    .individual-assets :deep(.data-table) {
+      width: 100%;
+      table-layout: fixed;
+      font-size: 0.875rem;
+    }
+    
+    .individual-assets :deep(.data-table th),
+    .individual-assets :deep(.data-table td) {
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+      padding: 0.5rem 0.25rem;
+      max-width: 0;
+    }
 
     @media (max-width: 1024px) {
       .asset-groups-grid {

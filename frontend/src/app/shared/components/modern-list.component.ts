@@ -62,7 +62,6 @@ export interface ListItem {
     .modern-list {
       background: #f8fafc;
       border-radius: 1rem;
-      overflow: hidden;
     }
 
     .list-container {
@@ -82,6 +81,8 @@ export interface ListItem {
       box-shadow: 0 1px 3px rgba(0,0,0,0.1);
       transition: all 0.2s ease;
       border: 1px solid transparent;
+      min-height: 120px;
+      width: 100%;
     }
 
     .list-item:hover {
@@ -201,6 +202,66 @@ export interface ListItem {
 
     .action-btn.primary:hover {
       background: #2563eb;
+    }
+    
+    @media (max-width: 1024px) {
+      .list-container {
+        padding: 1rem;
+      }
+      
+      .list-item {
+        padding: 1rem;
+        min-height: 100px;
+      }
+    }
+    
+    @media (max-width: 768px) {
+      .list-container {
+        gap: 0.5rem;
+        padding: 0.75rem;
+      }
+      
+      .list-item {
+        flex-direction: column;
+        align-items: stretch;
+        padding: 1rem;
+        gap: 0.75rem;
+        min-height: auto;
+      }
+      
+      .item-header {
+        flex-direction: column;
+        align-items: flex-start;
+        gap: 0.5rem;
+      }
+      
+      .item-metadata {
+        gap: 1rem;
+      }
+      
+      .item-actions {
+        align-self: flex-end;
+      }
+    }
+    
+    @media (max-width: 480px) {
+      .list-container {
+        padding: 0.5rem;
+      }
+      
+      .list-item {
+        padding: 0.75rem;
+      }
+      
+      .item-metadata {
+        flex-direction: column;
+        gap: 0.5rem;
+      }
+      
+      .item-actions {
+        align-self: stretch;
+        justify-content: center;
+      }
     }
   `]
 })

@@ -4,10 +4,12 @@ import jakarta.persistence.*;
 import lombok.Data;
 import java.math.BigDecimal;
 import java.time.LocalDate;
+import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 
 @Entity
 @Table(name = "assets")
 @Data
+@JsonIgnoreProperties({"hibernateLazyInitializer", "handler"})
 public class Asset {
     
     @Id
@@ -31,7 +33,7 @@ public class Asset {
     private LocalDate purchaseDate;
     private LocalDate warrantyExpiryDate;
     
-    @ManyToOne(fetch = FetchType.LAZY)
+    @ManyToOne(fetch = FetchType.EAGER)
     @JoinColumn(name = "vendor_id")
     private Vendor vendor;
     

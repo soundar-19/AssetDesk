@@ -12,7 +12,7 @@ import { filter } from 'rxjs/operators';
   template: `
     <aside class="sidebar" [class.collapsed]="collapsed">
       <div class="sidebar-header">
-        <div class="logo">
+        <div class="logo" (click)="toggleSidebar()">
           <svg width="32" height="32" viewBox="0 0 32 32" fill="none">
             <rect width="32" height="32" rx="8" fill="var(--primary-600)"/>
             <path d="M10 8h12a2 2 0 012 2v4a2 2 0 01-2 2H10a2 2 0 01-2-2v-4a2 2 0 012-2z" fill="white"/>
@@ -22,6 +22,11 @@ import { filter } from 'rxjs/operators';
           </svg>
           <span *ngIf="!collapsed" class="logo-text">AssetDesk</span>
         </div>
+        <button class="close-btn" (click)="closeSidebar()" *ngIf="!collapsed">
+          <svg width="20" height="20" viewBox="0 0 20 20" fill="currentColor">
+            <path fill-rule="evenodd" d="M4.293 4.293a1 1 0 011.414 0L10 8.586l4.293-4.293a1 1 0 111.414 1.414L11.414 10l4.293 4.293a1 1 0 01-1.414 1.414L10 11.414l-4.293 4.293a1 1 0 01-1.414-1.414L8.586 10 4.293 5.707a1 1 0 010-1.414z"/>
+          </svg>
+        </button>
       </div>
 
       <nav class="sidebar-nav">
@@ -82,7 +87,7 @@ import { filter } from 'rxjs/operators';
         
         <div class="nav-section" *ngIf="roleService.canManageUsers()">
           <div class="nav-section-title" *ngIf="!collapsed">Admin Tools</div>
-          <a routerLink="/warranty-management" class="nav-item" routerLinkActive="active">
+          <a routerLink="/warranty" class="nav-item" routerLinkActive="active">
             <svg class="nav-icon" width="20" height="20" viewBox="0 0 20 20" fill="currentColor">
               <path fill-rule="evenodd" d="M10 1.944A11.954 11.954 0 012.166 5C2.056 5.649 2 6.319 2 7c0 5.225 3.34 9.67 8 11.317C14.66 16.67 18 12.225 18 7c0-.682-.057-1.35-.166-2.001A11.954 11.954 0 0110 1.944zM11.166 4.12C9.758 4.569 8.589 5.498 8 6.739 7.411 5.498 6.242 4.57 4.834 4.12A9.957 9.957 0 0110 3c.34 0 .677.02 1.166.12z"/>
             </svg>
@@ -129,12 +134,44 @@ import { filter } from 'rxjs/operators';
       border-right: 1px solid var(--gray-200);
       display: flex;
       flex-direction: column;
-      transition: width var(--transition-normal);
+      transition: all 0.3s ease;
       height: 100vh;
       overflow: hidden;
+      position: relative;
+      z-index: 1000;
 
       &.collapsed {
         width: 80px;
+      }
+    }
+    
+    @media (max-width: 1024px) {
+      .sidebar {
+        width: 260px;
+        
+        &.collapsed {
+          width: 70px;
+        }
+      }
+    }
+    
+    @media (max-width: 768px) {
+      .sidebar {
+        position: fixed;
+        left: 0;
+        top: 0;
+        width: 280px;
+        transform: translateX(-100%);
+        box-shadow: var(--shadow-lg);
+        
+        &:not(.collapsed) {
+          transform: translateX(0);
+        }
+        
+        &.collapsed {
+          transform: translateX(-100%);
+          width: 280px;
+        }
       }
     }
 
@@ -144,6 +181,24 @@ import { filter } from 'rxjs/operators';
       display: flex;
       align-items: center;
       justify-content: space-between;
+    }
+    
+    .close-btn {
+      background: none;
+      border: none;
+      padding: var(--space-2);
+      border-radius: var(--radius-md);
+      color: var(--gray-500);
+      cursor: pointer;
+      transition: all var(--transition-fast);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+    
+    .close-btn:hover {
+      background-color: var(--gray-100);
+      color: var(--gray-700);
     }
 
     .logo {
@@ -262,5 +317,16 @@ export class AppSidenavComponent implements OnInit {
       .subscribe((event: NavigationEnd) => {
         this.currentRoute = event.url;
       });
+  }
+  
+  closeSidebar() {
+    // This will be handled by parent component
+    const event = new CustomEvent('closeSidebar');
+    window.dispatchEvent(event);
+  }
+  
+  toggleSidebar() {
+    const event = new CustomEvent('toggleSidebar');
+    window.dispatchEvent(event);
   }
 }

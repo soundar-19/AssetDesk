@@ -12,22 +12,41 @@ import { AssetRequest } from '../../core/models';
   standalone: true,
   imports: [CommonModule, ReactiveFormsModule],
   template: `
-    <div class="page-container">
-      <div class="page-header">
-        <div>
-          <h1 class="page-title">{{ isEditMode ? 'Edit Request' : 'Request Asset' }}</h1>
-          <p class="page-description">{{ isEditMode ? 'Update your asset request' : 'Submit a request for a new asset' }}</p>
+    <div class="request-page">
+      <div class="hero-section">
+        <div class="hero-content">
+          <div class="hero-text">
+            <h1>{{ isEditMode ? 'Edit Asset Request' : 'Request New Asset' }}</h1>
+            <p>{{ isEditMode ? 'Update your asset request details' : 'Get the equipment you need to be productive' }}</p>
+          </div>
+          <button class="back-btn" (click)="goBack()">
+            <svg width="20" height="20" viewBox="0 0 20 20" fill="currentColor">
+              <path fill-rule="evenodd" d="M9.707 16.707a1 1 0 01-1.414 0l-6-6a1 1 0 010-1.414l6-6a1 1 0 011.414 1.414L5.414 9H17a1 1 0 110 2H5.414l4.293 4.293a1 1 0 010 1.414z"/>
+            </svg>
+            Back
+          </button>
         </div>
-        <button class="btn btn-outline" (click)="goBack()">
-          ← Back to Requests
-        </button>
       </div>
 
-      <div class="form-container">
-        <form [formGroup]="requestForm" (ngSubmit)="onSubmit()" class="asset-request-form">
-          <!-- Request Type -->
-          <div class="form-section">
-            <h3>Request Type</h3>
+      <div class="form-wrapper">
+        <div class="progress-bar">
+          <div class="progress-step active">1</div>
+          <div class="progress-line"></div>
+          <div class="progress-step">2</div>
+          <div class="progress-line"></div>
+          <div class="progress-step">3</div>
+        </div>
+        
+        <form [formGroup]="requestForm" (ngSubmit)="onSubmit()" class="modern-form">
+          <!-- Step 1: Request Type -->
+          <div class="form-step">
+            <div class="step-header">
+              <div class="step-icon">📋</div>
+              <div class="step-info">
+                <h3>Request Details</h3>
+                <p>Tell us what you need</p>
+              </div>
+            </div>
             <div class="form-group">
               <label for="requestType">Type of Request *</label>
               <select id="requestType" 
@@ -46,9 +65,15 @@ import { AssetRequest } from '../../core/models';
             </div>
           </div>
 
-          <!-- Asset Details -->
-          <div class="form-section">
-            <h3>Asset Details</h3>
+          <!-- Step 2: Asset Details -->
+          <div class="form-step">
+            <div class="step-header">
+              <div class="step-icon">💻</div>
+              <div class="step-info">
+                <h3>Asset Specifications</h3>
+                <p>Specify the asset details</p>
+              </div>
+            </div>
             <div class="form-row">
               <div class="form-group">
                 <label for="category">Category *</label>
@@ -110,9 +135,15 @@ import { AssetRequest } from '../../core/models';
             </div>
           </div>
 
-          <!-- Business Justification -->
-          <div class="form-section">
-            <h3>Business Justification</h3>
+          <!-- Step 3: Business Justification -->
+          <div class="form-step">
+            <div class="step-header">
+              <div class="step-icon">🎯</div>
+              <div class="step-info">
+                <h3>Business Case</h3>
+                <p>Justify your request</p>
+              </div>
+            </div>
             <div class="form-group">
               <label for="businessJustification">Justification *</label>
               <textarea id="businessJustification" 
@@ -156,8 +187,14 @@ import { AssetRequest } from '../../core/models';
           </div>
 
           <!-- Additional Information -->
-          <div class="form-section">
-            <h3>Additional Information</h3>
+          <div class="form-step">
+            <div class="step-header">
+              <div class="step-icon">📝</div>
+              <div class="step-info">
+                <h3>Additional Details</h3>
+                <p>Any extra information</p>
+              </div>
+            </div>
             <div class="form-group">
               <label for="specifications">Technical Specifications</label>
               <textarea id="specifications" 
@@ -177,31 +214,78 @@ import { AssetRequest } from '../../core/models';
             </div>
           </div>
 
-          <!-- Form Actions -->
-          <div class="form-actions">
-            <button type="button" class="btn btn-secondary" (click)="goBack()" [disabled]="loading">
-              Cancel
-            </button>
-            <button type="submit" class="btn btn-primary" [disabled]="requestForm.invalid || loading">
-              <span *ngIf="loading" class="loading-spinner"></span>
-              {{ isEditMode ? 'Update Request' : 'Submit Request' }}
-            </button>
+          <!-- Submit Section -->
+          <div class="submit-section">
+            <div class="submit-card">
+              <div class="submit-header">
+                <h3>Ready to Submit?</h3>
+                <p>Review your request and submit when ready</p>
+              </div>
+              <div class="submit-actions">
+                <button type="button" class="btn-secondary" (click)="goBack()" [disabled]="loading">
+                  Cancel
+                </button>
+                <button type="submit" class="btn-primary" [disabled]="requestForm.invalid || loading">
+                  <span *ngIf="loading" class="spinner"></span>
+                  <svg *ngIf="!loading" width="20" height="20" viewBox="0 0 20 20" fill="currentColor">
+                    <path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-8.293l-3-3a1 1 0 00-1.414 1.414L10.586 9.5 9.293 8.207a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4a1 1 0 00-1.414-1.414L11 9.586z"/>
+                  </svg>
+                  {{ isEditMode ? 'Update Request' : 'Submit Request' }}
+                </button>
+              </div>
+            </div>
           </div>
         </form>
       </div>
     </div>
   `,
   styles: [`
-    .page-header {
+    .request-page {
+      min-height: 100vh;
+      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    }
+    
+    .hero-section {
+      padding: 3rem 2rem;
+      color: white;
+    }
+    
+    .hero-content {
+      max-width: 1200px;
+      margin: 0 auto;
       display: flex;
       justify-content: space-between;
-      align-items: flex-start;
-      margin-bottom: var(--space-6);
-      padding: var(--space-6);
-      background: white;
-      border-radius: var(--radius-lg);
-      box-shadow: var(--shadow-sm);
-      border: 1px solid var(--gray-200);
+      align-items: center;
+    }
+    
+    .hero-text h1 {
+      font-size: 2.5rem;
+      font-weight: 700;
+      margin: 0 0 1rem 0;
+    }
+    
+    .hero-text p {
+      font-size: 1.25rem;
+      opacity: 0.9;
+      margin: 0;
+    }
+    
+    .back-btn {
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+      padding: 0.75rem 1.5rem;
+      background: rgba(255,255,255,0.2);
+      border: 1px solid rgba(255,255,255,0.3);
+      border-radius: 50px;
+      color: white;
+      cursor: pointer;
+      transition: all 0.3s ease;
+    }
+    
+    .back-btn:hover {
+      background: rgba(255,255,255,0.3);
+      transform: translateY(-2px);
     }
     
     .page-title {
@@ -217,45 +301,94 @@ import { AssetRequest } from '../../core/models';
       font-size: 1rem;
     }
     
-    .form-container {
+    .form-wrapper {
+      max-width: 800px;
+      margin: -2rem auto 0;
+      padding: 0 2rem 2rem;
+      position: relative;
+      z-index: 1;
+    }
+    
+    .progress-bar {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      margin-bottom: 3rem;
       background: white;
-      border-radius: var(--radius-lg);
-      box-shadow: var(--shadow-sm);
-      border: 1px solid var(--gray-200);
+      padding: 1.5rem;
+      border-radius: 50px;
+      box-shadow: 0 10px 30px rgba(0,0,0,0.1);
+    }
+    
+    .progress-step {
+      width: 40px;
+      height: 40px;
+      border-radius: 50%;
+      background: #e5e7eb;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-weight: 600;
+      color: #6b7280;
+    }
+    
+    .progress-step.active {
+      background: #3b82f6;
+      color: white;
+    }
+    
+    .progress-line {
+      width: 60px;
+      height: 2px;
+      background: #e5e7eb;
+      margin: 0 1rem;
+    }
+    
+    .modern-form {
+      background: white;
+      border-radius: 20px;
+      box-shadow: 0 20px 60px rgba(0,0,0,0.1);
       overflow: hidden;
     }
     
-    .asset-request-form {
-      padding: var(--space-8);
+    .form-step {
+      padding: 2rem;
+      border-bottom: 1px solid #f3f4f6;
     }
     
-    .form-section {
-      margin-bottom: var(--space-8);
-      padding-bottom: var(--space-6);
-      border-bottom: 1px solid var(--gray-200);
-    }
-    
-    .form-section:last-of-type {
+    .form-step:last-child {
       border-bottom: none;
-      margin-bottom: var(--space-6);
     }
     
-    .form-section h3 {
-      margin: 0 0 var(--space-5) 0;
-      color: var(--gray-900);
-      font-size: 1.25rem;
-      font-weight: 600;
+    .step-header {
       display: flex;
       align-items: center;
-      gap: var(--space-2);
+      gap: 1rem;
+      margin-bottom: 2rem;
     }
     
-    .form-section h3::before {
-      content: '';
-      width: 4px;
-      height: 1.25rem;
-      background: var(--primary-500);
-      border-radius: var(--radius-sm);
+    .step-icon {
+      width: 50px;
+      height: 50px;
+      background: linear-gradient(135deg, #667eea, #764ba2);
+      border-radius: 15px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 1.5rem;
+    }
+    
+    .step-info h3 {
+      margin: 0 0 0.25rem 0;
+      font-size: 1.5rem;
+      font-weight: 700;
+      color: #1f2937;
+    }
+    
+    .step-info p {
+      margin: 0;
+      color: #6b7280;
+      font-size: 0.875rem;
     }
     
     .form-row {
@@ -326,55 +459,77 @@ import { AssetRequest } from '../../core/models';
       min-height: 80px;
     }
     
-    .form-actions {
-      display: flex;
-      justify-content: flex-end;
-      gap: var(--space-3);
-      padding-top: var(--space-6);
-      border-top: 1px solid var(--gray-200);
+    .submit-section {
+      padding: 2rem;
+      background: #f8fafc;
     }
     
-    .btn {
-      padding: var(--space-3) var(--space-6);
-      border-radius: var(--radius-md);
-      font-weight: 500;
-      font-size: 0.875rem;
-      cursor: pointer;
-      transition: all var(--transition-fast);
-      border: 1px solid transparent;
-      display: inline-flex;
-      align-items: center;
-      gap: var(--space-2);
-      min-width: 120px;
+    .submit-card {
+      background: white;
+      border-radius: 15px;
+      padding: 2rem;
+      box-shadow: 0 4px 20px rgba(0,0,0,0.05);
+      text-align: center;
+    }
+    
+    .submit-header h3 {
+      margin: 0 0 0.5rem 0;
+      font-size: 1.25rem;
+      font-weight: 600;
+      color: #1f2937;
+    }
+    
+    .submit-header p {
+      margin: 0 0 2rem 0;
+      color: #6b7280;
+    }
+    
+    .submit-actions {
+      display: flex;
+      gap: 1rem;
       justify-content: center;
     }
     
-    .btn:disabled {
-      opacity: 0.6;
-      cursor: not-allowed;
-    }
-    
     .btn-primary {
-      background: var(--primary-600);
+      background: linear-gradient(135deg, #667eea, #764ba2);
       color: white;
-      border-color: var(--primary-600);
+      border: none;
+      padding: 1rem 2rem;
+      border-radius: 50px;
+      font-weight: 600;
+      cursor: pointer;
+      transition: all 0.3s ease;
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+      box-shadow: 0 4px 15px rgba(102, 126, 234, 0.4);
     }
     
     .btn-primary:hover:not(:disabled) {
-      background: var(--primary-700);
-      border-color: var(--primary-700);
-      transform: translateY(-1px);
+      transform: translateY(-2px);
+      box-shadow: 0 8px 25px rgba(102, 126, 234, 0.6);
+    }
+    
+    .btn-primary:disabled {
+      opacity: 0.6;
+      cursor: not-allowed;
+      transform: none;
     }
     
     .btn-secondary {
       background: white;
-      color: var(--gray-700);
-      border-color: var(--gray-300);
+      color: #6b7280;
+      border: 2px solid #e5e7eb;
+      padding: 1rem 2rem;
+      border-radius: 50px;
+      font-weight: 500;
+      cursor: pointer;
+      transition: all 0.3s ease;
     }
     
     .btn-secondary:hover:not(:disabled) {
-      background: var(--gray-50);
-      border-color: var(--gray-400);
+      border-color: #d1d5db;
+      transform: translateY(-1px);
     }
     
     .btn-outline {
@@ -388,11 +543,11 @@ import { AssetRequest } from '../../core/models';
       border-color: var(--gray-400);
     }
     
-    .loading-spinner {
-      width: 1rem;
-      height: 1rem;
-      border: 2px solid transparent;
-      border-top: 2px solid currentColor;
+    .spinner {
+      width: 20px;
+      height: 20px;
+      border: 2px solid rgba(255,255,255,0.3);
+      border-top: 2px solid white;
       border-radius: 50%;
       animation: spin 1s linear infinite;
     }
