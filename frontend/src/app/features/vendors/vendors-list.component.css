@@ -1,7 +1,13 @@
-.vendors-list {
-  padding: var(--space-6);
-  max-width: var(--container-2xl);
+.standardized-layout {
+  padding: var(--space-6) var(--space-6) var(--space-6) var(--space-6);
+  max-width: var(--container-xl);
   margin: 0 auto;
+  min-height: 100vh;
+  box-sizing: border-box;
+}
+
+.vendors-list {
+  /* Layout handled by standardized-layout class */
 }
 
 .header {
@@ -24,8 +30,20 @@
   margin: 0;
 }
 
+@media (max-width: 1024px) {
+  .standardized-layout {
+    padding: var(--space-4) var(--space-4) var(--space-4) var(--space-4);
+  }
+}
+
+@media (max-width: 768px) {
+  .standardized-layout {
+    padding: var(--space-3) var(--space-3) var(--space-3) var(--space-3);
+  }
+}
+
 @media (max-width: 640px) {
-  .vendors-list {
-    padding: var(--space-4);
+  .standardized-layout {
+    padding: var(--space-2) var(--space-2) var(--space-2) var(--space-2);
   }
 }

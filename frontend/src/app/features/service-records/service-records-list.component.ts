@@ -647,28 +647,7 @@ export class ServiceRecordsListComponent implements OnInit {
     window.URL.revokeObjectURL(url);
   }
 
-  // Asset filtering properties
-  assetRiskFilter = '';
-  assetFrequencyFilter = '';
-  filteredAssets: any[] = [];
 
-  getFilteredAssets(): any[] {
-    let assets = this.getServicesByAsset();
-    
-    if (this.assetRiskFilter) {
-      assets = assets.filter(asset => asset.riskLevel === this.assetRiskFilter);
-    }
-    
-    if (this.assetFrequencyFilter) {
-      assets = assets.filter(asset => asset.maintenanceFrequency === this.assetFrequencyFilter);
-    }
-    
-    return assets;
-  }
-
-  applyAssetFilters() {
-    // Asset filters are applied in getFilteredAssets() method
-  }
 
   getAvgCompletionRate(): number {
     const vendors = this.getVendorAnalytics();

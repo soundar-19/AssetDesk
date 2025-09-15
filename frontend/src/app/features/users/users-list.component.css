@@ -1,7 +1,13 @@
-.users-list {
-  padding: var(--space-6);
-  max-width: var(--container-2xl);
+.standardized-layout {
+  padding: var(--space-6) var(--space-6) var(--space-6) var(--space-6);
+  max-width: var(--container-xl);
   margin: 0 auto;
+  min-height: 100vh;
+  box-sizing: border-box;
+}
+
+.users-list {
+  /* Layout handled by standardized-layout class */
 }
 
 /* Hide scrollbars but keep scroll functionality */
@@ -35,14 +41,14 @@
 }
 
 @media (max-width: 1024px) {
-  .users-list {
-    padding: var(--space-4);
+  .standardized-layout {
+    padding: var(--space-4) var(--space-4) var(--space-4) var(--space-4);
   }
 }
 
 @media (max-width: 768px) {
-  .users-list {
-    padding: var(--space-3);
+  .standardized-layout {
+    padding: var(--space-3) var(--space-3) var(--space-3) var(--space-3);
   }
   
   .header {
@@ -53,7 +59,7 @@
 }
 
 @media (max-width: 480px) {
-  .users-list {
-    padding: var(--space-2);
+  .standardized-layout {
+    padding: var(--space-2) var(--space-2) var(--space-2) var(--space-2);
   }
 }

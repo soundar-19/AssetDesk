@@ -32,27 +32,43 @@ import { ConfirmDialogService } from '../../shared/components/confirm-dialog/con
         </div>
       </div>
 
-      <!-- Filters -->
-      <div class="filters-section">
-        <div class="filters">
-          <select class="form-select" [(ngModel)]="filters.category" (change)="applyFilters()">
-            <option value="">All Categories</option>
-            <option value="HARDWARE">Hardware</option>
-            <option value="SOFTWARE">Software</option>
-            <option value="ACCESSORIES">Accessories</option>
-          </select>
+      <!-- Assets Section -->
+      <div class="assets-section">
+        <!-- Filters and Controls -->
+        <div class="filters-section">
+          <div class="filters">
+            <select class="form-select" [(ngModel)]="filters.category" (change)="applyFilters()">
+              <option value="">All Categories</option>
+              <option value="HARDWARE">Hardware</option>
+              <option value="SOFTWARE">Software</option>
+              <option value="ACCESSORIES">Accessories</option>
+            </select>
+            
+            <select class="form-select" [(ngModel)]="filters.type" (change)="applyFilters()">
+              <option value="">All Types</option>
+              <option value="LAPTOP">Laptop</option>
+              <option value="DESKTOP">Desktop</option>
+              <option value="MONITOR">Monitor</option>
+              <option value="PRINTER">Printer</option>
+              <option value="LICENSE">License</option>
+              <option value="ACCESSORIES">Accessories</option>
+            </select>
+          </div>
           
-          <select class="form-select" [(ngModel)]="filters.type" (change)="applyFilters()">
-            <option value="">All Types</option>
-            <option value="LAPTOP">Laptop</option>
-            <option value="DESKTOP">Desktop</option>
-            <option value="MONITOR">Monitor</option>
-            <option value="PRINTER">Printer</option>
-            <option value="LICENSE">License</option>
-            <option value="ACCESSORIES">Accessories</option>
-          </select>
+          <div class="view-toggle">
+            <button class="btn btn-sm" 
+                    [class.active]="showGrouped" 
+                    (click)="setView(true)">
+              Groups
+            </button>
+            <button class="btn btn-sm" 
+                    [class.active]="!showGrouped" 
+                    (click)="setView(false)">
+              List
+            </button>
+          </div>
         </div>
-        
+
         <!-- Bulk Actions -->
         <div class="bulk-actions" *ngIf="selectedAssets.size > 0 && roleService.canManageAssets()">
           <span class="selected-count">{{ selectedAssets.size }} selected</span>
@@ -72,25 +88,9 @@ import { ConfirmDialogService } from '../../shared/components/confirm-dialog/con
             Delete Selected
           </button>
         </div>
-        
-        <div class="view-toggle">
-          <button class="btn btn-sm" 
-                  [class.active]="showGrouped" 
-                  (click)="setView(true)">
-            Groups
-          </button>
-          <button class="btn btn-sm" 
-                  [class.active]="!showGrouped" 
-                  (click)="setView(false)">
-            List
-          </button>
-        </div>
-      </div>
 
-
-
-      <!-- Grouped View -->
-      <div *ngIf="showGrouped" class="grouped-view">
+        <!-- Grouped View -->
+        <div *ngIf="showGrouped" class="grouped-view">
         <div class="asset-groups-grid">
           <div *ngFor="let group of filteredGroups" class="asset-group-card card card-hover clickable" (click)="viewGroupDetails(group)">
             <div class="card-body">
@@ -134,10 +134,9 @@ import { ConfirmDialogService } from '../../shared/components/confirm-dialog/con
           <h3>No asset groups found</h3>
           <p>No assets match your current filters.</p>
         </div>
-      </div>
 
-      <!-- List View -->
-      <div *ngIf="!showGrouped" class="list-view">
+        <!-- List View -->
+        <div *ngIf="!showGrouped" class="list-view">
         <div class="table-controls" *ngIf="roleService.canManageAssets()">
           <label class="select-all">
             <input type="checkbox" 
@@ -164,6 +163,7 @@ import { ConfirmDialogService } from '../../shared/components/confirm-dialog/con
           (pageChange)="onPageChange($event)"
           (selectionChange)="onSelectionChange($event)">
         </app-data-table>
+        </div>
       </div>
 
       <!-- Loading State -->
@@ -183,7 +183,7 @@ import { ConfirmDialogService } from '../../shared/components/confirm-dialog/con
       display: flex;
       justify-content: space-between;
       align-items: flex-start;
-      margin-bottom: var(--space-6);
+      margin-bottom: var(--space-4);
     }
 
     .header-actions {
@@ -194,21 +194,27 @@ import { ConfirmDialogService } from '../../shared/components/confirm-dialog/con
 
 
 
-    .filters-section {
-      margin-bottom: var(--space-6);
-      padding: var(--space-4);
+    .assets-section {
       background: white;
-      border-radius: var(--radius-lg);
-      box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+      border-radius: var(--radius-md);
+      box-shadow: var(--shadow-sm);
       border: 1px solid var(--gray-200);
+      overflow: hidden;
+    }
+
+    .filters-section {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding: var(--space-3);
+      background: var(--gray-50);
+      border-bottom: 1px solid var(--gray-200);
     }
 
     .filters {
-      display: grid;
-      grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
-      gap: var(--space-3);
-      margin-bottom: var(--space-4);
-      align-items: end;
+      display: flex;
+      gap: var(--space-2-5);
+      align-items: center;
     }
     
     .advanced-filters {
@@ -248,12 +254,10 @@ import { ConfirmDialogService } from '../../shared/components/confirm-dialog/con
     .bulk-actions {
       display: flex;
       align-items: center;
-      gap: var(--space-3);
-      padding: var(--space-3);
+      gap: var(--space-2);
+      padding: var(--space-2-5);
       background: var(--primary-50);
-      border-radius: var(--radius-md);
-      border: 1px solid var(--primary-200);
-      margin-top: var(--space-4);
+      border-bottom: 1px solid var(--gray-200);
       flex-wrap: wrap;
     }
     
@@ -266,8 +270,8 @@ import { ConfirmDialogService } from '../../shared/components/confirm-dialog/con
       display: flex;
       justify-content: space-between;
       align-items: center;
-      margin-bottom: var(--space-4);
-      padding: var(--space-3);
+      margin-bottom: var(--space-3);
+      padding: var(--space-2-5);
       background: var(--gray-50);
       border-radius: var(--radius-md);
     }
@@ -286,7 +290,7 @@ import { ConfirmDialogService } from '../../shared/components/confirm-dialog/con
     }
 
     .form-select, .form-control {
-      width: 100%;
+      min-width: 140px;
       padding: var(--space-2) var(--space-3);
       border: 1px solid var(--gray-300);
       border-radius: var(--radius-md);
@@ -307,9 +311,6 @@ import { ConfirmDialogService } from '../../shared/components/confirm-dialog/con
       background: var(--gray-100);
       border-radius: var(--radius-md);
       padding: var(--space-1);
-      margin-top: var(--space-4);
-      width: fit-content;
-      margin-left: auto;
     }
 
     .view-toggle .btn {
@@ -326,9 +327,13 @@ import { ConfirmDialogService } from '../../shared/components/confirm-dialog/con
       color: white;
     }
 
+    .grouped-view {
+      padding: var(--space-4);
+    }
+
     .asset-groups-grid {
       display: grid;
-      grid-template-columns: repeat(auto-fill, minmax(400px, 1fr));
+      grid-template-columns: 1fr 1fr;
       gap: var(--space-6);
     }
 
@@ -344,7 +349,7 @@ import { ConfirmDialogService } from '../../shared/components/confirm-dialog/con
       display: flex;
       justify-content: space-between;
       align-items: flex-start;
-      margin-bottom: var(--space-4);
+      margin-bottom: var(--space-3);
     }
 
     .group-name {
@@ -375,10 +380,10 @@ import { ConfirmDialogService } from '../../shared/components/confirm-dialog/con
 
     .status-breakdown {
       display: grid;
-      grid-template-columns: repeat(auto-fit, minmax(80px, 1fr));
-      gap: var(--space-3);
-      margin-bottom: var(--space-4);
-      padding: var(--space-4);
+      grid-template-columns: repeat(auto-fit, minmax(70px, 1fr));
+      gap: var(--space-2-5);
+      margin-bottom: var(--space-3);
+      padding: var(--space-3);
       background-color: var(--gray-50);
       border-radius: var(--radius-md);
     }
@@ -448,20 +453,28 @@ import { ConfirmDialogService } from '../../shared/components/confirm-dialog/con
 
       .filters-section {
         flex-direction: column;
-        gap: var(--space-4);
+        gap: var(--space-3);
+        align-items: stretch;
       }
 
       .filters {
-        grid-template-columns: 1fr;
+        flex-direction: column;
+        gap: var(--space-2);
+      }
+      
+      .form-select {
+        min-width: auto;
+        width: 100%;
       }
       
       .view-toggle {
-        margin-left: 0;
         width: 100%;
       }
       
       .bulk-actions {
         justify-content: center;
+        flex-direction: column;
+        gap: var(--space-2);
       }
 
       .asset-groups-grid {

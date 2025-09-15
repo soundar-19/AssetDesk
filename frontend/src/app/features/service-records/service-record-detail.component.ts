@@ -49,6 +49,10 @@ import { RoleService } from '../../core/services/role.service';
                 <span class="item-value">{{ serviceRecord.serviceType }}</span>
               </div>
               <div class="overview-item">
+                <span class="item-label">Status</span>
+                <span class="item-value status" [class]="'status-' + (serviceRecord.status || 'completed').toLowerCase()">{{ formatStatus(serviceRecord.status || 'COMPLETED') }}</span>
+              </div>
+              <div class="overview-item">
                 <span class="item-label">Performed By</span>
                 <span class="item-value">{{ serviceRecord.performedBy || 'Not specified' }}</span>
               </div>
@@ -65,6 +69,10 @@ import { RoleService } from '../../core/services/role.service';
                 <span class="item-value" [class.overdue]="isOverdue()">
                   {{ serviceRecord.nextServiceDate ? formatDate(serviceRecord.nextServiceDate) : 'Not scheduled' }}
                 </span>
+              </div>
+              <div class="overview-item" *ngIf="serviceRecord.relatedIssue">
+                <span class="item-label">Related Issue</span>
+                <span class="item-value">{{ serviceRecord.relatedIssue.title }}</span>
               </div>
             </div>
           </div>
@@ -105,7 +113,9 @@ import { RoleService } from '../../core/services/role.service';
         <!-- Service Description -->
         <div class="description-section">
           <div class="description-card">
-            <h2>Service Description</h2>
+            <div class="card-header">
+              <h2>Service Description</h2>
+            </div>
             <div class="description-content">
               <p>{{ serviceRecord.description }}</p>
             </div>
@@ -115,7 +125,9 @@ import { RoleService } from '../../core/services/role.service';
         <!-- Additional Notes -->
         <div class="notes-section" *ngIf="serviceRecord.notes">
           <div class="notes-card">
-            <h2>Additional Notes</h2>
+            <div class="card-header">
+              <h2>Additional Notes</h2>
+            </div>
             <div class="notes-content">
               <p>{{ serviceRecord.notes }}</p>
             </div>
@@ -159,8 +171,8 @@ import { RoleService } from '../../core/services/role.service';
     .detail-container {
       max-width: 1200px;
       margin: 0 auto;
-      padding: 2rem;
-      background: #f9fafb;
+      padding: 1.5rem;
+      background: linear-gradient(135deg, #f8fafc 0%, #f1f5f9 100%);
       min-height: 100vh;
     }
 
@@ -190,28 +202,48 @@ import { RoleService } from '../../core/services/role.service';
 
     .detail-content {
       display: grid;
-      gap: 2rem;
+      gap: 1.5rem;
     }
 
     .overview-section, .asset-section, .description-section, .notes-section, .history-section {
       background: white;
       border-radius: 12px;
-      box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+      box-shadow: 0 2px 8px rgba(0,0,0,0.06), 0 1px 3px rgba(0,0,0,0.1);
+      border: none;
       overflow: hidden;
+      transition: transform 0.2s ease, box-shadow 0.2s ease;
+    }
+
+    .overview-section:hover, .asset-section:hover, .description-section:hover, .notes-section:hover, .history-section:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 4px 16px rgba(0,0,0,0.1), 0 2px 6px rgba(0,0,0,0.15);
     }
 
     .card-header {
       display: flex;
       justify-content: space-between;
       align-items: center;
-      padding: 1.5rem;
-      border-bottom: 1px solid #e5e7eb;
+      padding: 1rem 1.25rem;
+      border-bottom: 1px solid #f1f5f9;
+      background: linear-gradient(135deg, #f8fafc 0%, #f1f5f9 100%);
     }
 
     .card-header h2 {
       margin: 0;
-      font-size: 1.125rem;
-      font-weight: 600;
+      font-size: 1.1rem;
+      font-weight: 700;
+      color: #1e293b;
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+    }
+
+    .card-header h2::before {
+      content: '';
+      width: 4px;
+      height: 20px;
+      background: linear-gradient(135deg, #3b82f6, #1d4ed8);
+      border-radius: 2px;
     }
 
     .status-badge {
@@ -238,32 +270,74 @@ import { RoleService } from '../../core/services/role.service';
 
     .overview-grid {
       display: grid;
-      grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
-      gap: 1.5rem;
-      padding: 1.5rem;
+      grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+      gap: 1.25rem;
+      padding: 1.25rem;
     }
 
     .overview-item {
       display: flex;
       flex-direction: column;
       gap: 0.5rem;
+      padding: 1rem;
+      background: linear-gradient(135deg, #ffffff 0%, #f8fafc 100%);
+      border-radius: 10px;
+      border: 1px solid #e2e8f0;
+      transition: all 0.2s ease;
+    }
+
+    .overview-item:hover {
+      transform: translateY(-1px);
+      box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+      border-color: #cbd5e1;
     }
 
     .item-label {
-      font-size: 0.875rem;
-      color: #6b7280;
-      font-weight: 500;
+      font-size: 0.8rem;
+      color: #64748b;
+      font-weight: 600;
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
     }
 
     .item-value {
       font-size: 1rem;
-      color: #1f2937;
+      color: #1e293b;
       font-weight: 600;
+      line-height: 1.4;
     }
 
     .item-value.cost {
-      color: #3b82f6;
-      font-size: 1.125rem;
+      color: #059669;
+      font-size: 1.15rem;
+      font-weight: 700;
+      background: linear-gradient(135deg, #dcfce7, #bbf7d0);
+      padding: 0.25rem 0.5rem;
+      border-radius: 6px;
+      display: inline-block;
+    }
+
+    .item-value.status {
+      padding: 0.25rem 0.75rem;
+      border-radius: 12px;
+      font-size: 0.875rem;
+      font-weight: 600;
+      text-align: center;
+    }
+
+    .status-completed {
+      background: #f0fdf4;
+      color: #16a34a;
+    }
+
+    .status-pending {
+      background: #fef3c7;
+      color: #d97706;
+    }
+
+    .status-cancelled {
+      background: #fef2f2;
+      color: #dc2626;
     }
 
     .item-value.overdue {
@@ -274,7 +348,7 @@ import { RoleService } from '../../core/services/role.service';
       display: grid;
       grid-template-columns: 1fr 2fr;
       gap: 2rem;
-      padding: 1.5rem;
+      padding: 1.25rem;
     }
 
     .asset-main h3 {
@@ -321,9 +395,10 @@ import { RoleService } from '../../core/services/role.service';
     }
 
     .description-content, .notes-content {
-      padding: 1.5rem;
+      padding: 1.25rem;
       line-height: 1.6;
-      color: #374151;
+      color: #475569;
+      font-size: 1rem;
     }
 
     .history-count {
@@ -332,16 +407,26 @@ import { RoleService } from '../../core/services/role.service';
     }
 
     .history-list {
-      padding: 1.5rem;
+      padding: 1.25rem;
     }
 
     .history-item {
       display: grid;
-      grid-template-columns: 120px 1fr 100px;
+      grid-template-columns: 140px 1fr 120px;
       gap: 1rem;
       padding: 1rem;
-      border-bottom: 1px solid #f3f4f6;
+      border: 1px solid #f1f5f9;
       align-items: start;
+      border-radius: 8px;
+      margin-bottom: 0.75rem;
+      background: linear-gradient(135deg, #ffffff 0%, #f8fafc 100%);
+      transition: all 0.2s ease;
+    }
+
+    .history-item:hover {
+      transform: translateX(4px);
+      border-color: #cbd5e1;
+      box-shadow: 0 2px 6px rgba(0,0,0,0.08);
     }
 
     .history-item:last-child {
@@ -400,15 +485,16 @@ import { RoleService } from '../../core/services/role.service';
 
     .btn {
       padding: 0.5rem 1rem;
-      border-radius: 6px;
-      font-weight: 500;
+      border-radius: 8px;
+      font-weight: 600;
       cursor: pointer;
-      transition: all 0.2s;
+      transition: all 0.2s ease;
       text-decoration: none;
       display: inline-flex;
       align-items: center;
       gap: 0.5rem;
       border: none;
+      font-size: 0.875rem;
     }
 
     .btn-primary {
@@ -421,13 +507,16 @@ import { RoleService } from '../../core/services/role.service';
     }
 
     .btn-outline {
-      background: white;
-      color: #374151;
-      border: 1px solid #d1d5db;
+      background: linear-gradient(135deg, #ffffff 0%, #f8fafc 100%);
+      color: #475569;
+      border: 1px solid #cbd5e1;
+      box-shadow: 0 1px 3px rgba(0,0,0,0.1);
     }
 
     .btn-outline:hover {
-      background: #f9fafb;
+      background: linear-gradient(135deg, #f1f5f9 0%, #e2e8f0 100%);
+      transform: translateY(-1px);
+      box-shadow: 0 2px 6px rgba(0,0,0,0.15);
     }
 
     .btn-sm {
@@ -472,7 +561,24 @@ import { RoleService } from '../../core/services/role.service';
       }
       
       .card-header {
-        padding: 1rem;
+        padding: 1.5rem;
+      }
+      
+      .overview-grid {
+        padding: 1.5rem;
+        gap: 1.5rem;
+      }
+      
+      .asset-info {
+        padding: 1.5rem;
+      }
+      
+      .description-content, .notes-content {
+        padding: 1.5rem;
+      }
+      
+      .history-list {
+        padding: 1.5rem;
       }
     }
     

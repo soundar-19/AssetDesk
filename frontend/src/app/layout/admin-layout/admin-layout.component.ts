@@ -36,29 +36,7 @@ import { AppSidenavComponent } from '../../shared/components/app-sidenav/app-sid
     .page-content {
       flex: 1;
       overflow-y: auto;
-      padding: var(--space-8);
-    }
-    
-    @media (max-width: 1024px) {
-      .page-content {
-        padding: var(--space-4);
-      }
-    }
-    
-    @media (max-width: 768px) {
-      .app-layout {
-        position: relative;
-      }
-      
-      .page-content {
-        padding: var(--space-3);
-      }
-    }
-    
-    @media (max-width: 480px) {
-      .page-content {
-        padding: var(--space-2);
-      }
+      padding: 0;
     }
   `]
 })

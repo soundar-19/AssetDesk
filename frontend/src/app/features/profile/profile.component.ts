@@ -10,7 +10,7 @@ import { User } from '../../core/models';
   standalone: true,
   imports: [CommonModule],
   template: `
-    <div class="profile">
+    <div class="profile standardized-layout">
       <div class="header">
         <h2>My Profile</h2>
       </div>

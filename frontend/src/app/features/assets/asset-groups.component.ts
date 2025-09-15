@@ -29,7 +29,7 @@ import { ToastService } from '../../shared/components/toast/toast.service';
     .header h2 { margin: 0; color: #333; }
     .btn { padding: 0.5rem 1rem; border: none; border-radius: 0.375rem; cursor: pointer; font-weight: 500; }
     .btn-secondary { background-color: #6c757d; color: white; }
-    .groups-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(250px, 1fr)); gap: 1rem; }
+    .groups-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 2rem; }
     .group-card { 
       background: white; 
       border: 1px solid #ddd; 

@@ -1,29 +1,35 @@
-.service-records-container {
-  padding: 1rem;
-  max-width: 1400px;
+.standardized-layout {
+  padding: var(--space-6) var(--space-6) var(--space-6) var(--space-6);
+  max-width: var(--container-xl);
   margin: 0 auto;
-  overflow-x: hidden;
+  min-height: 100vh;
   box-sizing: border-box;
+}
+
+.service-records-container {
+  overflow-x: hidden;
 }
 
 /* Header */
 .page-header {
   display: flex;
   justify-content: space-between;
-  align-items: flex-start;
-  margin-bottom: 2rem;
+  align-items: center;
+  margin-bottom: 1.5rem;
+  padding: 1rem 0;
 }
 
 .page-title {
-  font-size: 2rem;
-  font-weight: 700;
+  font-size: 1.5rem;
+  font-weight: 600;
   color: #1f2937;
-  margin: 0 0 0.5rem 0;
+  margin: 0;
 }
 
 .page-description {
   color: #6b7280;
   margin: 0;
+  font-size: 0.875rem;
 }
 
 .header-actions {
@@ -35,6 +41,7 @@
 /* View Tabs */
 .view-tabs {
   display: flex;
+  align-items: center;
   gap: 0.5rem;
   margin-bottom: 2rem;
   border-bottom: 2px solid #f3f4f6;
@@ -50,6 +57,9 @@
   border-radius: 8px;
   cursor: pointer;
   transition: all 0.2s ease;
+  display: flex;
+  align-items: center;
+  justify-content: center;
 }
 
 .tab-btn:hover {
@@ -92,6 +102,7 @@
   display: grid;
   grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
   gap: 1.5rem;
+  align-items: stretch;
 }
 
 .metric-card {
@@ -153,10 +164,11 @@
 /* Analytics Grid */
 .analytics-grid {
   display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(350px, 1fr));
+  grid-template-columns: repeat(2, 1fr);
   gap: 1.5rem;
   margin-bottom: 2rem;
   overflow: hidden;
+  align-items: stretch;
 }
 
 .chart-card {
@@ -164,13 +176,18 @@
   border-radius: 12px;
   padding: 1.5rem;
   box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+  display: flex;
+  flex-direction: column;
+  height: 100%;
 }
 
 .chart-title {
   font-size: 1.125rem;
   font-weight: 600;
   color: #1f2937;
-  margin: 0 0 1rem 0;
+  margin: 0 0 1.5rem 0;
+  padding-bottom: 0.5rem;
+  border-bottom: 1px solid #f3f4f6;
 }
 
 /* Bar Chart */
@@ -955,7 +972,17 @@
   }
 }
 
+@media (max-width: 1024px) {
+  .standardized-layout {
+    padding: var(--space-4) var(--space-4) var(--space-4) var(--space-4);
+  }
+}
+
 @media (max-width: 768px) {
+  .standardized-layout {
+    padding: var(--space-3) var(--space-3) var(--space-3) var(--space-3);
+  }
+  
   .page-header {
     flex-direction: column;
     gap: 1rem;
@@ -988,5 +1015,11 @@
   
   .assets-grid {
     grid-template-columns: 1fr;
+  }
+}
+
+@media (max-width: 480px) {
+  .standardized-layout {
+    padding: var(--space-2) var(--space-2) var(--space-2) var(--space-2);
   }
 }

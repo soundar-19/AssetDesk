@@ -166,12 +166,7 @@ import { ToastService } from '../../shared/components/toast/toast.service';
         <p>Loading warranty data...</p>
       </div>
 
-      <!-- Empty State -->
-      <div *ngIf="!loading && getCurrentAssets().length === 0" class="empty-state">
-        <div class="empty-icon">📋</div>
-        <h3>No assets found</h3>
-        <p>No assets match the current filter criteria.</p>
-      </div>
+
     </div>
   `,
   styles: [`

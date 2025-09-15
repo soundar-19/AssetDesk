@@ -1,0 +1,79 @@
+<!-- AssetDesk Sidebar HTML Template -->
+<aside class="sidebar" id="sidebar">
+  <div class="sidebar-header">
+    <div class="logo" onclick="toggleSidebar()">
+      <svg width="32" height="32" viewBox="0 0 32 32" fill="none">
+        <rect width="32" height="32" rx="8" fill="var(--primary-600)"/>
+        <path d="M10 8h12a2 2 0 012 2v4a2 2 0 01-2 2H10a2 2 0 01-2-2v-4a2 2 0 012-2z" fill="white"/>
+        <path d="M8 18h16v2H8v-2zm0 4h12v2H8v-2z" fill="white"/>
+        <circle cx="20" cy="20" r="3" fill="white"/>
+        <path d="M19 20l1 1 2-2" stroke="var(--primary-600)" stroke-width="1.5" fill="none"/>
+      </svg>
+      <span class="logo-text">YourApp</span>
+    </div>
+    <button class="close-btn" onclick="closeSidebar()">
+      <svg width="20" height="20" viewBox="0 0 20 20" fill="currentColor">
+        <path fill-rule="evenodd" d="M4.293 4.293a1 1 0 011.414 0L10 8.586l4.293-4.293a1 1 0 111.414 1.414L11.414 10l4.293 4.293a1 1 0 01-1.414 1.414L10 11.414l-4.293 4.293a1 1 0 01-1.414-1.414L8.586 10 4.293 5.707a1 1 0 010-1.414z"/>
+      </svg>
+    </button>
+  </div>
+
+  <nav class="sidebar-nav">
+    <div class="nav-section">
+      <div class="nav-section-title">Overview</div>
+      <a href="/dashboard" class="nav-item active">
+        <svg class="nav-icon" width="20" height="20" viewBox="0 0 20 20" fill="currentColor">
+          <path d="M10.707 2.293a1 1 0 00-1.414 0l-7 7a1 1 0 001.414 1.414L4 10.414V17a1 1 0 001 1h2a1 1 0 001-1v-2a1 1 0 011-1h2a1 1 0 011 1v2a1 1 0 001 1h2a1 1 0 001-1v-6.586l.293.293a1 1 0 001.414-1.414l-7-7z"/>
+        </svg>
+        <span>Dashboard</span>
+      </a>
+    </div>
+
+    <div class="nav-section">
+      <div class="nav-section-title">Main</div>
+      <a href="/items" class="nav-item">
+        <svg class="nav-icon" width="20" height="20" viewBox="0 0 20 20" fill="currentColor">
+          <path d="M4 3a2 2 0 100 4h12a2 2 0 100-4H4zM3 8a2 2 0 00-2 2v6a2 2 0 002 2h14a2 2 0 002-2v-6a2 2 0 00-2-2H3zm5 3a1 1 0 011-1h2a1 1 0 110 2H9a1 1 0 01-1-1z"/>
+        </svg>
+        <span>Items</span>
+      </a>
+      <a href="/reports" class="nav-item">
+        <svg class="nav-icon" width="20" height="20" viewBox="0 0 20 20" fill="currentColor">
+          <path d="M2 11a1 1 0 011-1h2a1 1 0 011 1v5a1 1 0 01-1 1H3a1 1 0 01-1-1v-5zM8 7a1 1 0 011-1h2a1 1 0 011 1v9a1 1 0 01-1 1H9a1 1 0 01-1-1V7zM14 4a1 1 0 011-1h2a1 1 0 011 1v12a1 1 0 01-1 1h-2a1 1 0 01-1-1V4z"/>
+        </svg>
+        <span>Reports</span>
+      </a>
+    </div>
+
+    <div class="nav-section">
+      <div class="nav-section-title">Account</div>
+      <a href="/profile" class="nav-item">
+        <svg class="nav-icon" width="20" height="20" viewBox="0 0 20 20" fill="currentColor">
+          <path fill-rule="evenodd" d="M10 9a3 3 0 100-6 3 3 0 000 6zm-7 9a7 7 0 1114 0H3z"/>
+        </svg>
+        <span>Profile</span>
+      </a>
+    </div>
+  </nav>
+</aside>
+
+<script>
+function toggleSidebar() {
+  document.getElementById('sidebar').classList.toggle('collapsed');
+}
+
+function closeSidebar() {
+  document.getElementById('sidebar').classList.add('collapsed');
+}
+
+// Auto-collapse on mobile
+function handleResize() {
+  const sidebar = document.getElementById('sidebar');
+  if (window.innerWidth <= 768) {
+    sidebar.classList.add('collapsed');
+  }
+}
+
+window.addEventListener('resize', handleResize);
+handleResize(); // Initial check
+</script>

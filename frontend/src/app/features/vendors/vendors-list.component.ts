@@ -13,7 +13,7 @@ import { ConfirmDialogService } from '../../shared/components/confirm-dialog/con
   standalone: true,
   imports: [CommonModule, DataTableComponent, SearchFilterComponent],
   template: `
-    <div class="vendors-list">
+    <div class="vendors-list standardized-layout">
       <div class="header">
         <button class="btn btn-primary" (click)="createVendor()">
           Add Vendor

@@ -14,7 +14,7 @@ import { RoleService } from '../../core/services/role.service';
   standalone: true,
   imports: [CommonModule, ModernListComponent, SearchFilterComponent],
   template: `
-    <div class="users-list">
+    <div class="users-list standardized-layout">
       <div class="header">
         <button *ngIf="roleService.canManageUsers()" class="btn btn-primary" (click)="createUser()">
           Add User

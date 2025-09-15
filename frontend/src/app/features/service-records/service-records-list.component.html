@@ -1,4 +1,4 @@
-<div class="service-records-container">
+<div class="service-records-container standardized-layout">
   <!-- Header -->
   <div class="page-header">
     <div class="header-content">
@@ -71,14 +71,7 @@
             </div>
           </div>
           
-          <div class="metric-card danger">
-            <div class="metric-icon">⚠️</div>
-            <div class="metric-content">
-              <div class="metric-value">{{ getOverdueServices() }}</div>
-              <div class="metric-label">Overdue Services</div>
-              <div class="metric-trend">Requires attention</div>
-            </div>
-          </div>
+
         </div>
       </section>
 
@@ -236,28 +229,10 @@
         <h3>Service Summary by Asset</h3>
         <p>View maintenance history and costs grouped by asset</p>
         
-        <!-- Asset Filters -->
-        <div class="asset-filters">
-          <select class="form-select" [(ngModel)]="assetRiskFilter" (change)="applyAssetFilters()">
-            <option value="">All Risk Levels</option>
-            <option value="High">High Risk</option>
-            <option value="Medium">Medium Risk</option>
-            <option value="Low">Low Risk</option>
-          </select>
-          <select class="form-select" [(ngModel)]="assetFrequencyFilter" (change)="applyAssetFilters()">
-            <option value="">All Frequencies</option>
-            <option value="Monthly">Monthly</option>
-            <option value="Quarterly">Quarterly</option>
-            <option value="Semi-annual">Semi-annual</option>
-            <option value="Annual">Annual</option>
-            <option value="Irregular">Irregular</option>
-          </select>
 
-          <button class="btn btn-success btn-sm" (click)="generateMaintenanceReport()">Generate Report</button>
-        </div>
         
         <div class="assets-grid">
-          <div *ngFor="let asset of getFilteredAssets()" class="asset-summary-card enhanced">
+          <div *ngFor="let asset of getServicesByAsset()" class="asset-summary-card enhanced">
             <div class="asset-header">
               <div class="asset-info">
                 <h4>{{ asset.asset.assetTag }}</h4>
@@ -305,8 +280,10 @@
           </div>
         </div>
         
-        <div *ngIf="getAssetServiceSummary().length === 0" class="empty-state">
-          <p>No assets with service records found</p>
+        <div *ngIf="getServicesByAsset().length === 0 && !loading" class="empty-state">
+          <div class="empty-icon">📦</div>
+          <h3>No assets with service records found</h3>
+          <p>No service records have been logged for any assets yet.</p>
         </div>
       </div>
     </div>
@@ -337,7 +314,7 @@
         </div>
         
         <!-- Detailed Vendor Cards -->
-        <div class="vendor-stats">
+        <div class="vendor-stats" *ngIf="getVendorAnalytics().length > 0">
           <div *ngFor="let vendor of getVendorAnalytics()" class="vendor-card detailed">
             <div class="vendor-header">
               <div class="vendor-title">
@@ -402,21 +379,13 @@
             </div>
           </div>
         </div>
+        
+        <div *ngIf="getVendorAnalytics().length === 0 && !loading" class="empty-state">
+          <div class="empty-icon">🏢</div>
+          <h3>No vendor data found</h3>
+          <p>No service records with vendor information have been logged yet.</p>
+        </div>
       </div>
-    </div>
-
-
-
-    <!-- Empty State -->
-    <div *ngIf="serviceRecords.length === 0 && !loading" class="empty-state">
-      <div class="empty-icon">🔧</div>
-      <h3>No service records found</h3>
-      <p>{{ hasActiveFilters() ? 'No records match your current filters.' : 'No service records have been logged yet.' }}</p>
-      <button *ngIf="roleService.canManageAssets() && !hasActiveFilters()" 
-              class="btn btn-primary" 
-              (click)="createRecord()">
-        Create First Record
-      </button>
     </div>
   </div>
 </div>

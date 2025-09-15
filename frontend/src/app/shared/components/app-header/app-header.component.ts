@@ -54,13 +54,13 @@ import { NotificationService } from '../../../core/services/notification.service
   `,
   styles: [`
     .topbar {
-      height: 80px;
+      height: 64px;
       background-color: white;
       border-bottom: 1px solid var(--gray-200);
       display: flex;
       align-items: center;
       justify-content: space-between;
-      padding: 0 var(--space-8);
+      padding: 0 var(--space-6);
       box-shadow: var(--shadow-sm);
     }
 

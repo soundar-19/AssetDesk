@@ -68,80 +68,83 @@ import { ConfirmDialogService } from '../../shared/components/confirm-dialog/con
         </div>
       </div>
 
-      <!-- Tabs for IT Support and Admin -->
-      <div class="tabs-section" *ngIf="!roleService.isEmployee()">
-        <div class="tabs">
-          <button class="tab" [class.active]="activeTab === 'pending'" (click)="setActiveTab('pending')">
-            Pending Requests
-          </button>
-          <button class="tab" [class.active]="activeTab === 'all'" (click)="setActiveTab('all')">
-            All Requests
+      <!-- Table Section with Tabs and Filters -->
+      <div class="table-section">
+        <!-- Tabs for IT Support and Admin -->
+        <div class="tabs-container" *ngIf="!roleService.isEmployee()">
+          <div class="tabs">
+            <button class="tab" [class.active]="activeTab === 'pending'" (click)="setActiveTab('pending')">
+              Pending Requests
+            </button>
+            <button class="tab" [class.active]="activeTab === 'all'" (click)="setActiveTab('all')">
+              All Requests
+            </button>
+          </div>
+        </div>
+
+        <!-- Filters -->
+        <div class="filters-section">
+          <div class="filters">
+            <select class="form-select" [(ngModel)]="statusFilter" (change)="applyFilters()">
+              <option value="">All Statuses</option>
+              <option value="PENDING">Pending</option>
+              <option value="APPROVED">Approved</option>
+              <option value="REJECTED">Rejected</option>
+              <option value="FULFILLED">Fulfilled</option>
+              <option value="CANCELLED">Cancelled</option>
+            </select>
+            
+            <select class="form-select" [(ngModel)]="priorityFilter" (change)="applyFilters()">
+              <option value="">All Priorities</option>
+              <option value="URGENT">Urgent</option>
+              <option value="HIGH">High</option>
+              <option value="MEDIUM">Medium</option>
+              <option value="LOW">Low</option>
+            </select>
+            
+            <select class="form-select" [(ngModel)]="categoryFilter" (change)="applyFilters()">
+              <option value="">All Categories</option>
+              <option value="HARDWARE">Hardware</option>
+              <option value="SOFTWARE">Software</option>
+              <option value="ACCESSORIES">Accessories</option>
+            </select>
+            
+            <input type="text" 
+                   class="form-control" 
+                   placeholder="Search requests..." 
+                   [(ngModel)]="searchTerm"
+                   (input)="onSearchChange()">
+          </div>
+          
+          <div class="filter-actions">
+            <button class="btn btn-outline btn-sm" (click)="clearFilters()" *ngIf="hasActiveFilters()">
+              Clear Filters
+            </button>
+          </div>
+        </div>
+
+        <!-- Requests Table -->
+        <div class="requests-table" *ngIf="!loading && filteredRequests.length > 0">
+          <app-data-table
+            [data]="filteredRequests"
+            [columns]="columns"
+            [pagination]="pagination"
+            [rowClickAction]="onRequestClick"
+            (pageChange)="onPageChange($event)">
+          </app-data-table>
+        </div>
+
+        <!-- Empty State -->
+        <div *ngIf="!loading && filteredRequests.length === 0" class="empty-state">
+          <div class="empty-icon">📋</div>
+          <h3>No requests found</h3>
+          <p *ngIf="hasActiveFilters()">No requests match your current filters.</p>
+          <p *ngIf="!hasActiveFilters() && roleService.isEmployee()">You haven't submitted any asset requests yet.</p>
+          <p *ngIf="!hasActiveFilters() && !roleService.isEmployee()">No asset requests have been submitted yet.</p>
+          <button class="btn btn-primary" (click)="createRequest()" *ngIf="!hasActiveFilters()">
+            {{ roleService.isEmployee() ? 'Submit Your First Request' : 'Create First Request' }}
           </button>
         </div>
-      </div>
-
-      <!-- Filters -->
-      <div class="filters-section">
-        <div class="filters">
-          <select class="form-select" [(ngModel)]="statusFilter" (change)="applyFilters()">
-            <option value="">All Statuses</option>
-            <option value="PENDING">Pending</option>
-            <option value="APPROVED">Approved</option>
-            <option value="REJECTED">Rejected</option>
-            <option value="FULFILLED">Fulfilled</option>
-            <option value="CANCELLED">Cancelled</option>
-          </select>
-          
-          <select class="form-select" [(ngModel)]="priorityFilter" (change)="applyFilters()">
-            <option value="">All Priorities</option>
-            <option value="URGENT">Urgent</option>
-            <option value="HIGH">High</option>
-            <option value="MEDIUM">Medium</option>
-            <option value="LOW">Low</option>
-          </select>
-          
-          <select class="form-select" [(ngModel)]="categoryFilter" (change)="applyFilters()">
-            <option value="">All Categories</option>
-            <option value="HARDWARE">Hardware</option>
-            <option value="SOFTWARE">Software</option>
-            <option value="ACCESSORIES">Accessories</option>
-          </select>
-          
-          <input type="text" 
-                 class="form-control" 
-                 placeholder="Search requests..." 
-                 [(ngModel)]="searchTerm"
-                 (input)="onSearchChange()">
-        </div>
-        
-        <div class="filter-actions">
-          <button class="btn btn-outline btn-sm" (click)="clearFilters()" *ngIf="hasActiveFilters()">
-            Clear Filters
-          </button>
-        </div>
-      </div>
-
-      <!-- Requests Table -->
-      <div class="requests-table" *ngIf="!loading">
-        <app-data-table
-          [data]="filteredRequests"
-          [columns]="columns"
-          [pagination]="pagination"
-          [rowClickAction]="onRequestClick"
-          (pageChange)="onPageChange($event)">
-        </app-data-table>
-      </div>
-
-      <!-- Empty State -->
-      <div *ngIf="!loading && filteredRequests.length === 0" class="empty-state">
-        <div class="empty-icon">📋</div>
-        <h3>No requests found</h3>
-        <p *ngIf="hasActiveFilters()">No requests match your current filters.</p>
-        <p *ngIf="!hasActiveFilters() && roleService.isEmployee()">You haven't submitted any asset requests yet.</p>
-        <p *ngIf="!hasActiveFilters() && !roleService.isEmployee()">No asset requests have been submitted yet.</p>
-        <button class="btn btn-primary" (click)="createRequest()" *ngIf="!hasActiveFilters()">
-          {{ roleService.isEmployee() ? 'Submit Your First Request' : 'Create First Request' }}
-        </button>
       </div>
 
       <!-- Loading State -->
@@ -156,25 +159,25 @@ import { ConfirmDialogService } from '../../shared/components/confirm-dialog/con
       display: flex;
       justify-content: space-between;
       align-items: flex-start;
-      margin-bottom: var(--space-6);
-      padding: var(--space-6);
+      margin-bottom: var(--space-4);
+      padding: var(--space-4);
       background: white;
-      border-radius: var(--radius-lg);
+      border-radius: var(--radius-md);
       box-shadow: var(--shadow-sm);
       border: 1px solid var(--gray-200);
     }
     
     .page-title {
-      margin: 0 0 var(--space-2) 0;
+      margin: 0 0 var(--space-1-5) 0;
       color: var(--gray-900);
-      font-size: 1.875rem;
+      font-size: var(--text-xl);
       font-weight: 700;
     }
     
     .page-description {
       margin: 0;
       color: var(--gray-600);
-      font-size: 1rem;
+      font-size: var(--text-sm);
     }
     
     .header-actions {
@@ -185,24 +188,24 @@ import { ConfirmDialogService } from '../../shared/components/confirm-dialog/con
     
     .request-stats {
       background: white;
-      border-radius: var(--radius-lg);
+      border-radius: var(--radius-md);
       box-shadow: var(--shadow-sm);
       border: 1px solid var(--gray-200);
-      padding: var(--space-6);
-      margin-bottom: var(--space-6);
+      padding: var(--space-4);
+      margin-bottom: var(--space-4);
     }
     
     .stats-grid {
       display: grid;
-      grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
-      gap: var(--space-4);
+      grid-template-columns: repeat(auto-fit, minmax(160px, 1fr));
+      gap: var(--space-3);
     }
     
     .stat-card {
       display: flex;
       align-items: center;
-      gap: var(--space-4);
-      padding: var(--space-4);
+      gap: var(--space-3);
+      padding: var(--space-3);
       border-radius: var(--radius-md);
       transition: transform var(--transition-fast);
     }
@@ -232,11 +235,11 @@ import { ConfirmDialogService } from '../../shared/components/confirm-dialog/con
     }
     
     .stat-icon {
-      font-size: 2rem;
+      font-size: 1.5rem;
     }
     
     .stat-value {
-      font-size: 2rem;
+      font-size: var(--text-xl);
       font-weight: 700;
       color: var(--gray-900);
       line-height: 1;
@@ -244,58 +247,31 @@ import { ConfirmDialogService } from '../../shared/components/confirm-dialog/con
     
     .stat-label {
       color: var(--gray-600);
-      font-size: 0.875rem;
+      font-size: var(--text-xs);
       font-weight: 500;
       text-transform: uppercase;
       letter-spacing: 0.025em;
     }
     
-    .filters-section {
-      display: flex;
-      justify-content: space-between;
-      align-items: center;
-      margin-bottom: var(--space-6);
-      padding: var(--space-4);
-      background: var(--gray-50);
-      border-radius: var(--radius-lg);
-    }
-    
-    .filters {
-      display: flex;
-      gap: var(--space-4);
-      flex: 1;
-      flex-wrap: wrap;
-    }
-    
-    .form-select, .form-control {
-      min-width: 150px;
-      padding: var(--space-2) var(--space-3);
-      border: 1px solid var(--gray-300);
-      border-radius: var(--radius-md);
-      font-size: 0.875rem;
-    }
-    
-    .filter-actions {
-      display: flex;
-      gap: var(--space-2);
-    }
-    
-    .tabs-section {
-      margin-bottom: var(--space-6);
-    }
-    
-    .tabs {
-      display: flex;
+    .table-section {
       background: white;
-      border-radius: var(--radius-lg);
+      border-radius: var(--radius-md);
       box-shadow: var(--shadow-sm);
       border: 1px solid var(--gray-200);
       overflow: hidden;
     }
     
+    .tabs-container {
+      border-bottom: 1px solid var(--gray-200);
+    }
+    
+    .tabs {
+      display: flex;
+      background: white;
+    }
+    
     .tab {
-      flex: 1;
-      padding: var(--space-4) var(--space-6);
+      padding: var(--space-2-5) var(--space-4);
       background: white;
       border: none;
       font-weight: 500;
@@ -303,6 +279,7 @@ import { ConfirmDialogService } from '../../shared/components/confirm-dialog/con
       cursor: pointer;
       transition: all var(--transition-fast);
       border-right: 1px solid var(--gray-200);
+      border-bottom: 2px solid transparent;
     }
     
     .tab:last-child {
@@ -315,16 +292,47 @@ import { ConfirmDialogService } from '../../shared/components/confirm-dialog/con
     }
     
     .tab.active {
-      background: var(--primary-600);
-      color: white;
+      background: white;
+      color: var(--primary-600);
+      border-bottom-color: var(--primary-600);
+    }
+    
+    .filters-section {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding: var(--space-3);
+      background: var(--gray-50);
+      border-bottom: 1px solid var(--gray-200);
+    }
+    
+    .filters {
+      display: flex;
+      gap: var(--space-2-5);
+      flex: 1;
+      align-items: center;
+    }
+    
+    .form-select, .form-control {
+      min-width: 120px;
+      padding: var(--space-2) var(--space-2-5);
+      border: 1px solid var(--gray-300);
+      border-radius: var(--radius-md);
+      font-size: var(--text-sm);
+      background: white;
+    }
+    
+    .form-control {
+      min-width: 160px;
+    }
+    
+    .filter-actions {
+      display: flex;
+      gap: var(--space-2);
     }
     
     .requests-table {
       background: white;
-      border-radius: var(--radius-lg);
-      box-shadow: var(--shadow-sm);
-      border: 1px solid var(--gray-200);
-      overflow: hidden;
     }
     
     .requests-table :deep(.data-table) {
@@ -442,21 +450,21 @@ import { ConfirmDialogService } from '../../shared/components/confirm-dialog/con
     }
     
     .btn {
-      padding: var(--space-3) var(--space-4);
+      padding: var(--space-2) var(--space-3);
       border-radius: var(--radius-md);
       font-weight: 500;
-      font-size: 0.875rem;
+      font-size: var(--text-sm);
       cursor: pointer;
       transition: all var(--transition-fast);
       border: 1px solid transparent;
       display: inline-flex;
       align-items: center;
-      gap: var(--space-2);
+      gap: var(--space-1-5);
     }
     
     .btn-sm {
-      padding: var(--space-2) var(--space-3);
-      font-size: 0.75rem;
+      padding: var(--space-1-5) var(--space-2-5);
+      font-size: var(--text-xs);
     }
     
     .btn-primary {
@@ -499,11 +507,18 @@ import { ConfirmDialogService } from '../../shared/components/confirm-dialog/con
       
       .filters-section {
         flex-direction: column;
-        gap: var(--space-4);
+        gap: var(--space-3);
+        align-items: stretch;
       }
       
       .filters {
         flex-direction: column;
+        gap: var(--space-2);
+      }
+      
+      .form-select, .form-control {
+        min-width: auto;
+        width: 100%;
       }
       
       .stats-grid {

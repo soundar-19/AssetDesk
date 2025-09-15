@@ -129,7 +129,7 @@ import { filter } from 'rxjs/operators';
   `,
   styles: [`
     .sidebar {
-      width: 280px;
+      width: 260px;
       background-color: white;
       border-right: 1px solid var(--gray-200);
       display: flex;
@@ -147,10 +147,10 @@ import { filter } from 'rxjs/operators';
     
     @media (max-width: 1024px) {
       .sidebar {
-        width: 260px;
+        width: 240px;
         
         &.collapsed {
-          width: 70px;
+          width: 80px;
         }
       }
     }
@@ -160,7 +160,7 @@ import { filter } from 'rxjs/operators';
         position: fixed;
         left: 0;
         top: 0;
-        width: 280px;
+        width: 260px;
         transform: translateX(-100%);
         box-shadow: var(--shadow-lg);
         
@@ -170,17 +170,23 @@ import { filter } from 'rxjs/operators';
         
         &.collapsed {
           transform: translateX(-100%);
-          width: 280px;
+          width: 260px;
         }
       }
     }
 
     .sidebar-header {
-      padding: var(--space-6);
+      padding: var(--space-5);
       border-bottom: 1px solid var(--gray-200);
       display: flex;
       align-items: center;
       justify-content: space-between;
+      height: 64px;
+    }
+    
+    .sidebar.collapsed .sidebar-header {
+      justify-content: center;
+      padding: var(--space-3);
     }
     
     .close-btn {
@@ -190,10 +196,16 @@ import { filter } from 'rxjs/operators';
       border-radius: var(--radius-md);
       color: var(--gray-500);
       cursor: pointer;
-      transition: all var(--transition-fast);
+      transition: all 0.3s ease, opacity 0.3s ease;
       display: flex;
       align-items: center;
       justify-content: center;
+      opacity: 1;
+    }
+    
+    .sidebar.collapsed .close-btn {
+      opacity: 0;
+      pointer-events: none;
     }
     
     .close-btn:hover {
@@ -232,6 +244,10 @@ import { filter } from 'rxjs/operators';
         display: none;
       }
     }
+    
+    .sidebar.collapsed .sidebar-nav {
+      padding: var(--space-2);
+    }
 
     .nav-section {
       margin-bottom: var(--space-6);
@@ -267,7 +283,7 @@ import { filter } from 'rxjs/operators';
       color: var(--gray-600);
       text-decoration: none;
       font-weight: 500;
-      transition: all var(--transition-fast);
+      transition: all 0.3s ease 0.1s;
       margin-bottom: var(--space-1);
       overflow: hidden;
       white-space: nowrap;
@@ -287,13 +303,29 @@ import { filter } from 'rxjs/operators';
       
       span {
         opacity: 1;
-        transition: opacity var(--transition-fast);
+        transition: opacity 0.2s ease;
       }
     }
     
-    .sidebar.collapsed .nav-item span {
-      opacity: 0;
-      width: 0;
+    .sidebar.collapsed .nav-item {
+      justify-content: center;
+      padding: var(--space-3);
+      margin: var(--space-1) auto;
+      transform: none !important;
+      transition-delay: 0s;
+      
+      &:hover {
+        transform: none !important;
+      }
+      
+      &.active {
+        transform: none !important;
+      }
+      
+      span {
+        opacity: 0;
+        width: 0;
+      }
     }
 
     .nav-icon {
