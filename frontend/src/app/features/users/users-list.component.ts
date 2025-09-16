@@ -380,8 +380,8 @@ export class UsersListComponent implements OnInit {
   pagination: any = null;
   searchTerm = '';
   filters: SearchFilters = {};
-  sortColumn = '';
-  sortDirection: 'asc' | 'desc' = 'asc';
+  sortColumn = 'id';
+  sortDirection: 'asc' | 'desc' = 'desc';
   
   filterOptions: FilterOption[] = [
     {
@@ -431,7 +431,7 @@ export class UsersListComponent implements OnInit {
     if (hasSearch || hasFilters) {
       this.searchUsers(page);
     } else {
-      this.userService.getUsers(page, 10, this.sortColumn, this.sortDirection).subscribe({
+      this.userService.getUsers(page, 50, this.sortColumn, this.sortDirection).subscribe({
         next: (response) => {
           this.users = response?.content || [];
           this.userItems = this.transformToListItems(this.users);
@@ -472,7 +472,7 @@ export class UsersListComponent implements OnInit {
       }
     });
 
-    this.userService.searchUsers(searchParams, page, 10).subscribe({
+    this.userService.searchUsers(searchParams, page, 50).subscribe({
       next: (response) => {
         this.users = response?.content || [];
         this.userItems = this.transformToListItems(this.users);

@@ -12,6 +12,7 @@ export interface Asset {
   usefulLifeYears?: number;
   status: string;
   imageUrl?: string;
+  isShareable?: boolean;
   vendor?: any;
   allocatedTo?: { id: number; name: string; email: string };
   allocatedDate?: string;
@@ -37,6 +38,7 @@ export interface AssetCreateRequest {
   usefulLifeYears?: number;
   status: string;
   imageUrl?: string;
+  isShareable?: boolean;
   vendorId?: number;
   // Software license specific fields
   totalLicenses?: number;

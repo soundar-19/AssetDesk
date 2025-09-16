@@ -1,7 +1,9 @@
 import { Injectable } from '@angular/core';
 import { Observable } from 'rxjs';
+import { tap } from 'rxjs/operators';
 import { ApiService } from './api.service';
 import { AuthService } from './auth.service';
+import { NotificationService } from './notification.service';
 import { Message, MessageRequest, PageResponse } from '../models';
 
 @Injectable({
@@ -10,7 +12,11 @@ import { Message, MessageRequest, PageResponse } from '../models';
 export class MessageService {
   private endpoint = '/messages';
 
-  constructor(private api: ApiService, private auth: AuthService) {}
+  constructor(
+    private api: ApiService,
+    private auth: AuthService,
+    private notificationService: NotificationService
+  ) {}
 
   getMessages(page: number = 0, size: number = 10): Observable<PageResponse<Message>> {
     return this.api.getPagedData<Message>(this.endpoint, page, size);
@@ -48,7 +54,22 @@ export class MessageService {
   }
 
   sendIssueMessageWithFile(formData: FormData): Observable<any> {
-    return this.api.post<any>('/messages/issue-messages', formData);
+    return this.api.post<any>('/messages/issue-messages', formData).pipe(
+      tap(response => {
+        // Notify other participants in the issue chat
+        const issueId = formData.get('issueId');
+        const senderId = formData.get('senderId');
+        const message = formData.get('message') || 'New message in issue chat';
+        
+        // Backend should handle notifying relevant users
+        this.notificationService.sendNotification(
+          0, // Backend will determine recipients
+          'New Message in Issue',
+          `New message in issue #${issueId}: ${message}`,
+          'INFO'
+        ).subscribe();
+      })
+    );
   }
 
   markAsRead(id: number): Observable<void> {

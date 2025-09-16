@@ -174,6 +174,16 @@ export const routes: Routes = [
         path: 'notifications',
         loadComponent: () => import('./features/notifications/notifications-list.component').then(m => m.NotificationsListComponent)
       },
+      {
+        path: 'return-requests',
+        loadComponent: () => import('./features/assets/user-return-requests.component').then(m => m.UserReturnRequestsComponent)
+      },
+      {
+        path: 'admin/return-requests',
+        loadComponent: () => import('./features/assets/admin-return-requests.component').then(m => m.AdminReturnRequestsComponent),
+        canActivate: [RoleGuard],
+        data: { roles: [ROLES.ADMIN, ROLES.IT_SUPPORT] }
+      },
 
 
       {

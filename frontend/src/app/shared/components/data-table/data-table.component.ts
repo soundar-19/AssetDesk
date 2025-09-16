@@ -1,4 +1,4 @@
-import { Component, Input, Output, EventEmitter } from '@angular/core';
+import { Component, Input, Output, EventEmitter, OnInit, OnDestroy, HostListener } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { EmptyStateComponent } from '../../ui/empty-state.component';
 
@@ -8,6 +8,7 @@ export interface TableColumn {
   sortable?: boolean;
   pipe?: string;
   render?: (item: any) => string;
+  badge?: boolean;
 }
 
 export interface TableAction {
@@ -50,25 +51,41 @@ export interface TableAction {
                      (change)="toggleSelection(item.id, $event)">
             </td>
             <td *ngFor="let column of columns">
-              <span *ngIf="!column.render">{{ formatColumnValue(item, column) }}</span>
-              <span *ngIf="column.render" [innerHTML]="formatColumnValue(item, column)"></span>
+              <span *ngIf="!column.render && !column.badge">{{ formatColumnValue(item, column) }}</span>
+              <span *ngIf="column.render && !column.badge" [innerHTML]="formatColumnValue(item, column)"></span>
+              <span *ngIf="column.badge" 
+                    class="badge" 
+                    [class]="'badge-' + formatColumnValue(item, column).toLowerCase()">
+                {{ formatColumnValue(item, column) }}
+              </span>
             </td>
             <td *ngIf="actions.length > 0" class="actions" (click)="$event.stopPropagation()">
-              <div class="dropdown-container" (click)="$event.stopPropagation()">
-                <button class="dropdown-btn" 
-                        (click)="toggleDropdown(item.id)">
-                  ⋯
+              <ng-container *ngIf="getVisibleActions(item).length === 1; else multipleActions">
+                <button class="action-btn" 
+                        *ngFor="let action of getVisibleActions(item)"
+                        (click)="executeAction(action, item)">
+                  <span *ngIf="action.icon" class="action-icon">{{ action.icon }}</span>
+                  {{ action.label }}
                 </button>
-                <div class="dropdown-menu" 
-                     *ngIf="openDropdown === item.id">
-                  <button *ngFor="let action of getVisibleActions(item)"
-                          class="dropdown-item"
-                          (click)="executeAction(action, item)">
-                    <span *ngIf="action.icon" class="action-icon">{{ action.icon }}</span>
-                    {{ action.label }}
+              </ng-container>
+              <ng-template #multipleActions>
+                <div class="dropdown-container" (click)="$event.stopPropagation()">
+                  <button class="dropdown-btn" 
+                          (click)="toggleDropdown(item.id); $event.stopPropagation()">
+                    ⋯
                   </button>
+                  <div class="dropdown-menu" 
+                       *ngIf="openDropdown === item.id"
+                       (click)="$event.stopPropagation()">
+                    <button *ngFor="let action of getVisibleActions(item)"
+                            class="dropdown-item"
+                            (click)="executeAction(action, item); $event.stopPropagation()">
+                      <span *ngIf="action.icon" class="action-icon">{{ action.icon }}</span>
+                      {{ action.label }}
+                    </button>
+                  </div>
                 </div>
-              </div>
+              </ng-template>
             </td>
           </tr>
           <tr *ngIf="data.length === 0">
@@ -109,6 +126,7 @@ export interface TableAction {
       border: 1px solid var(--gray-200);
       overflow-x: auto;
       width: 100%;
+      padding-right: 1rem;
     }
     
     .table {
@@ -116,17 +134,32 @@ export interface TableAction {
       min-width: 800px;
       border-collapse: collapse;
       margin: 0;
-      table-layout: fixed;
+      table-layout: auto;
+      font-size: 0.875rem;
     }
     
     .table th, .table td {
-      padding: var(--space-4) var(--space-6);
+      padding: 0.75rem 1rem;
       border-bottom: 1px solid var(--gray-100);
       text-align: left;
       vertical-align: middle;
       overflow: hidden;
       text-overflow: ellipsis;
       white-space: nowrap;
+      max-width: 200px;
+    }
+    
+    .table th:first-child, .table td:first-child {
+      padding-left: 1.5rem;
+    }
+    
+    .table th:last-child, .table td:last-child {
+      padding-right: 2rem;
+    }
+    
+    .table td.actions {
+      overflow: visible;
+      position: relative;
     }
     
     .table th {
@@ -176,7 +209,7 @@ export interface TableAction {
     }
     
     .actions {
-      width: 60px;
+      width: 120px;
       text-align: center;
     }
     
@@ -213,36 +246,70 @@ export interface TableAction {
       right: 0;
       background: white;
       border: 1px solid var(--gray-200);
-      border-radius: 8px;
-      box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
-      z-index: 1000;
-      min-width: 150px;
+      border-radius: var(--radius-lg);
+      box-shadow: var(--shadow-xl);
+      z-index: 9999;
+      min-width: 160px;
       overflow: hidden;
+      margin-top: var(--space-1);
     }
     
     .dropdown-item {
       width: 100%;
-      padding: 8px 12px;
+      padding: var(--space-3) var(--space-4);
       border: none;
       background: none;
       text-align: left;
       cursor: pointer;
-      font-size: 0.875rem;
+      font-size: var(--text-sm);
       color: var(--gray-700);
       display: flex;
       align-items: center;
-      gap: 8px;
-      transition: background-color 0.15s;
+      gap: var(--space-2);
+      transition: var(--transition-fast);
+      font-weight: var(--font-medium);
     }
     
     .dropdown-item:hover {
       background: var(--gray-50);
+      color: var(--gray-900);
+    }
+    
+    .dropdown-item:first-child {
+      border-top-left-radius: var(--radius-lg);
+      border-top-right-radius: var(--radius-lg);
+    }
+    
+    .dropdown-item:last-child {
+      border-bottom-left-radius: var(--radius-lg);
+      border-bottom-right-radius: var(--radius-lg);
     }
     
     .action-icon {
       font-size: 0.75rem;
       width: 16px;
       text-align: center;
+    }
+    
+    .action-btn {
+      padding: var(--space-2) var(--space-3);
+      border: 1px solid var(--primary-300);
+      background: var(--primary-600);
+      color: white;
+      border-radius: var(--radius-md);
+      cursor: pointer;
+      font-size: 0.75rem;
+      font-weight: 500;
+      display: inline-flex;
+      align-items: center;
+      gap: var(--space-1);
+      transition: all var(--transition-fast);
+    }
+    
+    .action-btn:hover {
+      background: var(--primary-700);
+      border-color: var(--primary-400);
+      transform: translateY(-1px);
     }
     
     .btn {
@@ -292,7 +359,7 @@ export interface TableAction {
       display: flex;
       justify-content: space-between;
       align-items: center;
-      padding: var(--space-4) var(--space-6);
+      padding: 0.75rem 1rem;
       background: var(--gray-50);
       border-top: 1px solid var(--gray-200);
     }
@@ -314,6 +381,41 @@ export interface TableAction {
       font-weight: 500;
     }
     
+    .badge {
+      display: inline-block;
+      padding: 0.25rem 0.5rem;
+      border-radius: 0.375rem;
+      font-size: 0.75rem;
+      font-weight: 500;
+      text-transform: uppercase;
+      letter-spacing: 0.025em;
+    }
+    
+    .badge-available {
+      background-color: var(--success-100);
+      color: var(--success-700);
+    }
+    
+    .badge-allocated {
+      background-color: var(--primary-100);
+      color: var(--primary-700);
+    }
+    
+    .badge-maintenance {
+      background-color: var(--warning-100);
+      color: var(--warning-700);
+    }
+    
+    .badge-retired {
+      background-color: var(--gray-100);
+      color: var(--gray-700);
+    }
+    
+    .badge-lost {
+      background-color: var(--error-100);
+      color: var(--error-700);
+    }
+    
     @media (max-width: 768px) {
       .table-container {
         overflow-x: auto;
@@ -331,20 +433,21 @@ export interface TableAction {
     }
   `]
 })
-export class DataTableComponent {
+export class DataTableComponent implements OnInit, OnDestroy {
   @Input() data: any[] = [];
   @Input() columns: TableColumn[] = [];
   @Input() actions: TableAction[] = [];
   @Input() pagination: any = null;
   @Input() sortColumn: string = '';
   @Input() sortDirection: 'asc' | 'desc' = 'asc';
-  @Input() rowClickAction?: (item: any) => void;
+  @Input() rowClickAction = false;
   @Input() selectable = false;
   @Input() selectedItems: Set<number> = new Set();
   
   @Output() sort = new EventEmitter<{column: string, direction: 'asc' | 'desc'}>();
   @Output() pageChange = new EventEmitter<number>();
   @Output() selectionChange = new EventEmitter<Set<number>>();
+  @Output() rowClick = new EventEmitter<any>();
   
   openDropdown: number | null = null;
 
@@ -376,7 +479,19 @@ export class DataTableComponent {
       return new Date(value).toLocaleDateString();
     }
     
-    return value;
+    if (column.pipe === 'currency' && value) {
+      return new Intl.NumberFormat('en-US', {
+        style: 'currency',
+        currency: 'USD'
+      }).format(value);
+    }
+    
+    // Handle warranty column fallback
+    if (column.key === 'warrantyExpiryDate' && (!value || value === null)) {
+      return 'No Warranty';
+    }
+    
+    return value || '';
   }
 
   getVisibleActions(item: any): TableAction[] {
@@ -385,7 +500,7 @@ export class DataTableComponent {
 
   onRowClick(item: any) {
     if (this.rowClickAction) {
-      this.rowClickAction(item);
+      this.rowClick.emit(item);
     }
   }
   
@@ -409,17 +524,22 @@ export class DataTableComponent {
   
   toggleDropdown(itemId: number) {
     this.openDropdown = this.openDropdown === itemId ? null : itemId;
-    if (this.openDropdown) {
-      setTimeout(() => {
-        document.addEventListener('click', () => {
-          this.openDropdown = null;
-        }, { once: true });
-      }, 100);
-    }
   }
   
   executeAction(action: TableAction, item: any) {
     action.action(item);
     this.openDropdown = null;
+  }
+  
+  ngOnInit() {}
+  
+  ngOnDestroy() {}
+  
+  @HostListener('document:click', ['$event'])
+  onDocumentClick(event: Event) {
+    const target = event.target as HTMLElement;
+    if (!target.closest('.dropdown-container')) {
+      this.openDropdown = null;
+    }
   }
 }

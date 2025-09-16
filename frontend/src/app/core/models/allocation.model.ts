@@ -15,6 +15,7 @@ export interface AssetAllocation {
   returnRequestDate?: string;
   returnRequestRemarks?: string;
   returnRequested: boolean;
+  returnStatus?: 'NONE' | 'REQUESTED' | 'ACKNOWLEDGED' | 'COMPLETED';
 }
 
 export interface AllocationAnalytics {

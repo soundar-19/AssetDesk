@@ -7,15 +7,14 @@ import { Issue } from '../../../core/models';
 import { AuthService } from '../../../core/services/auth.service';
 import { UserService } from '../../../core/services/user.service';
 import { DataTableComponent, TableColumn, TableAction } from '../../../shared/components/data-table/data-table.component';
-
 import { ToastService } from '../../../shared/components/toast/toast.service';
 import { ConfirmDialogService } from '../../../shared/components/confirm-dialog/confirm-dialog.service';
-import { InputModalService } from '../../../shared/components/input-modal/input-modal.service';
+import { ResolveModalComponent, ResolveModalResult } from '../../../shared/components/resolve-modal/resolve-modal.component';
 
 @Component({
   selector: 'app-issues-list',
   standalone: true,
-  imports: [CommonModule, FormsModule, DataTableComponent],
+  imports: [CommonModule, FormsModule, DataTableComponent, ResolveModalComponent],
   templateUrl: './issues-list.component.html',
   styleUrls: ['./issues-list.component.css']
 })
@@ -27,6 +26,8 @@ export class IssuesListComponent implements OnInit {
   sortColumn = 'createdAt';
   sortDirection: 'asc' | 'desc' = 'desc';
   searchTerm = '';
+  showResolveModal = false;
+  currentIssue: Issue | null = null;
 
   
   columns: TableColumn[] = [
@@ -36,15 +37,12 @@ export class IssuesListComponent implements OnInit {
     { key: 'status', label: 'Status', sortable: true, render: (issue: any) => this.getStatusBadge(issue.status) },
     { key: 'assetTag', label: 'Asset' },
     { key: 'reportedByName', label: 'Reported By' },
-    { key: 'assignedToName', label: 'Assigned To' }
+    { key: 'assignedToName', label: 'Assigned To', render: (issue: any) => issue.assignedToName || 'Unassigned' }
   ];
 
 
 
   actions: TableAction[] = [
-
-
-
     {
       label: 'Start Work',
       icon: '🔧',
@@ -54,8 +52,8 @@ export class IssuesListComponent implements OnInit {
     {
       label: 'Resolve',
       icon: '✅',
-      action: (issue) => this.resolveIssue(issue.id),
-      condition: (issue) => issue.status === 'IN_PROGRESS' && this.isITSupport()
+      action: (issue) => this.resolveIssue(issue),
+      condition: (issue) => issue.status === 'IN_PROGRESS' && (this.isITSupport() || this.isAdmin()) && this.isAssignedToMe(issue)
     },
     {
       label: 'Close',
@@ -67,7 +65,7 @@ export class IssuesListComponent implements OnInit {
       label: 'Delete',
       icon: '🗑',
       action: (issue) => this.deleteIssue(issue.id),
-      condition: () => this.authService.getCurrentUser()?.role === 'ADMIN'
+      condition: (issue) => this.canDeleteIssue(issue)
     }
   ];
 
@@ -77,12 +75,17 @@ export class IssuesListComponent implements OnInit {
     private userService: UserService,
     private router: Router,
     private toastService: ToastService,
-    private confirmDialog: ConfirmDialogService,
-    private inputModalService: InputModalService
+    private confirmDialog: ConfirmDialogService
   ) {}
 
   ngOnInit() {
     this.loadIssues();
+    (window as any).resolveIssue = (id: number) => {
+      const issue = this.issues.find(i => i.id === id);
+      if (issue) {
+        this.resolveIssue(issue);
+      }
+    };
   }
 
   loadIssues(page: number = 0) {
@@ -243,7 +246,10 @@ export class IssuesListComponent implements OnInit {
         this.toastService.success('Issue assigned to you and status changed to In Progress');
         // Send notification to issue reporter
         this.issueService.sendIssueNotification(id, 'Issue In Progress', 
-          'Your issue is now being worked on by IT Support.', 'ISSUE_UPDATED').subscribe();
+          'Your issue is now being worked on by IT Support.', 'ISSUE_UPDATED').subscribe({
+          next: () => console.log('Notification sent successfully'),
+          error: (error) => console.error('Failed to send notification:', error)
+        });
         this.loadIssues();
       },
       error: (error) => {
@@ -257,6 +263,10 @@ export class IssuesListComponent implements OnInit {
     return this.authService.getCurrentUser()?.role === 'IT_SUPPORT';
   }
 
+  isAdmin(): boolean {
+    return this.authService.getCurrentUser()?.role === 'ADMIN';
+  }
+
   isIssueReporter(issue: any): boolean {
     const currentUser = this.authService.getCurrentUser();
     return currentUser?.id === issue.reportedById;
@@ -267,36 +277,37 @@ export class IssuesListComponent implements OnInit {
     return currentUser?.id === issue.assignedToId;
   }
 
-  async resolveIssue(id: number) {
-    const resolutionNotes = await this.inputModalService.promptTextarea(
-      'Resolve Issue',
-      'Enter resolution notes:',
-      'Describe how the issue was resolved...'
-    );
+  resolveIssue(issue: Issue) {
+    if (!this.isAssignedToMe(issue)) {
+      this.toastService.error('You can only resolve issues assigned to you');
+      return;
+    }
     
-    if (resolutionNotes) {
-      const costStr = await this.inputModalService.promptNumber(
-        'Resolution Cost',
-        'Enter approximate cost (optional):',
-        'Cost (leave empty if no cost)',
-        false
-      );
-      
-      const cost = costStr ? parseFloat(costStr) : undefined;
-      
-      this.issueService.resolveIssueWithCost(id, resolutionNotes, cost).subscribe({
+    this.showResolveModal = true;
+    this.currentIssue = issue;
+  }
+
+  onResolveConfirm(result: ResolveModalResult) {
+    if (this.currentIssue) {
+      this.issueService.resolveIssueWithCost(this.currentIssue.id, result.notes, result.cost).subscribe({
         next: () => {
           this.toastService.success('Issue resolved successfully');
-          // Send notification to issue reporter
-          this.issueService.sendIssueNotification(id, 'Issue Resolved', 
-            `Your issue has been resolved. Resolution: ${resolutionNotes}`, 'ISSUE_RESOLVED').subscribe();
+          this.issueService.sendIssueNotification(this.currentIssue!.id, 'Issue Resolved', 
+            `Your issue has been resolved. Resolution: ${result.notes}`, 'ISSUE_RESOLVED').subscribe();
           this.loadIssues();
         },
-        error: () => {
-          this.toastService.error('Failed to resolve issue');
+        error: (error) => {
+          this.toastService.error(error.error?.message || 'Failed to resolve issue');
         }
       });
     }
+    this.showResolveModal = false;
+    this.currentIssue = null;
+  }
+
+  onResolveCancel() {
+    this.showResolveModal = false;
+    this.currentIssue = null;
   }
 
   openChat(id: number) {
@@ -324,6 +335,12 @@ export class IssuesListComponent implements OnInit {
     if (assetId) {
       this.router.navigate(['/assets', assetId]);
     }
+  }
+
+  canDeleteIssue(issue: any): boolean {
+    const currentUser = this.authService.getCurrentUser();
+    return currentUser?.role === 'ADMIN' || 
+           (currentUser?.id === issue.reportedById && issue.status === 'OPEN');
   }
 
   deleteIssue(id: number) {
@@ -360,5 +377,12 @@ export class IssuesListComponent implements OnInit {
       'CLOSED': '<span class="badge badge-secondary">Closed</span>'
     };
     return badges[status] || `<span class="badge badge-secondary">${status}</span>`;
+  }
+
+  getResolveButton(issue: any): string {
+    if (this.isITSupport() && issue.status === 'IN_PROGRESS' && this.isAssignedToMe(issue)) {
+      return `<button class="btn btn-sm btn-success" onclick="window.resolveIssue(${issue.id})">Resolve</button>`;
+    }
+    return '';
   }
 }

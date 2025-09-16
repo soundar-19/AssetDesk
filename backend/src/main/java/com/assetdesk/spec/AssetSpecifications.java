@@ -93,6 +93,34 @@ public class AssetSpecifications {
             );
         };
     }
+
+    public static Specification<Asset> hasPurchaseDateAfter(java.time.LocalDate date) {
+        return (root, query, cb) -> {
+            if (date == null) return null;
+            return cb.greaterThanOrEqualTo(root.get("purchaseDate"), date);
+        };
+    }
+
+    public static Specification<Asset> hasPurchaseDateBefore(java.time.LocalDate date) {
+        return (root, query, cb) -> {
+            if (date == null) return null;
+            return cb.lessThanOrEqualTo(root.get("purchaseDate"), date);
+        };
+    }
+
+    public static Specification<Asset> hasCostGreaterThanOrEqual(java.math.BigDecimal cost) {
+        return (root, query, cb) -> {
+            if (cost == null) return null;
+            return cb.greaterThanOrEqualTo(root.get("cost"), cost);
+        };
+    }
+
+    public static Specification<Asset> hasCostLessThanOrEqual(java.math.BigDecimal cost) {
+        return (root, query, cb) -> {
+            if (cost == null) return null;
+            return cb.lessThanOrEqualTo(root.get("cost"), cost);
+        };
+    }
 }
 
 

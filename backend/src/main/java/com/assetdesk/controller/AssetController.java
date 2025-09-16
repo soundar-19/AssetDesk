@@ -21,6 +21,7 @@ import org.springframework.data.domain.PageRequest;
 import java.util.List;
 import java.util.Map;
 import java.time.LocalDate;
+import java.math.BigDecimal;
 
 @RestController
 @RequestMapping("/api/assets")
@@ -153,6 +154,12 @@ public class AssetController {
         return ResponseEntity.ok(allocatedAsset);
     }
     
+    @PostMapping("/{assetId}/allocate-by-employee/{employeeId}")
+    public ResponseEntity<AssetResponseDTO> allocateAssetByEmployeeId(@PathVariable Long assetId, @PathVariable String employeeId, @RequestParam(required = false) String remarks) {
+        AssetResponseDTO allocatedAsset = assetService.allocateAssetByEmployeeId(assetId, employeeId, remarks);
+        return ResponseEntity.ok(allocatedAsset);
+    }
+    
     @PostMapping("/{assetId}/return")
     public ResponseEntity<AssetResponseDTO> returnAsset(@PathVariable Long assetId, @RequestParam(required = false) String remarks) {
         AssetResponseDTO returnedAsset = assetService.returnAsset(assetId, remarks);
@@ -208,6 +215,11 @@ public class AssetController {
     @PostMapping("/group/allocate")
     public ResponseEntity<AssetResponseDTO> allocateFromGroup(@RequestParam String name, @RequestParam Long userId, @RequestParam(required = false) String remarks) {
         return ResponseEntity.ok(assetService.allocateFromGroup(name, userId, remarks));
+    }
+    
+    @PostMapping("/group/allocate-by-employee")
+    public ResponseEntity<AssetResponseDTO> allocateFromGroupByEmployeeId(@RequestParam String name, @RequestParam String employeeId, @RequestParam(required = false) String remarks) {
+        return ResponseEntity.ok(assetService.allocateFromGroupByEmployeeId(name, employeeId, remarks));
     }
     
     @GetMapping("/warranty/stats")
@@ -275,5 +287,19 @@ public class AssetController {
         );
         
         return ResponseEntity.ok(result);
+    }
+
+    @GetMapping("/count")
+    public ResponseEntity<Long> getFilteredAssetCount(
+            @RequestParam(required = false) String category,
+            @RequestParam(required = false) String type,
+            @RequestParam(required = false) String status,
+            @RequestParam(required = false) String dateFrom,
+            @RequestParam(required = false) String dateTo,
+            @RequestParam(required = false) String costMin,
+            @RequestParam(required = false) String costMax) {
+        
+        long count = assetService.getFilteredCount(category, type, status, dateFrom, dateTo, costMin, costMax);
+        return ResponseEntity.ok(count);
     }
 }

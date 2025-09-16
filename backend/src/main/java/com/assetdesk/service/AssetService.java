@@ -22,6 +22,7 @@ public interface AssetService {
     AssetResponseDTO updateAsset(Long id, AssetRequestDTO assetRequestDTO);
     void deleteAsset(Long id);
     AssetResponseDTO allocateAsset(Long assetId, Long userId, String remarks);
+    AssetResponseDTO allocateAssetByEmployeeId(Long assetId, String employeeId, String remarks);
     AssetResponseDTO returnAsset(Long assetId, String remarks);
     Page<AssetResponseDTO> getWarrantyExpiring(int days, Pageable pageable);
     Page<AssetResponseDTO> search(String name, String category, String type, String status, Pageable pageable);
@@ -29,7 +30,9 @@ public interface AssetService {
         String assetTag, String model, String serialNumber, String vendor, Pageable pageable);
     com.assetdesk.dto.asset.AssetGroupSummaryDTO getGroupSummary(String name);
     com.assetdesk.dto.asset.AssetResponseDTO allocateFromGroup(String name, Long userId, String remarks);
+    com.assetdesk.dto.asset.AssetResponseDTO allocateFromGroupByEmployeeId(String name, String employeeId, String remarks);
     com.assetdesk.dto.asset.WarrantyStatsDTO getWarrantyStats();
     Page<AssetResponseDTO> getExpiredWarranties(Pageable pageable);
     Page<AssetResponseDTO> getValidWarranties(Pageable pageable);
+    long getFilteredCount(String category, String type, String status, String dateFrom, String dateTo, String costMin, String costMax);
 }

@@ -15,7 +15,10 @@ public interface AssetAllocationRepository extends JpaRepository<AssetAllocation
     List<AssetAllocation> findByAssetId(Long assetId);
     List<AssetAllocation> findByUserId(Long userId);
     
-    @Query("SELECT aa FROM AssetAllocation aa WHERE aa.asset.id = ?1 AND aa.returnedDate IS NULL")
+    @Query("SELECT aa FROM AssetAllocation aa WHERE aa.asset.id = ?1 AND aa.returnedDate IS NULL ORDER BY aa.allocatedDate DESC")
+    List<AssetAllocation> findCurrentAllocationsByAssetId(Long assetId);
+    
+    @Query(value = "SELECT * FROM asset_allocations aa WHERE aa.asset_id = ?1 AND aa.returned_date IS NULL ORDER BY aa.allocated_date DESC LIMIT 1", nativeQuery = true)
     Optional<AssetAllocation> findCurrentAllocationByAssetId(Long assetId);
     
     @Query("SELECT aa FROM AssetAllocation aa WHERE aa.user.id = ?1 AND aa.returnedDate IS NULL")
@@ -41,4 +44,8 @@ public interface AssetAllocationRepository extends JpaRepository<AssetAllocation
     
     @Query("SELECT aa FROM AssetAllocation aa WHERE aa.user.id = ?1 AND aa.returnedDate IS NULL ORDER BY aa.allocatedDate DESC")
     List<AssetAllocation> findTop10ByUserIdAndReturnedDateIsNullOrderByAllocatedDateDesc(Long userId);
+    
+    List<AssetAllocation> findByUserIdAndReturnStatusIn(Long userId, List<AssetAllocation.ReturnStatus> statuses);
+    List<AssetAllocation> findByReturnStatusIn(List<AssetAllocation.ReturnStatus> statuses);
+    Optional<AssetAllocation> findByAssetIdAndUserIdAndReturnedDateIsNull(Long assetId, Long userId);
 }

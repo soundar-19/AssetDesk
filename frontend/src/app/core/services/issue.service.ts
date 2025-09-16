@@ -1,5 +1,6 @@
 import { Injectable } from '@angular/core';
 import { Observable } from 'rxjs';
+import { tap } from 'rxjs/operators';
 import { ApiService } from './api.service';
 import { Issue, IssueRequest, PageResponse } from '../models';
 
@@ -52,16 +53,33 @@ export class IssueService {
   }
 
   createIssue(issue: IssueRequest, reportedById: number): Observable<Issue> {
-    return this.api.post<Issue>(`${this.endpoint}?reportedById=${reportedById}`, issue);
+    return this.api.post<Issue>(`${this.endpoint}?reportedById=${reportedById}`, issue).pipe(
+      tap(createdIssue => {
+        this.sendSystemMessage(createdIssue.id, `Issue created by ${createdIssue.reportedByName}`).subscribe();
+      })
+    );
   }
 
   assignIssue(issueId: number, assignedToId: number): Observable<Issue> {
-    return this.api.put<Issue>(`${this.endpoint}/${issueId}/assign/${assignedToId}`, null);
+    return this.api.put<Issue>(`${this.endpoint}/${issueId}/assign/${assignedToId}`, null).pipe(
+      tap(issue => {
+        this.sendSystemMessage(issueId, `Issue assigned to ${issue.assignedToName}`).subscribe();
+      })
+    );
+  }
+
+  private sendStatusNotification(issue: Issue, status: string, message: string): void {
+    // Send notification to issue reporter
+    this.sendIssueNotification(issue.id, `Issue ${status}`, message, 'ISSUE_UPDATED').subscribe();
   }
 
   updateIssueStatus(issueId: number, status: string, userId?: number): Observable<Issue> {
     const params = userId ? `?status=${status}&userId=${userId}` : `?status=${status}`;
-    return this.api.put<Issue>(`${this.endpoint}/${issueId}/status${params}`, null);
+    return this.api.put<Issue>(`${this.endpoint}/${issueId}/status${params}`, null).pipe(
+      tap(() => {
+        this.sendSystemMessage(issueId, `Issue status changed to ${status.replace('_', ' ')}`).subscribe();
+      })
+    );
   }
 
   updateIssue(id: number, issue: IssueRequest): Observable<Issue> {
@@ -77,11 +95,19 @@ export class IssueService {
     if (cost !== undefined) {
       params += `&cost=${cost}`;
     }
-    return this.api.put<Issue>(`${this.endpoint}/${issueId}/resolve?${params}`, null);
+    return this.api.put<Issue>(`${this.endpoint}/${issueId}/resolve?${params}`, null).pipe(
+      tap(() => {
+        this.sendSystemMessage(issueId, `Issue resolved: ${resolutionNotes}`).subscribe();
+      })
+    );
   }
 
   closeIssue(issueId: number, userId: number): Observable<Issue> {
-    return this.api.put<Issue>(`${this.endpoint}/${issueId}/close?userId=${userId}`, null);
+    return this.api.put<Issue>(`${this.endpoint}/${issueId}/close?userId=${userId}`, null).pipe(
+      tap(issue => {
+        this.sendSystemMessage(issueId, `Issue closed by ${issue.reportedByName || 'User'}`).subscribe();
+      })
+    );
   }
 
   deleteIssue(id: number): Observable<void> {
@@ -98,6 +124,10 @@ export class IssueService {
 
   sendIssueNotification(issueId: number, title: string, message: string, type: string): Observable<any> {
     return this.api.post(`/issues/${issueId}/notify`, { title, message, type });
+  }
+
+  sendSystemMessage(issueId: number, message: string): Observable<any> {
+    return this.api.post(`/messages/system?issueId=${issueId}&messageText=${encodeURIComponent(message)}`, null);
   }
 
   searchIssues(params: {

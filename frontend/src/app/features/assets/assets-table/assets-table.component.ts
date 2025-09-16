@@ -38,7 +38,8 @@ import { ConfirmDialogService } from '../../../shared/components/confirm-dialog/
         [sortDirection]="sortDirection"
         (pageChange)="onPageChange($event)"
         (sort)="onSort($event)"
-        [rowClickAction]="onAssetClick">
+        [rowClickAction]="true"
+        (rowClick)="onAssetClick($event)">
       </app-data-table>
     </div>
   `,
@@ -194,25 +195,21 @@ export class AssetsTableComponent implements OnInit {
   actions: TableAction[] = [
     { 
       label: 'Edit', 
-      icon: '✏', 
       action: (asset) => this.editAsset(asset.id), 
       condition: () => this.roleService.canManageAssets() 
     },
     { 
       label: 'Allocate', 
-      icon: '👤', 
       action: (asset) => this.allocateAsset(asset.id), 
       condition: (asset) => asset.status === 'AVAILABLE' && this.roleService.canManageAssets()
     },
     { 
       label: 'Return', 
-      icon: '↩', 
       action: (asset) => this.returnAsset(asset.id), 
       condition: (asset) => asset.status === 'ALLOCATED' && this.roleService.canManageAssets()
     },
     { 
       label: 'Delete', 
-      icon: '🗑', 
       action: (asset) => this.deleteAsset(asset.id), 
       condition: () => this.roleService.canManageAssets()
     }

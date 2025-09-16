@@ -1,4 +1,4 @@
-import { Component, OnInit } from '@angular/core';
+import { Component, OnInit, ChangeDetectorRef } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { Router } from '@angular/router';
 import { FormsModule } from '@angular/forms';
@@ -6,6 +6,7 @@ import { FormsModule } from '@angular/forms';
 import { RequestService } from '../../core/services/request.service';
 import { RoleService } from '../../core/services/role.service';
 import { AuthService } from '../../core/services/auth.service';
+import { AssetService } from '../../core/services/asset.service';
 import { AssetRequest } from '../../core/models';
 import { DataTableComponent, TableColumn, TableAction } from '../../shared/components/data-table/data-table.component';
 import { ToastService } from '../../shared/components/toast/toast.service';
@@ -130,7 +131,8 @@ import { InputModalService } from '../../shared/components/input-modal/input-mod
             [data]="filteredRequests"
             [columns]="columns"
             [pagination]="pagination"
-            [rowClickAction]="onRequestClick"
+            [rowClickAction]="true"
+            (rowClick)="onRequestClick($event)"
             (pageChange)="onPageChange($event)">
           </app-data-table>
         </div>
@@ -388,7 +390,7 @@ import { InputModalService } from '../../shared/components/input-modal/input-mod
     
     .requests-table :deep(.data-table th:nth-child(8)),
     .requests-table :deep(.data-table td:nth-child(8)) {
-      width: 90px;
+      width: 100px;
     }
     
     .requests-table :deep(.badge) {
@@ -553,50 +555,49 @@ export class AssetRequestsListComponent implements OnInit {
     { key: 'priority', label: 'Priority', render: (request: AssetRequest) => this.getPriorityBadge(request.priority) },
     { key: 'status', label: 'Status', render: (request: AssetRequest) => this.getStatusBadge(request.status) },
     { key: 'requestedDate', label: 'Requested', pipe: 'date' },
-    { key: 'requiredDate', label: 'Required', pipe: 'date' }
+    { key: 'availability', label: 'Availability', render: (request: AssetRequest) => this.getAvailabilityBadge(request) }
   ];
 
   actions: TableAction[] = [
     { 
       label: 'Edit', 
-      icon: '✏', 
       action: (request) => this.editRequest(request.id), 
       condition: (request) => request.status === 'PENDING' && this.canEditRequest(request)
     },
     { 
       label: 'Approve', 
-      icon: '✅', 
       action: (request) => this.approveRequest(request), 
       condition: (request) => request.status === 'PENDING' && this.roleService.canApproveRequests()
     },
     { 
       label: 'Reject', 
-      icon: '❌', 
       action: (request) => this.rejectRequest(request), 
       condition: (request) => request.status === 'PENDING' && this.roleService.canApproveRequests()
     },
     { 
       label: 'Fulfill', 
-      icon: '📦', 
       action: (request) => this.fulfillRequest(request), 
       condition: (request) => request.status === 'APPROVED' && this.roleService.canFulfillRequests()
     },
     { 
       label: 'Cancel', 
-      icon: '🚫', 
       action: (request) => this.cancelRequest(request), 
       condition: (request) => request.status === 'PENDING' && this.canEditRequest(request)
     }
   ];
 
+  availabilityCache: { [key: string]: number } = {};
+
   constructor(
     private requestService: RequestService,
     public roleService: RoleService,
     private authService: AuthService,
+    private assetService: AssetService,
     private router: Router,
     private toastService: ToastService,
     private confirmDialog: ConfirmDialogService,
-    private inputModalService: InputModalService
+    private inputModalService: InputModalService,
+    private cdr: ChangeDetectorRef
   ) {}
 
   ngOnInit() {
@@ -755,6 +756,45 @@ export class AssetRequestsListComponent implements OnInit {
       'CANCELLED': '<span class="badge badge-secondary">Cancelled</span>'
     };
     return badges[status] || `<span class="badge badge-secondary">${status}</span>`;
+  }
+
+  getAvailabilityBadge(request: AssetRequest): string {
+    const availabilityKey = `${request.assetType}_${request.category}`;
+    const availability = this.availabilityCache[availabilityKey];
+    
+    if (availability === undefined) {
+      setTimeout(() => this.checkAssetAvailability(request), 0);
+      return '<span class="badge badge-secondary">Checking...</span>';
+    }
+    
+    return availability > 0 
+      ? '<span class="badge badge-success">Available</span>'
+      : '<span class="badge badge-error">Not Available</span>';
+  }
+
+  private checkAssetAvailability(request: AssetRequest) {
+    const availabilityKey = `${request.assetType}_${request.category}`;
+    
+    if (this.availabilityCache[availabilityKey] !== undefined) {
+      return;
+    }
+    
+    this.availabilityCache[availabilityKey] = -1; // Mark as checking
+    
+    this.assetService.searchAssets({
+      type: request.assetType,
+      category: request.category,
+      status: 'AVAILABLE'
+    }, 0, 1).subscribe({
+      next: (response) => {
+        this.availabilityCache[availabilityKey] = response.totalElements || 0;
+        this.cdr.detectChanges();
+      },
+      error: () => {
+        this.availabilityCache[availabilityKey] = 0;
+        this.cdr.detectChanges();
+      }
+    });
   }
 
   canEditRequest(request: AssetRequest): boolean {

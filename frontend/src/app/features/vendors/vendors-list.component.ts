@@ -40,7 +40,8 @@ import { ConfirmDialogService } from '../../shared/components/confirm-dialog/con
             [pagination]="pagination"
             [sortColumn]="sortColumn"
             [sortDirection]="sortDirection"
-            [rowClickAction]="viewVendor.bind(this)"
+            [rowClickAction]="true"
+            (rowClick)="viewVendor($event)"
             (pageChange)="onPageChange($event)"
             (sort)="onSort($event)">
           </app-data-table>
@@ -212,7 +213,7 @@ export class VendorsListComponent implements OnInit {
   }
 
   getNameBadge(name: string): string {
-    return `<span class="badge badge-info">${name}</span>`;
+    return name;
   }
 
   getEmailBadge(email: string): string {

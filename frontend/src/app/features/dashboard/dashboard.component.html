@@ -12,24 +12,22 @@
     <!-- Employee Dashboard -->
     <div *ngIf="roleService.isEmployee()" class="employee-view">
       <section class="metrics">
-        <div class="metric-card primary">
-          <div class="metric-info">
-            <span class="metric-value">{{ dashboardStats.myAssets || 0 }}</span>
-            <span class="metric-label">My Assets</span>
-          </div>
-        </div>
-        <div class="metric-card warning">
-          <div class="metric-info">
-            <span class="metric-value">{{ dashboardStats.myIssues || 0 }}</span>
-            <span class="metric-label">My Issues</span>
-          </div>
-        </div>
-        <div class="metric-card info" (click)="navigateToRequests()">
-          <div class="metric-info">
-            <span class="metric-value">{{ dashboardStats.myRequests || 0 }}</span>
-            <span class="metric-label">Requests</span>
-          </div>
-        </div>
+        <app-metric-card 
+          [value]="dashboardStats.myAssets || 0" 
+          label="My Assets" 
+          variant="primary">
+        </app-metric-card>
+        <app-metric-card 
+          [value]="dashboardStats.myIssues || 0" 
+          label="My Issues" 
+          variant="warning">
+        </app-metric-card>
+        <app-metric-card 
+          [value]="dashboardStats.myRequests || 0" 
+          label="Requests" 
+          variant="info"
+          (cardClick)="navigateToRequests()">
+        </app-metric-card>
       </section>
 
       <section class="widgets">
@@ -61,48 +59,37 @@
     <!-- IT Support Dashboard -->
     <div *ngIf="roleService.isITSupport() && !roleService.isAdmin()" class="support-view">
       <section class="metrics">
-        <div class="metric-card primary">
-          <div class="metric-info">
-            <span class="metric-value">{{ dashboardStats.totalAssets || 0 }}</span>
-            <span class="metric-label">Total Assets</span>
-            <span class="metric-trend">{{ getAssetTrend() }}</span>
-          </div>
-        </div>
-        <div class="metric-card success">
-          <div class="metric-info">
-            <span class="metric-value">{{ dashboardStats.availableAssets || 0 }}</span>
-            <span class="metric-label">Available</span>
-            <span class="metric-trend">{{ getUtilizationRate() }}% utilized</span>
-          </div>
-        </div>
-        <div class="metric-card warning">
-          <div class="metric-info">
-            <span class="metric-value">{{ dashboardStats.openIssues || 0 }}</span>
-            <span class="metric-label">Open Issues</span>
-            <span class="metric-trend">{{ dashboardStats.averageResolutionTime || 0 }}h avg</span>
-          </div>
-        </div>
-        <div class="metric-card info" (click)="navigateToRequests()">
-          <div class="metric-info">
-            <span class="metric-value">{{ dashboardStats.pendingRequests || 0 }}</span>
-            <span class="metric-label">Requests</span>
-            <span class="metric-trend">{{ getRequestTrend() }}</span>
-          </div>
-        </div>
+        <app-metric-card 
+          [value]="dashboardStats.totalAssets || 0" 
+          label="Total Assets" 
+          [trend]="getAssetTrend()" 
+          variant="primary">
+        </app-metric-card>
+        <app-metric-card 
+          [value]="dashboardStats.availableAssets || 0" 
+          label="Available" 
+          [trend]="getUtilizationRate() + '% utilized'" 
+          variant="success">
+        </app-metric-card>
+        <app-metric-card 
+          [value]="dashboardStats.openIssues || 0" 
+          label="Open Issues" 
+          [trend]="(dashboardStats.averageResolutionTime || 0) + 'h avg'" 
+          variant="warning">
+        </app-metric-card>
+        <app-metric-card 
+          [value]="dashboardStats.pendingRequests || 0" 
+          label="Requests" 
+          [trend]="getRequestTrend()" 
+          variant="info"
+          (cardClick)="navigateToRequests()">
+        </app-metric-card>
       </section>
 
       <section class="widgets">
         <div class="widget">
           <h3>Asset Distribution</h3>
-          <div class="chart">
-            <div *ngFor="let item of getAssetsByStatusArray()" class="chart-item">
-              <span class="chart-label">{{ formatStatus(item.key) }}</span>
-              <div class="chart-bar">
-                <div class="bar-fill" [style.width.%]="getPercentage(item.value, getTotalAssets())"></div>
-              </div>
-              <span class="chart-value">{{ item.value }}</span>
-            </div>
-          </div>
+          <app-chart [chartData]="getAssetsByStatusArray()"></app-chart>
         </div>
 
         <div class="widget">
@@ -135,41 +122,37 @@
     <!-- Admin Dashboard -->
     <div *ngIf="roleService.isAdmin()" class="admin-view">
       <section class="metrics">
-        <div class="metric-card primary">
-          <div class="metric-info">
-            <span class="metric-value">{{ dashboardStats.totalAssets || 0 }}</span>
-            <span class="metric-label">Assets</span>
-            <span class="metric-trend">{{ getAssetTrend() }}</span>
-          </div>
-        </div>
-        <div class="metric-card success">
-          <div class="metric-info">
-            <span class="metric-value">{{ dashboardStats.totalUsers || 0 }}</span>
-            <span class="metric-label">Users</span>
-            <span class="metric-trend">{{ getActiveUsers() }} active</span>
-          </div>
-        </div>
-        <div class="metric-card warning">
-          <div class="metric-info">
-            <span class="metric-value">{{ dashboardStats.openIssues || 0 }}</span>
-            <span class="metric-label">Issues</span>
-            <span class="metric-trend">{{ getIssueTrend() }}</span>
-          </div>
-        </div>
-        <div class="metric-card info" (click)="navigateToRequests()">
-          <div class="metric-info">
-            <span class="metric-value">{{ getTotalRequests() }}</span>
-            <span class="metric-label">Requests</span>
-            <span class="metric-trend">{{ getRequestTrend() }}</span>
-          </div>
-        </div>
-        <div class="metric-card secondary">
-          <div class="metric-info">
-            <span class="metric-value">{{ getUtilizationRate() }}%</span>
-            <span class="metric-label">Utilization</span>
-            <span class="metric-trend">{{ dashboardStats.availableAssets || 0 }} available</span>
-          </div>
-        </div>
+        <app-metric-card 
+          [value]="dashboardStats.totalAssets || 0" 
+          label="Assets" 
+          [trend]="getAssetTrend()" 
+          variant="primary">
+        </app-metric-card>
+        <app-metric-card 
+          [value]="dashboardStats.totalUsers || 0" 
+          label="Users" 
+          [trend]="getActiveUsers() + ' active'" 
+          variant="success">
+        </app-metric-card>
+        <app-metric-card 
+          [value]="dashboardStats.openIssues || 0" 
+          label="Issues" 
+          [trend]="getIssueTrend()" 
+          variant="warning">
+        </app-metric-card>
+        <app-metric-card 
+          [value]="getTotalRequests()" 
+          label="Requests" 
+          [trend]="getRequestTrend()" 
+          variant="info"
+          (cardClick)="navigateToRequests()">
+        </app-metric-card>
+        <app-metric-card 
+          [value]="getUtilizationRate() + '%'" 
+          label="Utilization" 
+          [trend]="(dashboardStats.availableAssets || 0) + ' available'" 
+          variant="secondary">
+        </app-metric-card>
       </section>
 
       <section class="widgets admin-layout">
@@ -194,15 +177,7 @@
 
           <div class="widget small">
             <h3>Asset Categories</h3>
-            <div class="chart">
-              <div *ngFor="let category of getAssetCategoriesArray()" class="chart-item">
-                <span class="chart-label">{{ category.key }}</span>
-                <div class="chart-bar">
-                  <div class="bar-fill" [style.width.%]="getPercentage(category.value, getTotalAssets())"></div>
-                </div>
-                <span class="chart-value">{{ category.value }}</span>
-              </div>
-            </div>
+            <app-chart [chartData]="getAssetCategoriesArray()"></app-chart>
           </div>
 
           <div class="widget small">
@@ -234,6 +209,8 @@
           </div>
         </div>
       </section>
+
+
     </div>
   </div>
 

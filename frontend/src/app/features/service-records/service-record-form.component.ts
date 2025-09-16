@@ -39,6 +39,7 @@ import { ToastService } from '../../shared/components/toast/toast.service';
             <label for="serviceType">Service Type *</label>
             <select id="serviceType" formControlName="serviceType" class="form-control">
               <option value="">Select Type</option>
+              <option value="Issue Resolution">Issue Resolution</option>
               <option value="Preventive Maintenance">Preventive Maintenance</option>
               <option value="Corrective Maintenance">Corrective Maintenance</option>
               <option value="Emergency Repair">Emergency Repair</option>
@@ -234,7 +235,7 @@ export class ServiceRecordFormComponent implements OnInit {
       serviceDescription: ['', Validators.required],
       performedBy: [''],
       vendorId: [''],
-      cost: [''],
+      cost: ['', [Validators.min(0.01)]],
       nextServiceDate: [''],
       status: ['COMPLETED'],
       notes: ['']

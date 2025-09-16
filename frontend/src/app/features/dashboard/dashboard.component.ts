@@ -5,18 +5,23 @@ import { AuthService } from '../../core/services/auth.service';
 import { RoleService } from '../../core/services/role.service';
 import { DashboardService, DashboardStats } from '../../core/services/dashboard.service';
 import { AssetService } from '../../core/services/asset.service';
+
+import { ToastService } from '../../shared/components/toast/toast.service';
 import { Asset } from '../../core/models';
 import { LoadingSpinnerComponent } from '../../shared/ui/loading-spinner.component';
+import { MetricCardComponent } from '../../shared/components/metric-card/metric-card.component';
+import { ChartComponent, ChartData } from '../../shared/components/chart/chart.component';
 
 @Component({
   selector: 'app-dashboard',
   standalone: true,
-  imports: [CommonModule, RouterModule, LoadingSpinnerComponent],
+  imports: [CommonModule, RouterModule, LoadingSpinnerComponent, MetricCardComponent, ChartComponent],
   templateUrl: './dashboard.component.html',
   styleUrls: ['./dashboard.component.css']
 })
 export class DashboardComponent implements OnInit {
   dashboardStats: DashboardStats = {};
+
   loading = true;
   currentUser: any = null;
   showAssetSelection = false;
@@ -27,6 +32,8 @@ export class DashboardComponent implements OnInit {
     public roleService: RoleService,
     private dashboardService: DashboardService,
     private assetService: AssetService,
+
+    private toastService: ToastService,
     private router: Router
   ) {}
 
@@ -74,9 +81,12 @@ export class DashboardComponent implements OnInit {
     return this.dashboardStats.totalAssets || 0;
   }
 
-  getAssetsByStatusArray() {
+  getAssetsByStatusArray(): ChartData[] {
     if (!this.dashboardStats.assetsByStatus) return [];
-    return Object.entries(this.dashboardStats.assetsByStatus).map(([key, value]) => ({ key, value }));
+    return Object.entries(this.dashboardStats.assetsByStatus).map(([key, value]) => ({ 
+      label: this.formatStatus(key), 
+      value 
+    }));
   }
 
   getDepartmentAnalytics() {
@@ -173,9 +183,12 @@ export class DashboardComponent implements OnInit {
     return Object.values(this.dashboardStats.requestsByStatus).reduce((sum, count) => sum + count, 0);
   }
 
-  getAssetCategoriesArray() {
+  getAssetCategoriesArray(): ChartData[] {
     if (!this.dashboardStats.assetsByCategory) return [];
-    return Object.entries(this.dashboardStats.assetsByCategory).map(([key, value]) => ({ key, value }));
+    return Object.entries(this.dashboardStats.assetsByCategory).map(([key, value]) => ({ 
+      label: key, 
+      value 
+    }));
   }
 
   getMyAssetCount(status: string): number {
@@ -225,4 +238,6 @@ export class DashboardComponent implements OnInit {
   closeAssetSelection() {
     this.showAssetSelection = false;
   }
+
+
 }

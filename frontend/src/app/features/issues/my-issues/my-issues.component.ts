@@ -24,7 +24,8 @@ import { DataTableComponent, TableColumn, TableAction } from '../../../shared/co
         [pagination]="pagination"
         [sortColumn]="sortColumn"
         [sortDirection]="sortDirection"
-        [rowClickAction]="viewIssueDetail.bind(this)"
+        [rowClickAction]="true"
+        (rowClick)="viewIssueDetail($event)"
         (pageChange)="onPageChange($event)"
         (sort)="onSort($event)">
       </app-data-table>
@@ -52,7 +53,14 @@ export class MyIssuesComponent implements OnInit {
     { key: 'assignedToName', label: 'Assigned To' }
   ];
 
-  actions: TableAction[] = [];
+  actions: TableAction[] = [
+    {
+      label: 'Delete',
+      icon: '🗑',
+      action: (issue) => this.deleteIssue(issue.id),
+      condition: (issue) => this.canDeleteIssue(issue)
+    }
+  ];
 
   constructor(
     private issueService: IssueService,
@@ -60,6 +68,25 @@ export class MyIssuesComponent implements OnInit {
     private roleService: RoleService,
     private router: Router
   ) {}
+
+  canDeleteIssue(issue: Issue): boolean {
+    const currentUser = this.authService.getCurrentUser();
+    return currentUser?.role === 'ADMIN' || 
+           (currentUser?.id === issue.reportedById && issue.status === 'OPEN');
+  }
+
+  deleteIssue(id: number) {
+    if (confirm('Are you sure you want to delete this issue?')) {
+      this.issueService.deleteIssue(id).subscribe({
+        next: () => {
+          this.loadMyIssues();
+        },
+        error: () => {
+          console.error('Failed to delete issue');
+        }
+      });
+    }
+  }
 
   ngOnInit() {
     this.loadMyIssues();

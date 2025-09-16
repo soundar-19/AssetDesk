@@ -1,269 +1,143 @@
-import { Component, OnInit } from '@angular/core';
+import { Component, OnInit, OnDestroy } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { AssetService } from '../../core/services/asset.service';
 import { ServiceRecordService } from '../../core/services/service-record.service';
 import { DashboardService } from '../../core/services/dashboard.service';
-import { AnalyticsService } from '../../core/services/analytics.service';
+import { AnalyticsService, AnalyticsData } from '../../core/services/analytics.service';
 import { ToastService } from '../../shared/components/toast/toast.service';
 import { RoleService } from '../../core/services/role.service';
-import { LoadingSpinnerComponent } from '../../shared/ui/loading-spinner.component';
+import { ReportGeneratorComponent } from './report-generator.component';
 
 @Component({
   selector: 'app-reports',
   standalone: true,
-  imports: [CommonModule, FormsModule, LoadingSpinnerComponent],
+  imports: [CommonModule, FormsModule, ReportGeneratorComponent],
   styleUrls: ['./reports.component.css'],
   template: `
     <div class="standardized-layout">
-      <div class="page-header page-header-with-actions">
-        <div>
-          <h1 class="page-title">Reports & Analytics</h1>
-          <p class="page-description">Generate comprehensive reports and export data with advanced filtering</p>
+      <!-- Header Section -->
+      <div class="page-header">
+        <div class="header-content">
+          <h1 class="page-title">Reports</h1>
         </div>
-        <div class="header-stats" *ngIf="reportStats">
-          <div class="metric-card-pro primary">
-            <div class="metric-header">
-              <div class="metric-icon">📊</div>
-              <div class="metric-content">
-                <div class="metric-value">{{reportStats.totalAssets | number}}</div>
-                <div class="metric-label">Total Assets</div>
-              </div>
+        <p class="page-description">Generate comprehensive reports and export data with advanced filtering capabilities</p>
+        
+        <!-- Key Metrics Overview -->
+        <div class="metrics-overview" *ngIf="reportStats">
+          <div class="metric-card primary">
+            <div class="metric-icon">📊</div>
+            <div class="metric-content">
+              <div class="metric-value">{{reportStats.totalAssets | number}}</div>
+              <div class="metric-label">Total Assets</div>
             </div>
           </div>
-          <div class="metric-card-pro success">
-            <div class="metric-header">
-              <div class="metric-icon">🔧</div>
-              <div class="metric-content">
-                <div class="metric-value">{{reportStats.totalServiceRecords | number}}</div>
-                <div class="metric-label">Service Records</div>
-              </div>
+          <div class="metric-card success">
+            <div class="metric-icon">🔧</div>
+            <div class="metric-content">
+              <div class="metric-value">{{reportStats.totalServiceRecords | number}}</div>
+              <div class="metric-label">Service Records</div>
             </div>
           </div>
-          <div class="metric-card-pro info">
-            <div class="metric-header">
-              <div class="metric-icon">👥</div>
-              <div class="metric-content">
-                <div class="metric-value">{{reportStats.activeAllocations | number}}</div>
-                <div class="metric-label">Active Allocations</div>
-              </div>
+          <div class="metric-card info">
+            <div class="metric-icon">👥</div>
+            <div class="metric-content">
+              <div class="metric-value">{{reportStats.activeAllocations | number}}</div>
+              <div class="metric-label">Active Allocations</div>
+            </div>
+          </div>
+          <div class="metric-card warning">
+            <div class="metric-icon">⚠️</div>
+            <div class="metric-content">
+              <div class="metric-value">{{reportStats.pendingRequests || 0}}</div>
+              <div class="metric-label">Pending Requests</div>
             </div>
           </div>
         </div>
       </div>
 
-      <div class="reports-grid">
-        <!-- Asset Reports -->
-        <div class="pro-card widget-card-pro">
-          <div class="widget-header">
-            <h3 class="widget-title">Asset Reports</h3>
-            <div class="widget-actions">
-              <span class="badge badge-primary">📊 Export</span>
-            </div>
-          </div>
-          
-          <div class="widget-content">
-            <div class="filters-section">
-              <div class="filters-grid">
-                <div class="form-group">
-                  <label class="form-label">Category</label>
-                  <select [(ngModel)]="filters.category" class="form-select">
-                    <option value="">All Categories</option>
-                    <option value="HARDWARE">Hardware</option>
-                    <option value="SOFTWARE">Software</option>
-                    <option value="ACCESSORIES">Accessories</option>
-                  </select>
-                </div>
-                <div class="form-group">
-                  <label class="form-label">Asset Type</label>
-                  <select [(ngModel)]="filters.type" class="form-select">
-                    <option value="">All Types</option>
-                    <option value="LAPTOP">Laptop</option>
-                    <option value="DESKTOP">Desktop</option>
-                    <option value="MONITOR">Monitor</option>
-                    <option value="PRINTER">Printer</option>
-                    <option value="LICENSE">License</option>
-                  </select>
-                </div>
-                <div class="form-group">
-                  <label class="form-label">Status</label>
-                  <select [(ngModel)]="filters.status" class="form-select">
-                    <option value="">All Statuses</option>
-                    <option value="AVAILABLE">Available</option>
-                    <option value="ALLOCATED">Allocated</option>
-                    <option value="MAINTENANCE">Maintenance</option>
-                    <option value="RETIRED">Retired</option>
-                  </select>
-                </div>
-                <div class="form-group">
-                  <label class="form-label">Date From</label>
-                  <input type="date" [(ngModel)]="filters.dateFrom" class="form-input">
-                </div>
-                <div class="form-group">
-                  <label class="form-label">Date To</label>
-                  <input type="date" [(ngModel)]="filters.dateTo" class="form-input">
-                </div>
-                <div class="form-group">
-                  <label class="form-label">Cost Range</label>
-                  <div class="cost-range">
-                    <input type="number" [(ngModel)]="filters.costMin" placeholder="Min $" class="form-input">
-                    <span>to</span>
-                    <input type="number" [(ngModel)]="filters.costMax" placeholder="Max $" class="form-input">
-                  </div>
-                </div>
-              </div>
-              
-              <div class="filter-actions">
-                <button class="btn btn-secondary btn-sm" (click)="clearFilters()" [disabled]="loading">Clear</button>
-                <button class="btn btn-outline btn-sm" (click)="previewAssetReport()" [disabled]="loading">Preview ({{filteredAssetCount}})</button>
-              </div>
-            </div>
-            
-            <div class="export-actions">
-              <button class="btn btn-outline" (click)="exportToCsv()" [disabled]="loading">📄 CSV</button>
-              <button class="btn btn-primary" (click)="exportToPdf()" [disabled]="loading">📋 PDF</button>
-            </div>
-          </div>
-        </div>
-        
-        <!-- Analytics Reports -->
-        <div class="pro-card widget-card-pro">
-          <div class="widget-header">
-            <h3 class="widget-title">Analytics & Insights</h3>
-            <div class="widget-actions">
-              <span class="badge badge-success">📈 Analytics</span>
-            </div>
-          </div>
-          
-          <div class="widget-content">
-            <div class="options-grid">
-              <label class="list-item-pro">
-                <input type="checkbox" [(ngModel)]="analyticsOptions.includeCharts" class="option-checkbox">
-                <div class="item-content">
-                  <div class="item-title">Include Charts & Graphs</div>
-                </div>
-              </label>
-              <label class="list-item-pro">
-                <input type="checkbox" [(ngModel)]="analyticsOptions.includeDepreciation" class="option-checkbox">
-                <div class="item-content">
-                  <div class="item-title">Depreciation Analysis</div>
-                </div>
-              </label>
-              <label class="list-item-pro">
-                <input type="checkbox" [(ngModel)]="analyticsOptions.includeWarranty" class="option-checkbox">
-                <div class="item-content">
-                  <div class="item-title">Warranty Status Report</div>
-                </div>
-              </label>
-              <label class="list-item-pro">
-                <input type="checkbox" [(ngModel)]="analyticsOptions.includeUtilization" class="option-checkbox">
-                <div class="item-content">
-                  <div class="item-title">Asset Utilization Metrics</div>
-                </div>
-              </label>
-            </div>
-            
-            <div class="export-actions">
-              <button class="btn btn-outline" (click)="generateAnalyticsReport()" [disabled]="loading">📊 Generate</button>
-              <button class="btn btn-primary" (click)="exportAnalyticsToPdf()" [disabled]="loading">📄 Export PDF</button>
-            </div>
-          </div>
-        </div>
-        
-        <!-- Service Records -->
-        <div class="pro-card widget-card-pro">
-          <div class="widget-header">
-            <h3 class="widget-title">Service Records</h3>
-            <div class="widget-actions">
-              <span class="badge badge-warning">🔧 Service</span>
-            </div>
-          </div>
-          
-          <div class="widget-content">
-            <div class="filters-grid">
-              <div class="form-group">
-                <label class="form-label">Service Type</label>
-                <select [(ngModel)]="serviceFilters.type" class="form-select">
-                  <option value="">All Types</option>
-                  <option value="MAINTENANCE">Maintenance</option>
-                  <option value="REPAIR">Repair</option>
-                  <option value="UPGRADE">Upgrade</option>
-                  <option value="INSPECTION">Inspection</option>
-                </select>
-              </div>
-              <div class="form-group">
-                <label class="form-label">Date Range</label>
-                <select [(ngModel)]="serviceFilters.dateRange" class="form-select">
-                  <option value="">All Time</option>
-                  <option value="week">Last Week</option>
-                  <option value="month">Last Month</option>
-                  <option value="quarter">Last Quarter</option>
-                  <option value="year">Last Year</option>
-                </select>
-              </div>
-              <div class="form-group">
-                <label class="form-label">Cost Range</label>
-                <div class="cost-range">
-                  <input type="number" [(ngModel)]="serviceFilters.costMin" placeholder="Min $" class="form-input">
-                  <span>to</span>
-                  <input type="number" [(ngModel)]="serviceFilters.costMax" placeholder="Max $" class="form-input">
-                </div>
-              </div>
-            </div>
-            
-            <div class="filter-actions">
-              <button class="btn btn-secondary btn-sm" (click)="clearServiceFilters()" [disabled]="loading">Clear</button>
-              <button class="btn btn-outline btn-sm" (click)="previewServiceReport()" [disabled]="loading">Preview ({{filteredServiceCount}})</button>
-            </div>
-            
-            <div class="export-actions">
-              <button class="btn btn-outline" (click)="exportServiceRecords()" [disabled]="loading">📄 CSV</button>
-              <button class="btn btn-primary" (click)="exportServiceRecordsPdf()" [disabled]="loading">📋 PDF</button>
-            </div>
-          </div>
-        </div>
+      <!-- Main Content Grid -->
+      <div class="reports-container">
 
-        <!-- Quick Reports -->
-        <div class="pro-card widget-card-pro">
-          <div class="widget-header">
-            <h3 class="widget-title">Quick Reports</h3>
-            <div class="widget-actions">
-              <span class="badge badge-info">⚡ Quick</span>
-            </div>
+        <!-- Report Generation Section -->
+        <app-report-generator
+          [loading]="loading"
+          [filteredAssetCount]="filteredAssetCount"
+          [filteredServiceCount]="filteredServiceCount"
+          [filters]="filters"
+          [serviceFilters]="serviceFilters"
+          (onFilterChange)="onFilterChange()"
+          (onServiceFilterChange)="onServiceFilterChange()"
+          (clearFilters)="clearFilters()"
+          (clearServiceFilters)="clearServiceFilters()"
+          (exportToCsv)="exportToCsv()"
+          (exportToPdf)="exportToPdf()"
+          (exportServiceRecords)="exportServiceRecords()"
+          (exportServiceRecordsPdf)="exportServiceRecordsPdf()">
+        </app-report-generator>
+        
+        <!-- Quick Reports Section -->
+        <div class="quick-reports-section">
+          <div class="section-header">
+            <h2 class="section-title">Quick Reports</h2>
+            <p class="section-description">Pre-configured reports for common scenarios</p>
           </div>
           
-          <div class="widget-content">
-            <div class="quick-reports">
-              <button class="action-btn-pro warning" (click)="generateQuickReport('warranty-expiring')" [disabled]="loading">
-                ⚠️ Warranty Expiring
-              </button>
-              <button class="action-btn-pro primary" (click)="generateQuickReport('unallocated-assets')" [disabled]="loading">
-                📦 Available Assets
-              </button>
-              <button class="action-btn-pro success" (click)="generateQuickReport('high-value-assets')" [disabled]="loading">
-                ⭐ High-Value Assets
-              </button>
-              <button class="action-btn-pro error" (click)="generateQuickReport('maintenance-due')" [disabled]="loading">
-                🔧 Maintenance Due
-              </button>
-            </div>
+          <div class="quick-reports-grid">
+            <button class="quick-report-btn warranty" (click)="generateQuickReport('warranty-expiring')" [disabled]="loading">
+              <div class="quick-report-icon">⚠️</div>
+              <div class="quick-report-content">
+                <div class="quick-report-title">Warranty Expiring</div>
+                <div class="quick-report-description">Assets with warranties expiring soon</div>
+              </div>
+            </button>
+            
+            <button class="quick-report-btn available" (click)="generateQuickReport('unallocated-assets')" [disabled]="loading">
+              <div class="quick-report-icon">📦</div>
+              <div class="quick-report-content">
+                <div class="quick-report-title">Available Assets</div>
+                <div class="quick-report-description">Unallocated and ready-to-use assets</div>
+              </div>
+            </button>
+            
+            <button class="quick-report-btn high-value" (click)="generateQuickReport('high-value-assets')" [disabled]="loading">
+              <div class="quick-report-icon">⭐</div>
+              <div class="quick-report-content">
+                <div class="quick-report-title">High-Value Assets</div>
+                <div class="quick-report-description">Assets above $1,000 in value</div>
+              </div>
+            </button>
+            
+            <button class="quick-report-btn maintenance" (click)="generateQuickReport('maintenance-due')" [disabled]="loading">
+              <div class="quick-report-icon">🔧</div>
+              <div class="quick-report-content">
+                <div class="quick-report-title">Maintenance Due</div>
+                <div class="quick-report-description">Assets requiring maintenance</div>
+              </div>
+            </button>
           </div>
         </div>
       </div>
 
+      <!-- Loading Overlay -->
       <div *ngIf="loading" class="loading-overlay">
-        <app-loading-spinner></app-loading-spinner>
-        <p class="loading-text">{{loadingMessage}}</p>
+        <div class="loading-content">
+          <div class="loading-spinner"></div>
+          <p class="loading-message">{{loadingMessage}}</p>
+        </div>
       </div>
     </div>
   `
 })
-export class ReportsComponent implements OnInit {
+export class ReportsComponent implements OnInit, OnDestroy {
   loading = false;
   loadingMessage = 'Generating report...';
   reportStats: any = null;
+  analyticsData: AnalyticsData | null = null;
   filteredAssetCount = 0;
   filteredServiceCount = 0;
+  private filterTimeout: any;
+  private serviceFilterTimeout: any;
   
   filters = {
     category: '',
@@ -300,7 +174,17 @@ export class ReportsComponent implements OnInit {
 
   ngOnInit() {
     this.loadReportStats();
+    this.loadAnalyticsData();
     this.updateFilteredCounts();
+  }
+
+  ngOnDestroy() {
+    if (this.filterTimeout) {
+      clearTimeout(this.filterTimeout);
+    }
+    if (this.serviceFilterTimeout) {
+      clearTimeout(this.serviceFilterTimeout);
+    }
   }
 
   loadReportStats() {
@@ -323,19 +207,165 @@ export class ReportsComponent implements OnInit {
     });
   }
 
+  loadAnalyticsData() {
+    this.analyticsService.getAnalyticsData().subscribe({
+      next: (data) => {
+        this.analyticsData = data;
+      },
+      error: (error) => {
+        console.error('Failed to load analytics data:', error);
+        this.analyticsData = null;
+      }
+    });
+  }
+
+  refreshAnalytics() {
+    this.loading = true;
+    this.loadingMessage = 'Refreshing analytics data...';
+    this.loadAnalyticsData();
+    setTimeout(() => {
+      this.loading = false;
+      this.toastService.success('Analytics data refreshed successfully');
+    }, 1500);
+  }
+
+  exportAnalyticsDashboard() {
+    this.loading = true;
+    this.loadingMessage = 'Exporting analytics dashboard...';
+    
+    const options = {
+      includeCharts: true,
+      includeDepreciation: true,
+      includeWarranty: true,
+      includeUtilization: true
+    };
+    
+    this.analyticsService.exportAnalyticsReport(options).subscribe({
+      next: (blob) => {
+        const filename = `analytics-dashboard-${new Date().toISOString().split('T')[0]}.pdf`;
+        this.downloadFile(blob, filename, 'application/pdf');
+        this.toastService.success('Analytics dashboard exported successfully');
+        this.loading = false;
+      },
+      error: (error) => {
+        console.error('Analytics dashboard export failed:', error);
+        this.toastService.error('Failed to export analytics dashboard');
+        this.loading = false;
+      }
+    });
+  }
+
+  getChartData(data: { [key: string]: number }) {
+    const total = Object.values(data).reduce((sum, value) => sum + value, 0);
+    return Object.entries(data).map(([label, value]) => ({
+      label: label.charAt(0) + label.slice(1).toLowerCase(),
+      value,
+      percentage: total > 0 ? (value / total) * 100 : 0
+    }));
+  }
+
+  getStatusData(data: { [key: string]: number }) {
+    return Object.entries(data).map(([label, value]) => ({
+      label: label.charAt(0) + label.slice(1).toLowerCase(),
+      value
+    }));
+  }
+
+  getStatusClass(status: string): string {
+    const statusMap: { [key: string]: string } = {
+      'Available': 'available',
+      'Allocated': 'allocated',
+      'Maintenance': 'maintenance',
+      'Retired': 'retired'
+    };
+    return statusMap[status] || 'default';
+  }
+
+  getStatusIcon(status: string): string {
+    const iconMap: { [key: string]: string } = {
+      'Available': '✅',
+      'Allocated': '👤',
+      'Maintenance': '🔧',
+      'Retired': '🗑️'
+    };
+    return iconMap[status] || '📋';
+  }
+
   updateFilteredCounts() {
-    this.filteredAssetCount = Math.floor(Math.random() * 100) + 50;
-    this.filteredServiceCount = Math.floor(Math.random() * 50) + 20;
+    // Get filtered asset count
+    const assetFilters = this.buildExportFilters();
+    this.assetService.getFilteredCount(assetFilters).subscribe({
+      next: (count) => this.filteredAssetCount = count,
+      error: (error) => {
+        console.warn('Asset count endpoint not available, using fallback:', error);
+        // Fallback: estimate based on total assets and filters applied
+        this.filteredAssetCount = this.estimateFilteredCount(this.reportStats?.totalAssets || 0, assetFilters);
+      }
+    });
+
+    // Get filtered service count
+    const serviceFilters = this.buildServiceExportFilters();
+    this.serviceRecordService.getFilteredCount(serviceFilters).subscribe({
+      next: (count) => this.filteredServiceCount = count,
+      error: (error) => {
+        console.warn('Service count endpoint not available, using fallback:', error);
+        // Fallback: estimate based on total service records and filters applied
+        this.filteredServiceCount = this.estimateFilteredCount(this.reportStats?.totalServiceRecords || 0, serviceFilters);
+      }
+    });
+  }
+
+  private estimateFilteredCount(totalCount: number, filters: any): number {
+    if (!totalCount) return 0;
+    
+    // Simple estimation: reduce count based on number of active filters
+    const activeFilters = Object.values(filters).filter(value => 
+      value !== null && value !== undefined && value !== ''
+    ).length;
+    
+    if (activeFilters === 0) return totalCount;
+    
+    // Rough estimation: each filter reduces the count by 20-80%
+    const reductionFactor = Math.pow(0.6, activeFilters);
+    return Math.max(1, Math.floor(totalCount * reductionFactor));
   }
 
   previewAssetReport() {
-    this.updateFilteredCounts();
-    this.toastService.success(`Preview updated: ${this.filteredAssetCount} assets match your filters`);
+    this.loading = true;
+    this.loadingMessage = 'Updating preview...';
+    
+    const assetFilters = this.buildExportFilters();
+    this.assetService.getFilteredCount(assetFilters).subscribe({
+      next: (count) => {
+        this.filteredAssetCount = count;
+        this.toastService.success(`Preview updated: ${count} assets match your filters`);
+        this.loading = false;
+      },
+      error: () => {
+        this.filteredAssetCount = 0;
+        this.toastService.error('Failed to update preview');
+        this.loading = false;
+      }
+    });
   }
 
   previewServiceReport() {
-    this.updateFilteredCounts();
-    this.toastService.success(`Preview updated: ${this.filteredServiceCount} service records match your filters`);
+    this.loading = true;
+    this.loadingMessage = 'Updating preview...';
+    
+    const serviceFilters = this.buildServiceExportFilters();
+    this.serviceRecordService.getFilteredCount(serviceFilters).subscribe({
+      next: (count) => {
+        this.filteredServiceCount = count;
+        this.toastService.success(`Preview updated: ${count} service records match your filters`);
+        this.loading = false;
+      },
+      error: () => {
+        this.filteredServiceCount = 0;
+        this.toastService.error('Failed to update preview');
+        this.loading = false;
+      }
+    });
   }
 
   exportToCsv() {
@@ -424,6 +454,44 @@ export class ReportsComponent implements OnInit {
     };
     this.updateFilteredCounts();
     this.toastService.success('Service filters cleared');
+  }
+
+  onFilterChange() {
+    // Validate date range
+    if (this.filters.dateFrom && this.filters.dateTo && this.filters.dateFrom > this.filters.dateTo) {
+      this.toastService.error('Start date cannot be after end date');
+      return;
+    }
+
+    // Validate cost range
+    if (this.filters.costMin !== null && this.filters.costMax !== null && this.filters.costMin > this.filters.costMax) {
+      this.toastService.error('Minimum cost cannot be greater than maximum cost');
+      return;
+    }
+
+    // Debounce filter changes to avoid too many API calls
+    if (this.filterTimeout) {
+      clearTimeout(this.filterTimeout);
+    }
+    this.filterTimeout = setTimeout(() => {
+      this.updateFilteredCounts();
+    }, 500);
+  }
+
+  onServiceFilterChange() {
+    // Validate cost range
+    if (this.serviceFilters.costMin !== null && this.serviceFilters.costMax !== null && this.serviceFilters.costMin > this.serviceFilters.costMax) {
+      this.toastService.error('Minimum cost cannot be greater than maximum cost');
+      return;
+    }
+
+    // Debounce filter changes to avoid too many API calls
+    if (this.serviceFilterTimeout) {
+      clearTimeout(this.serviceFilterTimeout);
+    }
+    this.serviceFilterTimeout = setTimeout(() => {
+      this.updateFilteredCounts();
+    }, 500);
   }
 
   generateAnalyticsReport() {

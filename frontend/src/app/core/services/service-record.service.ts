@@ -82,4 +82,19 @@ export class ServiceRecordService {
     const url = queryString ? `${this.endpoint}/export/pdf?${queryString}` : `${this.endpoint}/export/pdf`;
     return this.api.getBlob(url);
   }
+
+  getFilteredCount(filters?: any): Observable<number> {
+    const params = new URLSearchParams();
+    if (filters) {
+      Object.keys(filters).forEach(key => {
+        const value = filters[key];
+        if (value !== null && value !== undefined && value !== '') {
+          params.append(key, value.toString());
+        }
+      });
+    }
+    const queryString = params.toString();
+    const url = queryString ? `${this.endpoint}/count?${queryString}` : `${this.endpoint}/count`;
+    return this.api.get<number>(url);
+  }
 }

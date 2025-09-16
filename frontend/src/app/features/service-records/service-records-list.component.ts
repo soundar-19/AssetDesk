@@ -47,13 +47,27 @@ export class ServiceRecordsListComponent implements OnInit {
   // Table configuration
   columns: TableColumn[] = [
     { key: 'serviceDate', label: 'Date', pipe: 'date', sortable: true },
-    { key: 'asset', label: 'Asset', render: (record: ServiceRecord) => `${record.asset?.assetTag}<br><small>${record.asset?.name}</small>` },
-    { key: 'issue', label: 'Issue', render: (record: ServiceRecord) => (record as any).issueTitle || record.description || 'No issue title' },
+    { key: 'asset', label: 'Asset', render: (record: ServiceRecord) => `${record.asset?.assetTag || 'N/A'}<br><small>${record.asset?.name || 'Unknown Asset'}</small>` },
+    { key: 'serviceType', label: 'Service Type', sortable: true },
+    { key: 'description', label: 'Description', render: (record: ServiceRecord) => record.description || 'No description' },
     { key: 'provider', label: 'Provider', render: (record: ServiceRecord) => `${record.vendor?.name || 'Internal'}<br><small>${record.performedBy || 'Not specified'}</small>` },
-    { key: 'cost', label: 'Cost', render: (record: ServiceRecord) => record.cost ? `<span class="badge badge-success">$${record.cost.toFixed(2)}</span>` : '<span class="badge badge-secondary">No cost</span>' }
+    { key: 'cost', label: 'Cost', pipe: 'currency' },
+    { key: 'status', label: 'Status', badge: true }
   ];
 
-  actions: TableAction[] = [];
+  actions: TableAction[] = [
+    {
+      label: 'Edit',
+      icon: '✏️',
+      action: (record: ServiceRecord) => this.editRecord(record.id),
+      condition: () => this.roleService.canManageAssets()
+    },
+    {
+      label: 'Print',
+      icon: '🖨️',
+      action: (record: ServiceRecord) => this.printServiceRecord(record)
+    }
+  ];
 
   constructor(
     private serviceRecordService: ServiceRecordService,
@@ -64,8 +78,27 @@ export class ServiceRecordsListComponent implements OnInit {
   ) {}
 
   ngOnInit() {
+    console.log('ServiceRecordsListComponent initialized');
+    this.initializeComponent();
+  }
+  
+  private initializeComponent() {
+    // Initialize with empty data first
+    this.serviceRecords = [];
+    this.allServiceRecords = [];
+    this.analytics = {
+      totalCost: 0,
+      monthlyTrend: 0,
+      avgCostPerService: 0,
+      topVendors: [],
+      servicesByType: {},
+      upcomingMaintenance: [],
+      overdueMaintenance: [],
+      costByMonth: {}
+    };
+    
+    // Load data
     this.loadServiceRecords();
-    this.calculateAnalytics();
   }
 
   loadServiceRecords(page: number = 0) {
@@ -77,21 +110,28 @@ export class ServiceRecordsListComponent implements OnInit {
     } else {
       this.serviceRecordService.getServiceRecords(page, 100).subscribe({
         next: (response) => {
-          this.allServiceRecords = (response.content || []).filter(record => 
-            record.serviceType && record.serviceType !== 'ASSET_ALLOCATION'
+          console.log('Service records response:', response);
+          this.allServiceRecords = (response.content || response || []).filter(record => 
+            record && record.serviceType && 
+            record.serviceType !== 'ASSET_ALLOCATION' &&
+            !record.description?.toLowerCase().includes('allocation') &&
+            !record.description?.toLowerCase().includes('assigned') &&
+            !record.description?.toLowerCase().includes('allocated')
           );
           this.serviceRecords = this.allServiceRecords;
           this.calculateAnalytics();
           this.pagination = {
             page: response.number || 0,
-            totalPages: response.totalPages || 0,
-            totalElements: response.totalElements || 0
+            totalPages: response.totalPages || 1,
+            totalElements: response.totalElements || this.allServiceRecords.length
           };
           this.loading = false;
         },
-        error: () => {
-          this.toastService.error('Failed to load service records');
+        error: (error) => {
+          console.error('Error loading service records:', error);
+          this.toastService.error('Failed to load service records: ' + (error.error?.message || error.message || 'Unknown error'));
           this.loading = false;
+          this.handleEmptyData();
         }
       });
     }
@@ -137,21 +177,28 @@ export class ServiceRecordsListComponent implements OnInit {
     // For now, use client-side filtering until backend search is implemented
     this.serviceRecordService.getServiceRecords(page, 100).subscribe({
       next: (response) => {
-        this.allServiceRecords = (response.content || []).filter(record => 
-          record.serviceType && record.serviceType !== 'ASSET_ALLOCATION'
+        console.log('Search response:', response);
+        this.allServiceRecords = (response.content || response || []).filter(record => 
+          record && record.serviceType && 
+          record.serviceType !== 'ASSET_ALLOCATION' &&
+          !record.description?.toLowerCase().includes('allocation') &&
+          !record.description?.toLowerCase().includes('assigned') &&
+          !record.description?.toLowerCase().includes('allocated')
         );
         this.applyClientSideFilters();
         this.calculateAnalytics();
         this.pagination = {
           page: response.number || 0,
-          totalPages: response.totalPages || 0,
-          totalElements: response.totalElements || 0
+          totalPages: response.totalPages || 1,
+          totalElements: response.totalElements || this.allServiceRecords.length
         };
         this.loading = false;
       },
-      error: () => {
-        this.toastService.error('Failed to search service records');
+      error: (error) => {
+        console.error('Error searching service records:', error);
+        this.toastService.error('Failed to search service records: ' + (error.error?.message || error.message || 'Unknown error'));
         this.loading = false;
+        this.handleEmptyData();
       }
     });
   }
@@ -197,13 +244,18 @@ export class ServiceRecordsListComponent implements OnInit {
   }
 
   calculateAnalytics() {
-    const records = this.allServiceRecords;
-    
-    // Total cost
-    this.analytics.totalCost = records.reduce((sum, r) => sum + (r.cost || 0), 0);
-    
-    // Average cost per service
-    this.analytics.avgCostPerService = records.length > 0 ? this.analytics.totalCost / records.length : 0;
+    try {
+      const records = this.allServiceRecords || [];
+      console.log('Calculating analytics for', records.length, 'records');
+      
+      // Total cost
+      this.analytics.totalCost = records.reduce((sum, r) => {
+        const cost = r?.cost || 0;
+        return sum + (typeof cost === 'number' ? cost : 0);
+      }, 0);
+      
+      // Average cost per service
+      this.analytics.avgCostPerService = records.length > 0 ? this.analytics.totalCost / records.length : 0;
     
     // Monthly trend (comparing last 2 months)
     const now = new Date();
@@ -261,6 +313,22 @@ export class ServiceRecordsListComponent implements OnInit {
       }
     });
     this.analytics.costByMonth = costByMonth;
+    
+    console.log('Analytics calculated:', this.analytics);
+    } catch (error) {
+      console.error('Error calculating analytics:', error);
+      // Reset to safe defaults
+      this.analytics = {
+        totalCost: 0,
+        monthlyTrend: 0,
+        avgCostPerService: 0,
+        topVendors: [],
+        servicesByType: {},
+        upcomingMaintenance: [],
+        overdueMaintenance: [],
+        costByMonth: {}
+      };
+    }
   }
 
   applyFilters() {
@@ -281,11 +349,21 @@ export class ServiceRecordsListComponent implements OnInit {
   }
 
   getUniqueServiceTypes(): string[] {
-    return [...new Set(this.allServiceRecords.map(r => r.serviceType))];
+    try {
+      return [...new Set((this.allServiceRecords || []).map(r => r?.serviceType).filter(type => type))];
+    } catch (error) {
+      console.error('Error getting unique service types:', error);
+      return [];
+    }
   }
 
   getUniqueVendors(): string[] {
-    return [...new Set(this.allServiceRecords.filter(r => r.vendor?.name).map(r => r.vendor!.name))];
+    try {
+      return [...new Set((this.allServiceRecords || []).filter(r => r?.vendor?.name).map(r => r.vendor!.name))];
+    } catch (error) {
+      console.error('Error getting unique vendors:', error);
+      return [];
+    }
   }
 
   getTotalCost(): number {
@@ -314,9 +392,9 @@ export class ServiceRecordsListComponent implements OnInit {
   }
 
   formatCurrency(amount: number): string {
-    return new Intl.NumberFormat('en-US', {
+    return new Intl.NumberFormat('en-IN', {
       style: 'currency',
-      currency: 'USD'
+      currency: 'INR'
     }).format(amount);
   }
 
@@ -406,45 +484,65 @@ export class ServiceRecordsListComponent implements OnInit {
   }
 
   getCostByMonthArray(): { key: string, value: number }[] {
-    return Object.entries(this.analytics.costByMonth).map(([key, value]) => ({ key, value: value as number }));
+    try {
+      return Object.entries(this.analytics?.costByMonth || {}).map(([key, value]) => ({ key, value: value as number }));
+    } catch (error) {
+      console.error('Error getting cost by month array:', error);
+      return [];
+    }
   }
 
   getBarHeight(value: number): number {
-    const monthlyValues = this.getCostByMonthArray().map(item => item.value);
-    const maxValue = Math.max(...monthlyValues);
-    return maxValue > 0 ? (value / maxValue) * 100 : 0;
+    try {
+      const monthlyValues = this.getCostByMonthArray().map(item => item.value);
+      const maxValue = Math.max(...monthlyValues, 0);
+      return maxValue > 0 ? (value / maxValue) * 100 : 0;
+    } catch (error) {
+      console.error('Error calculating bar height:', error);
+      return 0;
+    }
   }
 
   getServiceTypeArray(): { key: string, value: number }[] {
-    return Object.entries(this.analytics.servicesByType).map(([key, value]) => ({ key, value: value as number }));
+    try {
+      return Object.entries(this.analytics?.servicesByType || {}).map(([key, value]) => ({ key, value: value as number }));
+    } catch (error) {
+      console.error('Error getting service type array:', error);
+      return [];
+    }
   }
 
   getAssetServiceSummary(): any[] {
-    const assetMap = new Map();
-    this.allServiceRecords.forEach(record => {
-      if (record.asset) {
-        const key = record.asset.id;
-        if (!assetMap.has(key)) {
-          assetMap.set(key, {
-            asset: record.asset,
-            serviceCount: 0,
-            totalCost: 0,
-            lastService: null,
-            nextService: null
-          });
+    try {
+      const assetMap = new Map();
+      (this.allServiceRecords || []).forEach(record => {
+        if (record?.asset?.id) {
+          const key = record.asset.id;
+          if (!assetMap.has(key)) {
+            assetMap.set(key, {
+              asset: record.asset,
+              serviceCount: 0,
+              totalCost: 0,
+              lastService: null,
+              nextService: null
+            });
+          }
+          const summary = assetMap.get(key);
+          summary.serviceCount++;
+          summary.totalCost += (record.cost || 0);
+          if (!summary.lastService || new Date(record.serviceDate) > new Date(summary.lastService)) {
+            summary.lastService = record.serviceDate;
+          }
+          if (record.nextServiceDate && (!summary.nextService || new Date(record.nextServiceDate) < new Date(summary.nextService))) {
+            summary.nextService = record.nextServiceDate;
+          }
         }
-        const summary = assetMap.get(key);
-        summary.serviceCount++;
-        summary.totalCost += (record.cost || 0);
-        if (!summary.lastService || new Date(record.serviceDate) > new Date(summary.lastService)) {
-          summary.lastService = record.serviceDate;
-        }
-        if (record.nextServiceDate && (!summary.nextService || new Date(record.nextServiceDate) < new Date(summary.nextService))) {
-          summary.nextService = record.nextServiceDate;
-        }
-      }
-    });
-    return Array.from(assetMap.values()).sort((a, b) => b.totalCost - a.totalCost);
+      });
+      return Array.from(assetMap.values()).sort((a, b) => b.totalCost - a.totalCost);
+    } catch (error) {
+      console.error('Error getting asset service summary:', error);
+      return [];
+    }
   }
 
   getUpcomingServices(): any[] {
@@ -465,45 +563,52 @@ export class ServiceRecordsListComponent implements OnInit {
   }
 
   getVendorAnalytics(): any[] {
-    const vendorMap = new Map();
-    this.allServiceRecords.forEach(record => {
-      const vendorName = record.vendor?.name || 'Internal';
-      if (!vendorMap.has(vendorName)) {
-        vendorMap.set(vendorName, {
-          name: vendorName,
-          totalCost: 0,
-          serviceCount: 0,
-          avgCost: 0,
-          lastService: null,
-          assets: new Set(),
-          serviceTypes: new Set(),
-          completedServices: 0,
-          pendingServices: 0,
-          rating: 0
-        });
-      }
-      const vendor = vendorMap.get(vendorName);
-      vendor.totalCost += (record.cost || 0);
-      vendor.serviceCount++;
-      vendor.assets.add(record.asset?.id);
-      vendor.serviceTypes.add(record.serviceType);
+    try {
+      const vendorMap = new Map();
+      (this.allServiceRecords || []).forEach(record => {
+        if (record) {
+          const vendorName = record.vendor?.name || 'Internal';
+          if (!vendorMap.has(vendorName)) {
+            vendorMap.set(vendorName, {
+              name: vendorName,
+              totalCost: 0,
+              serviceCount: 0,
+              avgCost: 0,
+              lastService: null,
+              assets: new Set(),
+              serviceTypes: new Set(),
+              completedServices: 0,
+              pendingServices: 0,
+              rating: 0
+            });
+          }
+          const vendor = vendorMap.get(vendorName);
+          vendor.totalCost += (record.cost || 0);
+          vendor.serviceCount++;
+          if (record.asset?.id) vendor.assets.add(record.asset.id);
+          if (record.serviceType) vendor.serviceTypes.add(record.serviceType);
+          
+          if (record.status === 'COMPLETED') vendor.completedServices++;
+          if (record.status === 'PENDING') vendor.pendingServices++;
+          
+          if (!vendor.lastService || new Date(record.serviceDate) > new Date(vendor.lastService)) {
+            vendor.lastService = record.serviceDate;
+          }
+        }
+      });
       
-      if (record.status === 'COMPLETED') vendor.completedServices++;
-      if (record.status === 'PENDING') vendor.pendingServices++;
-      
-      if (!vendor.lastService || new Date(record.serviceDate) > new Date(vendor.lastService)) {
-        vendor.lastService = record.serviceDate;
-      }
-    });
-    
-    return Array.from(vendorMap.values()).map(vendor => ({
-      ...vendor,
-      avgCost: vendor.serviceCount > 0 ? vendor.totalCost / vendor.serviceCount : 0,
-      assetCount: vendor.assets.size,
-      serviceTypeCount: vendor.serviceTypes.size,
-      completionRate: vendor.serviceCount > 0 ? (vendor.completedServices / vendor.serviceCount) * 100 : 0,
-      rating: this.calculateVendorRating(vendor)
-    })).sort((a, b) => b.totalCost - a.totalCost);
+      return Array.from(vendorMap.values()).map(vendor => ({
+        ...vendor,
+        avgCost: vendor.serviceCount > 0 ? vendor.totalCost / vendor.serviceCount : 0,
+        assetCount: vendor.assets.size,
+        serviceTypeCount: vendor.serviceTypes.size,
+        completionRate: vendor.serviceCount > 0 ? (vendor.completedServices / vendor.serviceCount) * 100 : 0,
+        rating: this.calculateVendorRating(vendor)
+      })).sort((a, b) => b.totalCost - a.totalCost);
+    } catch (error) {
+      console.error('Error getting vendor analytics:', error);
+      return [];
+    }
   }
 
   calculateVendorRating(vendor: any): number {
@@ -592,30 +697,37 @@ export class ServiceRecordsListComponent implements OnInit {
   }
 
   getServiceTypeStats(): any[] {
-    const typeMap = new Map();
-    this.allServiceRecords.forEach(record => {
-      if (!typeMap.has(record.serviceType)) {
-        typeMap.set(record.serviceType, {
-          type: record.serviceType,
-          count: 0,
-          totalCost: 0,
-          avgCost: 0,
-          completedCount: 0,
-          pendingCount: 0
-        });
-      }
-      const stat = typeMap.get(record.serviceType);
-      stat.count++;
-      stat.totalCost += (record.cost || 0);
-      if (record.status === 'COMPLETED') stat.completedCount++;
-      if (record.status === 'PENDING') stat.pendingCount++;
-    });
-    
-    return Array.from(typeMap.values()).map(stat => ({
-      ...stat,
-      avgCost: stat.count > 0 ? stat.totalCost / stat.count : 0,
-      completionRate: stat.count > 0 ? (stat.completedCount / stat.count) * 100 : 0
-    })).sort((a, b) => b.totalCost - a.totalCost);
+    try {
+      const typeMap = new Map();
+      (this.allServiceRecords || []).forEach(record => {
+        if (record?.serviceType) {
+          if (!typeMap.has(record.serviceType)) {
+            typeMap.set(record.serviceType, {
+              type: record.serviceType,
+              count: 0,
+              totalCost: 0,
+              avgCost: 0,
+              completedCount: 0,
+              pendingCount: 0
+            });
+          }
+          const stat = typeMap.get(record.serviceType);
+          stat.count++;
+          stat.totalCost += (record.cost || 0);
+          if (record.status === 'COMPLETED') stat.completedCount++;
+          if (record.status === 'PENDING') stat.pendingCount++;
+        }
+      });
+      
+      return Array.from(typeMap.values()).map(stat => ({
+        ...stat,
+        avgCost: stat.count > 0 ? stat.totalCost / stat.count : 0,
+        completionRate: stat.count > 0 ? (stat.completedCount / stat.count) * 100 : 0
+      })).sort((a, b) => b.totalCost - a.totalCost);
+    } catch (error) {
+      console.error('Error getting service type stats:', error);
+      return [];
+    }
   }
 
   markServiceComplete(serviceId: number) {
@@ -747,6 +859,18 @@ export class ServiceRecordsListComponent implements OnInit {
   refreshRecords() {
     this.loadServiceRecords();
     this.toastService.success('Service records refreshed');
+  }
+  
+  private handleEmptyData() {
+    console.log('No service records found, initializing empty state');
+    this.serviceRecords = [];
+    this.allServiceRecords = [];
+    this.pagination = {
+      page: 0,
+      totalPages: 0,
+      totalElements: 0
+    };
+    this.calculateAnalytics();
   }
 
   viewAssetServices(assetId: number) {

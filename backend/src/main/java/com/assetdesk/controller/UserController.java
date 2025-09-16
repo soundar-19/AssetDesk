@@ -52,7 +52,7 @@ public class UserController {
     @GetMapping
     public ResponseEntity<Page<UserResponseDTO>> getAllUsers(
             @RequestParam(defaultValue = "0") int page,
-            @RequestParam(defaultValue = "10") int size,
+            @RequestParam(defaultValue = "50") int size,
             @RequestParam(required = false) String sortBy,
             @RequestParam(required = false, defaultValue = "asc") String sortDir) {
         Pageable pageable = PageRequest.of(page, size,
@@ -61,6 +61,13 @@ public class UserController {
                 org.springframework.data.domain.Sort.Direction.DESC : 
                 org.springframework.data.domain.Sort.Direction.ASC, sortBy) : 
             org.springframework.data.domain.Sort.unsorted());
+        Page<UserResponseDTO> users = userService.getAllUsers(pageable);
+        return ResponseEntity.ok(users);
+    }
+    
+    @GetMapping("/all")
+    public ResponseEntity<Page<UserResponseDTO>> getAllUsersUnpaginated() {
+        Pageable pageable = PageRequest.of(0, Integer.MAX_VALUE);
         Page<UserResponseDTO> users = userService.getAllUsers(pageable);
         return ResponseEntity.ok(users);
     }
@@ -76,7 +83,7 @@ public class UserController {
             @RequestParam(required = false) String sortBy,
             @RequestParam(required = false, defaultValue = "asc") String sortDir,
             @RequestParam(defaultValue = "0") int page,
-            @RequestParam(defaultValue = "10") int size) {
+            @RequestParam(defaultValue = "50") int size) {
         Pageable pageable = PageRequest.of(page, size,
             sortBy != null ? org.springframework.data.domain.Sort.by(
                 "desc".equalsIgnoreCase(sortDir) ? 
@@ -92,7 +99,7 @@ public class UserController {
     public ResponseEntity<Page<UserResponseDTO>> getUsersByRole(
             @PathVariable String role,
             @RequestParam(defaultValue = "0") int page,
-            @RequestParam(defaultValue = "10") int size) {
+            @RequestParam(defaultValue = "50") int size) {
         Pageable pageable = PageRequest.of(page, size);
         Page<UserResponseDTO> users = userService.getUsersByRole(role, pageable);
         return ResponseEntity.ok(users);
@@ -102,7 +109,7 @@ public class UserController {
     public ResponseEntity<Page<UserResponseDTO>> getUsersByDepartment(
             @PathVariable String department,
             @RequestParam(defaultValue = "0") int page,
-            @RequestParam(defaultValue = "10") int size) {
+            @RequestParam(defaultValue = "50") int size) {
         Pageable pageable = PageRequest.of(page, size);
         Page<UserResponseDTO> users = userService.getUsersByDepartment(department, pageable);
         return ResponseEntity.ok(users);
@@ -112,7 +119,7 @@ public class UserController {
     public ResponseEntity<Page<UserResponseDTO>> getUsersByStatus(
             @PathVariable String status,
             @RequestParam(defaultValue = "0") int page,
-            @RequestParam(defaultValue = "10") int size) {
+            @RequestParam(defaultValue = "50") int size) {
         Pageable pageable = PageRequest.of(page, size);
         Page<UserResponseDTO> users = userService.getUsersByStatus(status, pageable);
         return ResponseEntity.ok(users);

@@ -2,6 +2,7 @@ import { Component, OnInit } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { ActivatedRoute, Router } from '@angular/router';
+import { Location } from '@angular/common';
 import { AssetService } from '../../../core/services/asset.service';
 import { Asset, ServiceRecord, User, UserRole, AssetAllocation } from '../../../core/models';
 import { AllocationService } from '../../../core/services/allocation.service';
@@ -13,11 +14,13 @@ import { ToastService } from '../../../shared/components/toast/toast.service';
 import { ROLE_PERMISSIONS } from '../../../core/constants/role.constants';
 import { UserSelectorDialogComponent } from '../../../shared/components/user-selector-dialog/user-selector-dialog.component';
 import { InputModalService } from '../../../shared/components/input-modal/input-modal.service';
+import { ConfirmationDialogComponent } from '../../../shared/components/confirmation-dialog/confirmation-dialog.component';
+import { ConfirmationDialogService } from '../../../shared/components/confirmation-dialog/confirmation-dialog.service';
 
 @Component({
   selector: 'app-asset-detail',
   standalone: true,
-  imports: [CommonModule, FormsModule, UserSelectorDialogComponent],
+  imports: [CommonModule, FormsModule, UserSelectorDialogComponent, ConfirmationDialogComponent],
   template: `
     <div class="asset-detail" *ngIf="asset">
       <div class="header">
@@ -63,11 +66,11 @@ import { InputModalService } from '../../../shared/components/input-modal/input-
                       <label>Type:</label>
                       <span class="badge type">{{ asset.type }}</span>
                     </div>
-                    <div class="info-item">
+                    <div class="info-item" *ngIf="asset.category !== 'SOFTWARE'">
                       <label>Model:</label>
                       <span>{{ asset.model || 'N/A' }}</span>
                     </div>
-                    <div class="info-item" *ngIf="shouldShowField('serialNumber')">
+                    <div class="info-item" *ngIf="shouldShowField('serialNumber') && asset.category !== 'SOFTWARE'">
                       <label>Serial Number:</label>
                       <span class="serial">{{ asset.serialNumber || 'N/A' }}</span>
                     </div>
@@ -75,7 +78,7 @@ import { InputModalService } from '../../../shared/components/input-modal/input-
                       <label>Purchase Date:</label>
                       <span>{{ formatDate(asset.purchaseDate) }}</span>
                     </div>
-                    <div class="info-item">
+                    <div class="info-item" *ngIf="asset.category !== 'SOFTWARE'">
                       <label>Warranty Expiry:</label>
                       <span [class.expired]="isWarrantyExpired()">{{ formatDate(asset.warrantyExpiryDate) }}</span>
                     </div>
@@ -117,7 +120,7 @@ import { InputModalService } from '../../../shared/components/input-modal/input-
                   </div>
                 </div>
 
-                <div class="info-section" *ngIf="asset.type === 'LICENSE'">
+                <div class="info-section" *ngIf="asset.category === 'SOFTWARE' || asset.type === 'LICENSE'">
                   <h3><i class="icon-key"></i> License Information</h3>
                   <div class="info-grid">
                     <div class="info-item">
@@ -126,7 +129,7 @@ import { InputModalService } from '../../../shared/components/input-modal/input-
                     </div>
                     <div class="info-item">
                       <label>Total Licenses:</label>
-                      <span class="license-count">{{ asset.totalLicenses || 'N/A' }}</span>
+                      <span class="license-count">{{ asset.totalLicenses || 1 }}</span>
                     </div>
                     <div class="info-item">
                       <label>Used Licenses:</label>
@@ -134,7 +137,7 @@ import { InputModalService } from '../../../shared/components/input-modal/input-
                     </div>
                     <div class="info-item">
                       <label>Available Licenses:</label>
-                      <span class="license-available">{{ (asset.totalLicenses || 0) - (asset.usedLicenses || 0) }}</span>
+                      <span class="license-available">{{ (asset.totalLicenses || 1) - (asset.usedLicenses || 0) }}</span>
                     </div>
                     <div class="info-item">
                       <label>License Expiry:</label>
@@ -164,7 +167,7 @@ import { InputModalService } from '../../../shared/components/input-modal/input-
                   </div>
                 </div>
 
-                <div class="info-section" *ngIf="currentAllocation">
+                <div class="info-section" *ngIf="currentAllocation && !asset?.isShareable && asset?.category !== 'SOFTWARE'">
                   <h3><i class="icon-user"></i> Current Owner</h3>
                   <div class="allocation-card">
                     <div class="user-info">
@@ -180,10 +183,35 @@ import { InputModalService } from '../../../shared/components/input-modal/input-
                         <label>Duration:</label>
                         <span>{{ currentAllocation.daysAllocated }} days</span>
                       </div>
+                      <div class="detail-item" *ngIf="currentAllocation.returnRequestDate">
+                        <label>Return Status:</label>
+                        <span class="status status-requested">Return Requested</span>
+                      </div>
+                      <div class="detail-item" *ngIf="currentAllocation.returnRequestDate">
+                        <label>Return Requested:</label>
+                        <span>{{ formatDate(currentAllocation.returnRequestDate) }}</span>
+                      </div>
+                      <div class="detail-item" *ngIf="currentAllocation.returnRequestRemarks">
+                        <label>Return Reason:</label>
+                        <span>{{ currentAllocation.returnRequestRemarks }}</span>
+                      </div>
                       <div class="detail-item" *ngIf="currentAllocation.remarks">
                         <label>Remarks:</label>
                         <span>{{ currentAllocation.remarks }}</span>
                       </div>
+                    </div>
+                  </div>
+                </div>
+                
+                <div class="info-section" *ngIf="(asset?.isShareable || asset?.category === 'SOFTWARE') && getCurrentActiveUsers().length > 0">
+                  <h3><i class="icon-users"></i> Current Users</h3>
+                  <div class="users-list">
+                    <div *ngFor="let user of getCurrentActiveUsers()" class="user-card">
+                      <div class="user-info">
+                        <div class="user-name" (click)="viewUserDetails(user.userId)" style="cursor: pointer; color: var(--primary-600);">{{ user.userName }}</div>
+                        <div class="user-details">{{ user.userEmail }}</div>
+                      </div>
+                      <div class="allocation-date">{{ formatDate(user.allocatedDate) }}</div>
                     </div>
                   </div>
                 </div>
@@ -346,20 +374,32 @@ import { InputModalService } from '../../../shared/components/input-modal/input-
           
           <div class="quick-actions">
             <h4>Quick Actions</h4>
-            <button class="action-btn" (click)="editAsset()" *ngIf="canManageAssets()">
+            <button class="action-btn edit-btn" (click)="editAsset()" *ngIf="canManageAssets()">
               <i class="icon-edit"></i> Edit Asset
             </button>
-            <button class="action-btn" (click)="reportIssue()" *ngIf="canCreateIssues()">
+            <button class="action-btn issue-btn" (click)="reportIssue()" *ngIf="canCreateIssues()">
               <i class="icon-alert"></i> Report Issue
             </button>
-            <button class="action-btn" *ngIf="asset.status === 'AVAILABLE' && canManageAssets()" (click)="allocateAsset()">
+            <!-- For shareable assets (software) -->
+            <button class="action-btn allocate-btn" *ngIf="(asset?.isShareable || asset?.category === 'SOFTWARE') && canManageAssets() && hasAvailableLicenses()" (click)="allocateAsset()">
+              <i class="icon-user"></i> Allocate License ({{ getAvailableLicenseCount() }} available)
+            </button>
+            <button class="action-btn return-btn" *ngIf="(asset?.isShareable || asset?.category === 'SOFTWARE') && canManageAssets() && getCurrentActiveUsers().length > 0" (click)="initiateReturn()">
+              <i class="icon-return"></i> Return License
+            </button>
+            
+            <!-- For non-shareable assets (hardware) -->
+            <button class="action-btn allocate-btn" *ngIf="!(asset?.isShareable || asset?.category === 'SOFTWARE') && asset?.status === 'AVAILABLE' && canManageAssets()" (click)="allocateAsset()">
               <i class="icon-user"></i> Allocate
             </button>
-            <button class="action-btn" *ngIf="asset.status === 'ALLOCATED' && canManageAssets()" (click)="returnAsset()">
-              <i class="icon-return"></i> Return Asset
+            <button class="action-btn return-btn" *ngIf="!(asset?.isShareable || asset?.category === 'SOFTWARE') && asset?.status === 'ALLOCATED' && canManageAssets()" (click)="initiateReturn()">
+              <i class="icon-return"></i> Request Return
             </button>
-            <button class="action-btn" (click)="viewAssetHistory()" *ngIf="canManageAssets()">
-              <i class="icon-history"></i> View History
+            <button class="action-btn return-btn" *ngIf="!(asset?.isShareable || asset?.category === 'SOFTWARE') && asset?.status === 'ALLOCATED' && canManageAssets() && hasReturnRequest()" (click)="forceReturn()">
+              <i class="icon-return"></i> Force Return
+            </button>
+            <button class="action-btn delete-btn" (click)="deleteAsset()" *ngIf="canManageAssets()">
+              <i class="icon-delete"></i> Delete Asset
             </button>
           </div>
 
@@ -381,11 +421,37 @@ import { InputModalService } from '../../../shared/components/input-modal/input-
 
     <app-user-selector-dialog 
       *ngIf="showUserSelector"
-      [singleUser]="true"
+      [show]="showUserSelector"
+      [singleUser]="!(asset?.isShareable || asset?.category === 'SOFTWARE')"
+      [licenseCount]="getAvailableLicenseCount()"
       [licenseName]="asset?.name || 'Asset'"
+      [assetId]="asset?.id || null"
+      [mode]="'allocate'"
       (onConfirm)="onUserSelected($event)"
-      (onCancel)="showUserSelector = false">
+      (onCancel)="closeUserSelector()">
     </app-user-selector-dialog>
+
+    <app-user-selector-dialog 
+      *ngIf="showReturnUserSelector"
+      [show]="showReturnUserSelector"
+      [singleUser]="false"
+      [licenseCount]="allocatedUsersForReturn.length"
+      [licenseName]="asset?.name || 'Asset'"
+      [allocatedUsers]="allocatedUsersForReturn"
+      [mode]="'return'"
+      (onConfirm)="onReturnUsersSelected($event)"
+      (onCancel)="closeReturnUserSelector()">
+    </app-user-selector-dialog>
+
+    <app-confirmation-dialog
+      [show]="(confirmationService.show$ | async) || false"
+      [title]="(confirmationService.config$ | async)?.title || 'Confirm'"
+      [message]="(confirmationService.config$ | async)?.message || 'Are you sure?'"
+      [confirmText]="(confirmationService.config$ | async)?.confirmText || 'Confirm'"
+      [cancelText]="(confirmationService.config$ | async)?.cancelText || 'Cancel'"
+      (onConfirm)="confirmationService.onConfirm()"
+      (onCancel)="confirmationService.onCancel()">
+    </app-confirmation-dialog>
   `,
   styles: [`
     .asset-detail { 
@@ -556,13 +622,13 @@ import { InputModalService } from '../../../shared/components/input-modal/input-
     }
     
     .badge.category { 
-      background: var(--primary-50); 
-      color: var(--primary-600); 
+      background: var(--success-50); 
+      color: var(--success-700); 
     }
     
     .badge.type { 
-      background: var(--gray-100); 
-      color: var(--gray-700); 
+      background: var(--primary-50); 
+      color: var(--primary-700); 
     }
     
     .status { 
@@ -594,6 +660,22 @@ import { InputModalService } from '../../../shared/components/input-modal/input-
       background: var(--gray-500); 
     }
     
+    .status-requested {
+      background: var(--warning-500);
+    }
+    
+    .status-acknowledged {
+      background: var(--primary-500);
+    }
+    
+    .status-completed {
+      background: var(--success-500);
+    }
+    
+    .status-none {
+      background: var(--gray-400);
+    }
+    
     .serial { 
       font-family: var(--font-family-mono); 
       background: var(--gray-100); 
@@ -619,8 +701,8 @@ import { InputModalService } from '../../../shared/components/input-modal/input-
     }
     
     .depreciation-chart, .license-usage { 
-      margin-top: var(--space-5); 
-      padding: var(--space-4);
+      margin-top: var(--space-3); 
+      padding: var(--space-3);
       background: white;
       border-radius: var(--radius-md);
       border: 1px solid var(--gray-200);
@@ -630,7 +712,8 @@ import { InputModalService } from '../../../shared/components/input-modal/input-
       display: flex; 
       justify-content: space-between; 
       align-items: center; 
-      margin-bottom: var(--space-3); 
+      margin-bottom: var(--space-2); 
+      font-size: 0.875rem;
     }
     
     .percentage { 
@@ -674,11 +757,12 @@ import { InputModalService } from '../../../shared/components/input-modal/input-
     .card-value { font-size: 2rem; font-weight: 700; color: #1a1a1a; }
     .card-label { color: #666; font-weight: 500; text-transform: uppercase; font-size: 0.75rem; letter-spacing: 0.5px; }
     
-    .user-list { display: flex; flex-direction: column; gap: 0.75rem; }
-    .user-item { display: flex; justify-content: space-between; align-items: center; padding: 0.75rem; background: #f8f9fa; border-radius: 0.5rem; }
+    .user-list, .users-list { display: flex; flex-direction: column; gap: 0.75rem; }
+    .user-item, .user-card { display: flex; justify-content: space-between; align-items: center; padding: 0.75rem; background: #f8f9fa; border-radius: 0.5rem; }
     .user-name { font-weight: 600; }
     .user-dept { color: #666; font-size: 0.875rem; }
     .user-email { color: #007bff; font-size: 0.875rem; }
+    .allocation-date { color: #666; font-size: 0.875rem; font-weight: 500; }
     
     .section-header { display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 2rem; }
     .section-header h3 { margin: 0; display: flex; align-items: center; gap: 0.5rem; }
@@ -779,6 +863,51 @@ import { InputModalService } from '../../../shared/components/input-modal/input-
       background: var(--gray-100); 
       transform: translateX(2px); 
       color: var(--gray-900);
+    }
+    
+    .edit-btn {
+      color: var(--primary-600);
+    }
+    
+    .edit-btn:hover {
+      background: var(--primary-50);
+      color: var(--primary-700);
+    }
+    
+    .issue-btn {
+      color: var(--warning-600);
+    }
+    
+    .issue-btn:hover {
+      background: var(--warning-50);
+      color: var(--warning-700);
+    }
+    
+    .allocate-btn {
+      color: var(--success-600);
+    }
+    
+    .allocate-btn:hover {
+      background: var(--success-50);
+      color: var(--success-700);
+    }
+    
+    .return-btn {
+      color: var(--primary-500);
+    }
+    
+    .return-btn:hover {
+      background: var(--primary-50);
+      color: var(--primary-700);
+    }
+    
+    .delete-btn {
+      color: var(--error-600);
+    }
+    
+    .delete-btn:hover {
+      background: var(--error-50);
+      color: var(--error-700);
     }
     
     .stat-item { display: flex; justify-content: space-between; padding: 0.5rem 0; border-bottom: 1px solid #f0f0f0; }
@@ -897,6 +1026,8 @@ export class AssetDetailComponent implements OnInit {
   activeTab = 'overview';
   showLicenseKey = false;
   showUserSelector = false;
+  showReturnUserSelector = false;
+  allocatedUsersForReturn: User[] = [];
   currentUser: User | null = null;
   userRole: UserRole | null = null;
   permissions: any = {};
@@ -904,6 +1035,7 @@ export class AssetDetailComponent implements OnInit {
   constructor(
     private route: ActivatedRoute,
     private router: Router,
+    private location: Location,
     private assetService: AssetService,
     private allocationService: AllocationService,
     private serviceRecordService: ServiceRecordService,
@@ -911,15 +1043,18 @@ export class AssetDetailComponent implements OnInit {
     private warrantyHistoryService: WarrantyHistoryService,
     private authService: AuthService,
     private toastService: ToastService,
-    private inputModalService: InputModalService
+    private inputModalService: InputModalService,
+    public confirmationService: ConfirmationDialogService
   ) {}
 
   ngOnInit() {
     this.initializeUserContext();
     const id = this.route.snapshot.paramMap.get('id');
+    console.log('Asset ID from route:', id);
     if (id && !isNaN(+id)) {
       this.loadAsset(+id);
     } else {
+      console.error('Invalid asset ID:', id);
       this.toastService.error('Invalid asset ID');
       this.router.navigate(['/assets']);
     }
@@ -938,22 +1073,33 @@ export class AssetDetailComponent implements OnInit {
       return;
     }
     
+    // Reset component state
+    this.asset = null;
+    this.currentAllocation = null;
+    this.ownershipHistory = [];
+    this.serviceRecords = [];
+    
     this.assetService.getAssetById(id).subscribe({
       next: (asset) => {
-        console.log('Asset loaded:', asset);
+        console.log('Asset loaded successfully:', asset);
         this.asset = asset;
         this.loadAssetData(id);
       },
       error: (error) => {
-        console.error('Error loading asset:', error);
-        this.toastService.error('Asset not found or access denied');
+        console.error('Error loading asset ID', id, ':', error);
+        if (error.status === 404) {
+          this.toastService.error(`Asset with ID ${id} not found. It may have been deleted.`);
+        } else if (error.status === 403) {
+          this.toastService.error('Access denied to this asset.');
+        } else {
+          this.toastService.error(`Failed to load asset: ${error.message || 'Unknown error'}`);
+        }
         this.router.navigate(['/assets']);
       }
     });
   }
 
   private loadAssetData(id: number) {
-    this.loadCurrentAllocation(id);
     this.loadOwnershipHistory(id);
     this.loadServiceRecords(id);
     this.loadWarrantyHistory(id);
@@ -1016,9 +1162,15 @@ export class AssetDetailComponent implements OnInit {
             userEmail: alloc.user?.email || allocation.userEmail,
             daysAllocated: Math.ceil((new Date().getTime() - new Date(allocation.allocatedDate).getTime()) / (1000 * 60 * 60 * 24))
           };
+        } else {
+          this.currentAllocation = null;
         }
       },
       error: (error) => {
+        // 404 is expected for assets with no current allocation - suppress console errors
+        if (error.status !== 404) {
+          console.error('Error loading current allocation:', error);
+        }
         this.currentAllocation = null;
       }
     });
@@ -1047,7 +1199,7 @@ export class AssetDetailComponent implements OnInit {
   }
 
   goBack() {
-    this.router.navigate(['/assets']);
+    this.location.back();
   }
 
   setActiveTab(tab: string) {
@@ -1165,8 +1317,14 @@ export class AssetDetailComponent implements OnInit {
       return;
     }
     
-    if (this.asset.status !== 'AVAILABLE') {
+    if (this.asset.status !== 'AVAILABLE' && !(this.asset.isShareable || this.asset.category === 'SOFTWARE')) {
       this.toastService.error('Asset is not available for allocation');
+      return;
+    }
+    
+    // For shareable assets, check if licenses are available
+    if ((this.asset.isShareable || this.asset.category === 'SOFTWARE') && !this.hasAvailableLicenses()) {
+      this.toastService.error('No licenses available for allocation');
       return;
     }
     
@@ -1174,18 +1332,27 @@ export class AssetDetailComponent implements OnInit {
   }
 
   onUserSelected(users: User[]) {
-    this.showUserSelector = false;
+    this.closeUserSelector();
     
     if (!users.length || !this.asset) return;
     
-    const user = users[0];
-    this.assetService.allocateAsset(this.asset.id, user.id).subscribe({
-      next: () => {
-        this.toastService.success(`Asset allocated to ${user.name} successfully`);
-        this.loadAsset(this.asset!.id);
-      },
-      error: () => this.toastService.error('Failed to allocate asset')
-    });
+    if (users.length === 1) {
+      // Single user allocation
+      const user = users[0];
+      this.assetService.allocateAsset(this.asset.id, user.id).subscribe({
+        next: (updatedAsset) => {
+          this.toastService.success(`Asset allocated to ${user.name} successfully`);
+          if (updatedAsset) {
+            this.asset = updatedAsset;
+          }
+          this.loadAsset(this.asset!.id);
+        },
+        error: () => this.toastService.error('Failed to allocate asset')
+      });
+    } else {
+      // Sequential allocation for multiple users to ensure proper license counting
+      this.allocateUsersSequentially(users, 0, 0, 0);
+    }
   }
 
 
@@ -1238,6 +1405,60 @@ export class AssetDetailComponent implements OnInit {
     this.router.navigate(['/service-records', record.id]);
   }
 
+  initiateReturn() {
+    if (!this.canManageAssets() || !this.asset) {
+      this.toastService.error('Access denied');
+      return;
+    }
+    
+    if (this.asset.isShareable || this.asset.category === 'SOFTWARE') {
+      // For shareable assets, show user selector to choose which users to return
+      // Refresh the ownership history first to get latest data
+      this.loadOwnershipHistory(this.asset.id);
+      
+      // Use setTimeout to ensure ownership history is loaded before getting allocated users
+      setTimeout(() => {
+        this.allocatedUsersForReturn = this.getAllocatedUsers();
+        console.log('Allocated users for return:', this.allocatedUsersForReturn);
+        
+        if (this.allocatedUsersForReturn.length === 0) {
+          this.toastService.error('No users currently have this license allocated');
+          return;
+        }
+        
+        this.showReturnUserSelector = true;
+      }, 100);
+    } else {
+      // For non-shareable assets, send return request first
+      this.requestAssetReturn();
+    }
+  }
+
+  async requestAssetReturn() {
+    if (!this.canManageAssets() || !this.asset) {
+      this.toastService.error('Access denied');
+      return;
+    }
+    
+    const remarks = await this.inputModalService.promptText(
+      'Request Asset Return',
+      'Enter reason for return request:',
+      'Please return this asset...',
+      '',
+      false
+    );
+    
+    if (remarks !== null) {
+      this.allocationService.requestReturn(this.asset.id, remarks || '').subscribe({
+        next: () => {
+          this.toastService.success('Return request sent to user. They will be notified to return the asset.');
+          this.loadAsset(this.asset!.id);
+        },
+        error: () => this.toastService.error('Failed to send return request')
+      });
+    }
+  }
+
   async returnAsset() {
     if (!this.canManageAssets() || !this.asset) {
       this.toastService.error('Access denied');
@@ -1263,13 +1484,56 @@ export class AssetDetailComponent implements OnInit {
     }
   }
 
-  viewAssetHistory() {
-    if (!this.canManageAssets()) {
+  onReturnUsersSelected(users: User[]) {
+    this.closeReturnUserSelector();
+    
+    if (!users.length || !this.asset) return;
+    
+    // Sequential return for multiple users to ensure proper license counting
+    this.returnUsersSequentially(users, 0, 0, 0);
+  }
+
+  async deleteAsset() {
+    if (!this.canManageAssets() || !this.asset) {
       this.toastService.error('Access denied');
       return;
     }
-    // Navigate to asset history page or open modal
-    this.router.navigate(['/assets', this.asset?.id, 'history']);
+    
+    // Check if asset has any allocations (current or historical)
+    if (this.asset.status === 'ALLOCATED' || this.getCurrentActiveUsers().length > 0) {
+      this.toastService.error('Cannot delete asset. Asset is currently allocated. Please return all allocations first.');
+      return;
+    }
+    
+    // Check for allocation history
+    if (this.ownershipHistory && this.ownershipHistory.length > 0) {
+      this.toastService.error('Cannot delete asset. Asset has allocation history. Only assets that have never been allocated can be deleted.');
+      return;
+    }
+    
+    const confirmed = await this.confirmationService.confirm({
+      title: 'Delete Asset',
+      message: `Are you sure you want to delete "${this.asset.name}"? This action cannot be undone.`,
+      confirmText: 'Delete',
+      cancelText: 'Cancel'
+    });
+    
+    if (confirmed) {
+      this.assetService.deleteAsset(this.asset.id).subscribe({
+        next: () => {
+          this.toastService.success('Asset deleted successfully');
+          this.router.navigate(['/assets']);
+        },
+        error: (error) => {
+          if (error.status === 409) {
+            this.toastService.error('Cannot delete asset. Asset has related records that prevent deletion.');
+          } else {
+            const errorMsg = error.error?.message || 'Failed to delete asset';
+            this.toastService.error(errorMsg);
+          }
+        }
+      });
+    }
   }
 
   getTotalServiceCost(): number {
@@ -1296,7 +1560,8 @@ export class AssetDetailComponent implements OnInit {
           };
         }).sort((a, b) => b.id - a.id);
         
-        if (!this.currentAllocation && this.ownershipHistory.length > 0) {
+        // Set current allocation from ownership history for non-shareable assets
+        if (this.asset && !this.asset.isShareable && this.asset.category !== 'SOFTWARE') {
           const current = this.ownershipHistory.find(h => !h.returnedDate);
           if (current) {
             this.currentAllocation = current;
@@ -1317,5 +1582,167 @@ export class AssetDetailComponent implements OnInit {
 
   viewIssueDetails(issueId: number) {
     this.router.navigate(['/issues', issueId]);
+  }
+
+  getAllocatedUsers(): User[] {
+    if (!this.ownershipHistory || this.ownershipHistory.length === 0) {
+      return [];
+    }
+    
+    // Get all current allocations (no return date)
+    const currentAllocations = this.ownershipHistory.filter(allocation => !allocation.returnedDate);
+    
+    if (currentAllocations.length === 0) {
+      return [];
+    }
+    
+    // Convert to User objects with proper IDs
+    return currentAllocations.map(allocation => ({
+      id: allocation.userId,
+      name: allocation.userName || 'Unknown User',
+      email: allocation.userEmail || '',
+      employeeId: '', // Not available in allocation data
+      role: 'EMPLOYEE' as any,
+      department: '',
+      designation: '',
+      status: 'ACTIVE' as any,
+      phoneNumber: '',
+      dateJoined: '',
+      password: ''
+    }));
+  }
+  
+  getCurrentActiveUsers(): any[] {
+    if (!this.ownershipHistory) return [];
+    return this.ownershipHistory.filter(allocation => !allocation.returnedDate);
+  }
+  
+  hasAvailableLicenses(): boolean {
+    if (!this.asset || !(this.asset.isShareable || this.asset.category === 'SOFTWARE')) {
+      return false;
+    }
+    
+    const totalLicenses = this.asset.totalLicenses || 1;
+    const usedLicenses = this.asset.usedLicenses || 0;
+    
+    return usedLicenses < totalLicenses;
+  }
+  
+  getAvailableLicenseCount(): number {
+    if (!this.asset || !(this.asset.isShareable || this.asset.category === 'SOFTWARE')) {
+      return 0;
+    }
+    
+    const totalLicenses = this.asset.totalLicenses || 1;
+    const usedLicenses = this.asset.usedLicenses || 0;
+    
+    return Math.max(0, totalLicenses - usedLicenses);
+  }
+  
+  closeUserSelector() {
+    this.showUserSelector = false;
+  }
+  
+  closeReturnUserSelector() {
+    this.showReturnUserSelector = false;
+    this.allocatedUsersForReturn = [];
+  }
+
+  getReturnStatusLabel(status: string): string {
+    switch (status) {
+      case 'REQUESTED': return 'Return Requested';
+      case 'ACKNOWLEDGED': return 'User Acknowledged';
+      case 'COMPLETED': return 'Returned';
+      case 'NONE': return 'No Request';
+      default: return status;
+    }
+  }
+  
+  private allocateUsersSequentially(users: User[], index: number, successCount: number, errorCount: number) {
+    if (index >= users.length) {
+      // All allocations completed
+      if (errorCount === 0) {
+        this.toastService.success(`Asset allocated to ${successCount} users successfully`);
+      } else {
+        this.toastService.success(`Asset allocated to ${successCount} users (${errorCount} failed)`);
+      }
+      this.loadAsset(this.asset!.id);
+      return;
+    }
+    
+    const user = users[index];
+    this.assetService.allocateAsset(this.asset!.id, user.id).subscribe({
+      next: (updatedAsset) => {
+        if (updatedAsset) {
+          this.asset = updatedAsset;
+        }
+        this.allocateUsersSequentially(users, index + 1, successCount + 1, errorCount);
+      },
+      error: () => {
+        this.allocateUsersSequentially(users, index + 1, successCount, errorCount + 1);
+      }
+    });
+  }
+  
+  private returnUsersSequentially(users: User[], index: number, successCount: number, errorCount: number) {
+    if (index >= users.length) {
+      // All returns completed
+      if (errorCount === 0) {
+        this.toastService.success(`License returned for ${successCount} users successfully`);
+      } else {
+        this.toastService.success(`License returned for ${successCount} users (${errorCount} failed)`);
+      }
+      this.loadAsset(this.asset!.id);
+      return;
+    }
+    
+    const user = users[index];
+    this.allocationService.returnFromUser(this.asset!.id, user.id, `License returned for ${user.name}`).subscribe({
+      next: () => {
+        this.returnUsersSequentially(users, index + 1, successCount + 1, errorCount);
+      },
+      error: () => {
+        this.returnUsersSequentially(users, index + 1, successCount, errorCount + 1);
+      }
+    });
+  }
+
+  hasReturnRequest(): boolean {
+    // Check if current allocation has a return request
+    return !!this.currentAllocation?.returnRequestDate;
+  }
+
+  async forceReturn() {
+    if (!this.canManageAssets() || !this.asset) {
+      this.toastService.error('Access denied');
+      return;
+    }
+    
+    const confirmed = await this.confirmationService.confirm({
+      title: 'Force Return Asset',
+      message: `Are you sure you want to force return "${this.asset.name}"? This will mark the asset as returned without user confirmation.`,
+      confirmText: 'Force Return',
+      cancelText: 'Cancel'
+    });
+    
+    if (confirmed) {
+      const remarks = await this.inputModalService.promptText(
+        'Force Return Asset',
+        'Enter return remarks:',
+        'Asset forcibly returned by admin',
+        'Asset forcibly returned by admin',
+        false
+      );
+      
+      if (remarks !== null) {
+        this.assetService.returnAsset(this.asset.id, remarks || 'Asset forcibly returned by admin').subscribe({
+          next: () => {
+            this.toastService.success('Asset returned successfully');
+            this.loadAsset(this.asset!.id);
+          },
+          error: () => this.toastService.error('Failed to return asset')
+        });
+      }
+    }
   }
 }

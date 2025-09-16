@@ -16,7 +16,7 @@ public interface ServiceRecordRepository extends JpaRepository<ServiceRecord, Lo
     
 
     
-    @Query("SELECT SUM(sr.cost) FROM ServiceRecord sr WHERE sr.asset.id = ?1")
+    @Query("SELECT COALESCE(SUM(COALESCE(sr.serviceCost, sr.cost)), 0) FROM ServiceRecord sr WHERE sr.asset.id = ?1")
     BigDecimal getTotalServiceCostByAssetId(Long assetId);
     
     @Query("SELECT COUNT(sr) FROM ServiceRecord sr WHERE sr.asset.id = ?1")
@@ -35,4 +35,18 @@ public interface ServiceRecordRepository extends JpaRepository<ServiceRecord, Lo
     
     @Query("SELECT sr FROM ServiceRecord sr LEFT JOIN FETCH sr.asset LEFT JOIN FETCH sr.vendor WHERE sr.id = :id")
     java.util.Optional<ServiceRecord> findByIdWithAssetAndVendor(@org.springframework.data.repository.query.Param("id") Long id);
+    
+    @Query(value = "SELECT sr FROM ServiceRecord sr LEFT JOIN FETCH sr.asset LEFT JOIN FETCH sr.vendor " +
+           "WHERE sr.serviceType != 'ASSET_ALLOCATION' AND " +
+           "(sr.serviceDescription NOT LIKE '%allocated to%' AND " +
+           "sr.serviceDescription NOT LIKE '%returned by%' AND " +
+           "sr.serviceDescription NOT LIKE '%Asset allocated%' AND " +
+           "sr.serviceDescription NOT LIKE '%Asset returned%')",
+           countQuery = "SELECT COUNT(sr) FROM ServiceRecord sr " +
+           "WHERE sr.serviceType != 'ASSET_ALLOCATION' AND " +
+           "(sr.serviceDescription NOT LIKE '%allocated to%' AND " +
+           "sr.serviceDescription NOT LIKE '%returned by%' AND " +
+           "sr.serviceDescription NOT LIKE '%Asset allocated%' AND " +
+           "sr.serviceDescription NOT LIKE '%Asset returned%')")
+    Page<ServiceRecord> findAllServiceRecordsExcludingAllocations(Pageable pageable);
 }

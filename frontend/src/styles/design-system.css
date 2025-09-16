@@ -37,6 +37,28 @@
   color: var(--gray-700);
 }
 
+.badge-primary {
+  background-color: var(--primary-100);
+  color: var(--primary-700);
+}
+
+/* Additional button styles */
+.btn-ghost {
+  background: transparent;
+  color: var(--gray-600);
+  border-color: transparent;
+}
+
+.btn-ghost:hover:not(:disabled) {
+  background: var(--gray-100);
+  color: var(--gray-700);
+}
+
+.btn-xs {
+  padding: var(--space-1) var(--space-2);
+  font-size: 0.6875rem;
+}
+
 /* Form control styles */
 .form-control {
   width: 100%;

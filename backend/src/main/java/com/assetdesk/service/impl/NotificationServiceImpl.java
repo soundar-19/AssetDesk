@@ -89,4 +89,18 @@ public class NotificationServiceImpl implements NotificationService {
     public void deleteNotification(Long id) {
         notificationRepository.deleteById(id);
     }
+    
+    @Override
+    @Transactional(readOnly = true)
+    public Page<NotificationResponseDTO> getNotificationsByUserPaged(Long userId, Pageable pageable) {
+        return notificationRepository.findByUserIdOrderByCreatedAtDesc(userId, pageable)
+            .map(NotificationResponseDTO::fromEntity);
+    }
+    
+    @Override
+    @Transactional(readOnly = true)
+    public Page<NotificationResponseDTO> getUnreadNotificationsByUserPaged(Long userId, Pageable pageable) {
+        return notificationRepository.findUnreadNotificationsByUserId(userId, pageable)
+            .map(NotificationResponseDTO::fromEntity);
+    }
 }

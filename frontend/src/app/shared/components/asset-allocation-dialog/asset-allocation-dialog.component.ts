@@ -1,9 +1,10 @@
-import { Component, Input, Output, EventEmitter, OnInit } from '@angular/core';
+import { Component, Input, Output, EventEmitter, OnInit, OnChanges, SimpleChanges } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { Asset, User } from '../../../core/models';
 import { AssetService } from '../../../core/services/asset.service';
 import { UserService } from '../../../core/services/user.service';
+import { AllocationService } from '../../../core/services/allocation.service';
 import { ToastService } from '../toast/toast.service';
 
 @Component({
@@ -26,11 +27,31 @@ import { ToastService } from '../toast/toast.service';
               <span class="asset-status" [class]="'status-' + asset?.status?.toLowerCase()">
                 {{ asset?.status }}
               </span>
+              <span *ngIf="asset?.isShareable && asset?.totalLicenses" class="license-info">
+                {{ getLicenseText() }}
+              </span>
             </div>
           </div>
           
           <div class="allocation-form" *ngIf="mode === 'allocate'">
-            <div class="form-group">
+            <div class="allocation-method">
+              <div class="method-tabs">
+                <button type="button" 
+                        class="tab-btn" 
+                        [class.active]="allocationMethod === 'dropdown'"
+                        (click)="allocationMethod = 'dropdown'">
+                  Select User
+                </button>
+                <button type="button" 
+                        class="tab-btn" 
+                        [class.active]="allocationMethod === 'employeeId'"
+                        (click)="allocationMethod = 'employeeId'">
+                  Employee ID
+                </button>
+              </div>
+            </div>
+            
+            <div class="form-group" *ngIf="allocationMethod === 'dropdown'">
               <label for="userId">Select User *</label>
               <select id="userId" 
                       class="form-control" 
@@ -41,6 +62,16 @@ import { ToastService } from '../toast/toast.service';
                   {{ user.name }} ({{ user.email }}) - {{ user.department }}
                 </option>
               </select>
+            </div>
+            
+            <div class="form-group" *ngIf="allocationMethod === 'employeeId'">
+              <label for="employeeId">Employee ID *</label>
+              <input id="employeeId" 
+                     type="text" 
+                     class="form-control" 
+                     [(ngModel)]="employeeId" 
+                     placeholder="Enter employee ID (e.g., EMP001)"
+                     [disabled]="loading">
             </div>
             
             <div class="form-group">
@@ -81,7 +112,7 @@ import { ToastService } from '../toast/toast.service';
           </button>
           <button class="btn btn-primary" 
                   (click)="confirm()" 
-                  [disabled]="loading || (mode === 'allocate' && !selectedUserId)">
+                  [disabled]="loading || (mode === 'allocate' && ((allocationMethod === 'dropdown' && !selectedUserId) || (allocationMethod === 'employeeId' && !employeeId.trim())))">
             <span *ngIf="loading" class="loading-spinner"></span>
             {{ mode === 'allocate' ? 'Allocate' : 'Return' }}
           </button>
@@ -201,6 +232,49 @@ import { ToastService } from '../toast/toast.service';
       font-weight: 500;
       text-transform: uppercase;
       letter-spacing: 0.025em;
+    }
+    
+    .license-info {
+      background: var(--info-100);
+      color: var(--info-700);
+      padding: var(--space-1) var(--space-2);
+      border-radius: var(--radius-sm);
+      font-size: 0.75rem;
+      font-weight: 500;
+    }
+    
+    .allocation-method {
+      margin-bottom: var(--space-4);
+    }
+    
+    .method-tabs {
+      display: flex;
+      background: var(--gray-100);
+      border-radius: var(--radius-md);
+      padding: var(--space-1);
+    }
+    
+    .tab-btn {
+      flex: 1;
+      padding: var(--space-2) var(--space-3);
+      border: none;
+      background: transparent;
+      color: var(--gray-600);
+      font-size: 0.875rem;
+      font-weight: 500;
+      border-radius: var(--radius-sm);
+      cursor: pointer;
+      transition: all var(--transition-fast);
+    }
+    
+    .tab-btn:hover {
+      color: var(--gray-800);
+    }
+    
+    .tab-btn.active {
+      background: white;
+      color: var(--primary-600);
+      box-shadow: var(--shadow-sm);
     }
     
     .status-available {
@@ -354,7 +428,7 @@ import { ToastService } from '../toast/toast.service';
     }
   `]
 })
-export class AssetAllocationDialogComponent implements OnInit {
+export class AssetAllocationDialogComponent implements OnInit, OnChanges {
   @Input() asset: Asset | null = null;
   @Input() mode: 'allocate' | 'return' = 'allocate';
   @Input() show = false;
@@ -366,28 +440,58 @@ export class AssetAllocationDialogComponent implements OnInit {
   
   users: User[] = [];
   selectedUserId: number | null = null;
+  employeeId = '';
+  allocationMethod: 'dropdown' | 'employeeId' = 'dropdown';
   remarks = '';
   loading = false;
   
   constructor(
     private assetService: AssetService,
     private userService: UserService,
+    private allocationService: AllocationService,
     private toastService: ToastService
   ) {}
   
   ngOnInit() {
-    if (this.mode === 'allocate') {
-      this.loadUsers();
+    // Users will be loaded when dialog is shown
+  }
+  
+  ngOnChanges(changes: SimpleChanges) {
+    if (changes['show'] && this.show) {
+      this.resetForm();
+      // Always reload users when dialog is shown to ensure fresh data
+      setTimeout(() => this.loadUsers(), 0);
     }
   }
   
   loadUsers() {
+    if (!this.asset) {
+      this.users = [];
+      return;
+    }
+
     this.userService.getActiveUsers(0, 100).subscribe({
       next: (response) => {
-        this.users = response.content || [];
+        const allUsers = response.content || [];
+        
+        // For shareable assets (software), filter out already allocated users
+        if (this.asset?.isShareable || this.asset?.category === 'SOFTWARE') {
+          this.allocationService.getAllocatedUserIds(this.asset.id).subscribe({
+            next: (allocatedUserIds) => {
+              this.users = allUsers.filter(user => !allocatedUserIds.includes(user.id));
+            },
+            error: () => {
+              this.users = allUsers;
+            }
+          });
+        } else {
+          // For non-shareable assets, show all users
+          this.users = allUsers;
+        }
       },
       error: () => {
         this.toastService.error('Failed to load users');
+        this.users = [];
       }
     });
   }
@@ -404,28 +508,54 @@ export class AssetAllocationDialogComponent implements OnInit {
     this.loading = true;
     
     if (this.mode === 'allocate') {
-      if (!this.selectedUserId) {
-        this.toastService.error('Please select a user');
-        this.loading = false;
-        return;
-      }
-      
-      this.assetService.allocateAsset(this.asset.id, this.selectedUserId, this.remarks).subscribe({
-        next: (updatedAsset) => {
-          this.toastService.success('Asset allocated successfully');
+      if (this.allocationMethod === 'dropdown') {
+        if (!this.selectedUserId) {
+          this.toastService.error('Please select a user');
           this.loading = false;
-          this.close.emit(updatedAsset);
-        },
-        error: (error) => {
-          this.toastService.error(error.error?.message || 'Failed to allocate asset');
-          this.loading = false;
+          return;
         }
-      });
+        
+        this.assetService.allocateAsset(this.asset.id, this.selectedUserId, this.remarks).subscribe({
+          next: (updatedAsset) => {
+            this.toastService.success('Asset allocated successfully');
+            this.loading = false;
+            // Update the asset reference with the latest data
+            this.asset = updatedAsset;
+            this.close.emit(updatedAsset);
+          },
+          error: (error) => {
+            this.toastService.error(error.error?.message || 'Failed to allocate asset');
+            this.loading = false;
+          }
+        });
+      } else {
+        if (!this.employeeId.trim()) {
+          this.toastService.error('Please enter employee ID');
+          this.loading = false;
+          return;
+        }
+        
+        this.assetService.allocateAssetByEmployeeId(this.asset.id, this.employeeId.trim(), this.remarks).subscribe({
+          next: (updatedAsset) => {
+            this.toastService.success('Asset allocated successfully');
+            this.loading = false;
+            // Update the asset reference with the latest data
+            this.asset = updatedAsset;
+            this.close.emit(updatedAsset);
+          },
+          error: (error) => {
+            this.toastService.error(error.error?.message || 'Failed to allocate asset');
+            this.loading = false;
+          }
+        });
+      }
     } else {
       this.assetService.returnAsset(this.asset.id, this.remarks).subscribe({
         next: (updatedAsset) => {
           this.toastService.success('Asset returned successfully');
           this.loading = false;
+          // Update the asset reference with the latest data
+          this.asset = updatedAsset;
           this.close.emit(updatedAsset);
         },
         error: (error) => {
@@ -434,5 +564,28 @@ export class AssetAllocationDialogComponent implements OnInit {
         }
       });
     }
+  }
+  
+  getAvailableLicenses(): number {
+    if (!this.asset?.isShareable || !this.asset.totalLicenses) {
+      return 0;
+    }
+    const used = this.asset.usedLicenses || 0;
+    return this.asset.totalLicenses - used;
+  }
+  
+  getLicenseText(): string {
+    if (!this.asset?.isShareable || !this.asset.totalLicenses) {
+      return '';
+    }
+    const available = this.getAvailableLicenses();
+    return `${available} of ${this.asset.totalLicenses} licenses available`;
+  }
+  
+  resetForm() {
+    this.selectedUserId = null;
+    this.employeeId = '';
+    this.remarks = '';
+    this.allocationMethod = 'dropdown';
   }
 }

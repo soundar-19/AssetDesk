@@ -54,6 +54,18 @@ public class AssetServiceImpl implements AssetService {
             asset.setStatus(Asset.Status.AVAILABLE);
         }
         
+        // Automatically set isShareable to true for software assets
+        if (asset.getCategory() == Asset.Category.SOFTWARE) {
+            asset.setIsShareable(true);
+            // Set default values for license fields if not provided
+            if (asset.getTotalLicenses() == null) {
+                asset.setTotalLicenses(1);
+            }
+            if (asset.getUsedLicenses() == null) {
+                asset.setUsedLicenses(0);
+            }
+        }
+        
         if (assetRequestDTO.getVendorId() != null) {
             asset.setVendor(vendorRepository.findById(assetRequestDTO.getVendorId())
                 .orElseThrow(() -> new ResourceNotFoundException("Vendor", "id", assetRequestDTO.getVendorId())));
@@ -148,11 +160,24 @@ public class AssetServiceImpl implements AssetService {
         existingAsset.setUsefulLifeYears(assetRequestDTO.getUsefulLifeYears());
         existingAsset.setStatus(assetRequestDTO.getStatus());
         existingAsset.setImageUrl(assetRequestDTO.getImageUrl());
+        existingAsset.setIsShareable(assetRequestDTO.getIsShareable());
         existingAsset.setTotalLicenses(assetRequestDTO.getTotalLicenses());
         existingAsset.setUsedLicenses(assetRequestDTO.getUsedLicenses());
         existingAsset.setLicenseExpiryDate(assetRequestDTO.getLicenseExpiryDate());
         existingAsset.setLicenseKey(assetRequestDTO.getLicenseKey());
         existingAsset.setVersion(assetRequestDTO.getVersion());
+        
+        // Automatically set isShareable to true for software assets
+        if (existingAsset.getCategory() == Asset.Category.SOFTWARE) {
+            existingAsset.setIsShareable(true);
+            // Set default values for license fields if not provided
+            if (existingAsset.getTotalLicenses() == null) {
+                existingAsset.setTotalLicenses(1);
+            }
+            if (existingAsset.getUsedLicenses() == null) {
+                existingAsset.setUsedLicenses(0);
+            }
+        }
         
         if (assetRequestDTO.getVendorId() != null) {
             existingAsset.setVendor(vendorRepository.findById(assetRequestDTO.getVendorId())
@@ -184,13 +209,16 @@ public class AssetServiceImpl implements AssetService {
     }
     
     @Override
+    public AssetResponseDTO allocateAssetByEmployeeId(Long assetId, String employeeId, String remarks) {
+        User user = userRepository.findByEmployeeId(employeeId)
+            .orElseThrow(() -> new ResourceNotFoundException("User", "employeeId", employeeId));
+        return allocateAsset(assetId, user.getId(), remarks);
+    }
+    
+    @Override
     public AssetResponseDTO allocateAsset(Long assetId, Long userId, String remarks) {
         Asset asset = assetRepository.findById(assetId)
             .orElseThrow(() -> new ResourceNotFoundException("Asset", "id", assetId));
-        
-        if (asset.getStatus() != Asset.Status.AVAILABLE) {
-            throw new AssetNotAvailableException(asset.getAssetTag());
-        }
         
         // Validate user exists and is active
         User user = userRepository.findById(userId)
@@ -200,8 +228,30 @@ public class AssetServiceImpl implements AssetService {
             throw new InvalidOperationException("Cannot allocate asset to inactive user");
         }
         
+        // Handle shareable assets (software licenses)
+        if (Boolean.TRUE.equals(asset.getIsShareable()) || asset.getCategory() == Asset.Category.SOFTWARE) {
+            // Check if licenses are available
+            int totalLicenses = asset.getTotalLicenses() != null ? asset.getTotalLicenses() : 1;
+            int usedLicenses = asset.getUsedLicenses() != null ? asset.getUsedLicenses() : 0;
+            
+            if (usedLicenses >= totalLicenses) {
+                throw new AssetNotAvailableException("No available licenses for " + asset.getAssetTag() + ". All " + totalLicenses + " licenses are in use.");
+            }
+            
+            // For software assets, we only check license availability, not asset status
+            // Asset can be ALLOCATED and still have available licenses
+        } else {
+            // Handle unique assets (hardware) - must be AVAILABLE status
+            if (asset.getStatus() != Asset.Status.AVAILABLE) {
+                throw new AssetNotAvailableException(asset.getAssetTag());
+            }
+        }
+        
         AssetAllocation allocation = assetAllocationService.allocateAsset(assetId, userId, LocalDate.now(), remarks);
-        return AssetResponseDTO.fromEntity(allocation.getAsset());
+        // Reload asset to get updated license counts
+        Asset updatedAsset = assetRepository.findById(assetId)
+            .orElseThrow(() -> new ResourceNotFoundException("Asset", "id", assetId));
+        return AssetResponseDTO.fromEntity(updatedAsset);
     }
     
     @Override
@@ -209,12 +259,29 @@ public class AssetServiceImpl implements AssetService {
         Asset asset = assetRepository.findById(assetId)
             .orElseThrow(() -> new ResourceNotFoundException("Asset", "id", assetId));
         
-        if (asset.getStatus() != Asset.Status.ALLOCATED) {
-            throw new InvalidOperationException("Asset is not currently allocated");
+        // Handle shareable assets (software licenses)
+        if (Boolean.TRUE.equals(asset.getIsShareable())) {
+            if (asset.getUsedLicenses() != null && asset.getUsedLicenses() > 0) {
+                // Decrement used licenses
+                asset.setUsedLicenses(asset.getUsedLicenses() - 1);
+                // Update status to AVAILABLE if licenses become available
+                if (asset.getUsedLicenses() < asset.getTotalLicenses()) {
+                    asset.setStatus(Asset.Status.AVAILABLE);
+                }
+                assetRepository.save(asset);
+            }
+        } else {
+            // Handle unique assets (hardware)
+            if (asset.getStatus() != Asset.Status.ALLOCATED) {
+                throw new InvalidOperationException("Asset is not currently allocated");
+            }
         }
         
         AssetAllocation allocation = assetAllocationService.returnAsset(assetId, LocalDate.now(), remarks);
-        return AssetResponseDTO.fromEntity(allocation.getAsset());
+        // Reload asset to get updated license counts
+        Asset updatedAsset = assetRepository.findById(assetId)
+            .orElseThrow(() -> new ResourceNotFoundException("Asset", "id", assetId));
+        return AssetResponseDTO.fromEntity(updatedAsset);
     }
     
     @Override
@@ -247,7 +314,10 @@ public class AssetServiceImpl implements AssetService {
     @Transactional(readOnly = true)
     public Page<AssetResponseDTO> getAssetsByName(String name, Pageable pageable) {
         return assetRepository.findByName(name, pageable)
-            .map(AssetResponseDTO::fromEntity);
+            .map(asset -> {
+                AssetAllocation currentAllocation = allocationRepository.findCurrentAllocationByAssetId(asset.getId()).orElse(null);
+                return AssetResponseDTO.fromEntityWithAllocation(asset, currentAllocation);
+            });
     }
 
     @Override
@@ -352,6 +422,13 @@ public class AssetServiceImpl implements AssetService {
     }
     
     @Override
+    public AssetResponseDTO allocateFromGroupByEmployeeId(String name, String employeeId, String remarks) {
+        User user = userRepository.findByEmployeeId(employeeId)
+            .orElseThrow(() -> new ResourceNotFoundException("User", "employeeId", employeeId));
+        return allocateFromGroup(name, user.getId(), remarks);
+    }
+    
+    @Override
     @Transactional(readOnly = true)
     public WarrantyStatsDTO getWarrantyStats() {
         long totalAssets = assetRepository.countAssetsWithWarranty();
@@ -375,5 +452,61 @@ public class AssetServiceImpl implements AssetService {
     public Page<AssetResponseDTO> getValidWarranties(Pageable pageable) {
         return assetRepository.findValidWarranties(pageable)
             .map(AssetResponseDTO::fromEntity);
+    }
+
+    @Override
+    @Transactional(readOnly = true)
+    public long getFilteredCount(String category, String type, String status, String dateFrom, String dateTo, String costMin, String costMax) {
+        Specification<Asset> spec = Specification.where(null);
+        
+        if (category != null && !category.trim().isEmpty()) {
+            spec = spec.and(hasCategory(category));
+        }
+        
+        if (type != null && !type.trim().isEmpty()) {
+            spec = spec.and(hasType(type));
+        }
+        
+        if (status != null && !status.trim().isEmpty()) {
+            spec = spec.and(hasStatus(status));
+        }
+        
+        if (dateFrom != null && !dateFrom.trim().isEmpty()) {
+            try {
+                LocalDate fromDate = LocalDate.parse(dateFrom);
+                spec = spec.and(hasPurchaseDateAfter(fromDate));
+            } catch (Exception e) {
+                // Ignore invalid date format
+            }
+        }
+        
+        if (dateTo != null && !dateTo.trim().isEmpty()) {
+            try {
+                LocalDate toDate = LocalDate.parse(dateTo);
+                spec = spec.and(hasPurchaseDateBefore(toDate));
+            } catch (Exception e) {
+                // Ignore invalid date format
+            }
+        }
+        
+        if (costMin != null && !costMin.trim().isEmpty()) {
+            try {
+                java.math.BigDecimal minCost = new java.math.BigDecimal(costMin);
+                spec = spec.and(hasCostGreaterThanOrEqual(minCost));
+            } catch (Exception e) {
+                // Ignore invalid number format
+            }
+        }
+        
+        if (costMax != null && !costMax.trim().isEmpty()) {
+            try {
+                java.math.BigDecimal maxCost = new java.math.BigDecimal(costMax);
+                spec = spec.and(hasCostLessThanOrEqual(maxCost));
+            } catch (Exception e) {
+                // Ignore invalid number format
+            }
+        }
+        
+        return assetRepository.count(spec);
     }
 }

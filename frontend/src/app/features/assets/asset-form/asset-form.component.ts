@@ -37,14 +37,15 @@ export class AssetFormComponent implements OnInit {
   ) {
     this.assetForm = this.fb.group({
       assetTag: ['', [Validators.required]],
-      name: ['', [Validators.required]],
+      name: ['', [Validators.required, Validators.minLength(2), Validators.maxLength(100)]],
       category: ['', [Validators.required]],
       type: ['', [Validators.required]],
       model: [''],
       serialNumber: [''],
       purchaseDate: [''],
       warrantyExpiryDate: [''],
-      cost: [0, [Validators.min(0)]],
+      cost: ['', [Validators.min(0.01)]],
+      usefulLifeYears: [5, [Validators.required, Validators.min(1), Validators.max(20)]],
       status: ['AVAILABLE', [Validators.required]],
       vendorId: [''],
       totalLicenses: [null],

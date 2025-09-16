@@ -66,9 +66,37 @@ export class AssetService {
     return this.api.post<Asset>(`${this.endpoint}/${assetId}/allocate/${userId}${query}`, null);
   }
 
+  allocateAssetByEmployeeId(assetId: number, employeeId: string, remarks?: string): Observable<Asset> {
+    const query = remarks ? `?remarks=${encodeURIComponent(remarks)}` : '';
+    return this.api.post<Asset>(`${this.endpoint}/${assetId}/allocate-by-employee/${employeeId}${query}`, null);
+  }
+
   returnAsset(assetId: number, remarks?: string): Observable<Asset> {
     const query = remarks ? `?remarks=${encodeURIComponent(remarks)}` : '';
     return this.api.post<Asset>(`${this.endpoint}/${assetId}/return${query}`, null);
+  }
+
+  returnAssetFromUser(assetId: number, userId: number, remarks?: string): Observable<any> {
+    const params: any = { assetId, userId };
+    if (remarks) params.remarks = remarks;
+    return this.api.post<any>('/allocations/return-from-user', null, params);
+  }
+
+  requestAssetReturn(assetId: number, remarks?: string): Observable<any> {
+    const params = remarks ? { remarks } : {};
+    return this.api.post<any>(`/allocations/request-return/${assetId}`, null, params);
+  }
+
+  acknowledgeReturnRequest(assetId: number, userId: number): Observable<any> {
+    return this.api.post<any>(`/allocations/acknowledge-return/${assetId}`, null, { userId });
+  }
+
+  getUserReturnRequests(userId: number): Observable<any[]> {
+    return this.api.get<any[]>(`/allocations/user/${userId}/return-requests`);
+  }
+
+  getPendingReturns(): Observable<any[]> {
+    return this.api.get<any[]>('/allocations/pending-returns');
   }
 
   getAssetGroups(): Observable<any[]> {
@@ -124,6 +152,12 @@ export class AssetService {
     return this.api.post<Asset>(`${this.endpoint}/group/allocate`, null, params);
   }
 
+  allocateFromGroupByEmployeeId(name: string, employeeId: string, remarks?: string): Observable<Asset> {
+    const params: any = { name, employeeId };
+    if (remarks) params.remarks = remarks;
+    return this.api.post<Asset>(`${this.endpoint}/group/allocate-by-employee`, null, params);
+  }
+
   getWarrantyStats(): Observable<any> {
     return this.api.get<any>(`${this.endpoint}/warranty/stats`);
   }
@@ -174,5 +208,20 @@ export class AssetService {
     const body = assetIds;
     const params = remarks ? { remarks } : {};
     return this.api.post<any>(`${this.endpoint}/bulk/return`, body, params);
+  }
+
+  getFilteredCount(filters?: any): Observable<number> {
+    const params = new URLSearchParams();
+    if (filters) {
+      Object.keys(filters).forEach(key => {
+        const value = filters[key];
+        if (value !== null && value !== undefined && value !== '') {
+          params.append(key, value.toString());
+        }
+      });
+    }
+    const queryString = params.toString();
+    const url = queryString ? `${this.endpoint}/count?${queryString}` : `${this.endpoint}/count`;
+    return this.api.get<number>(url);
   }
 }

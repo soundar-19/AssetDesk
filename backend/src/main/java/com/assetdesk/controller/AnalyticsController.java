@@ -8,6 +8,7 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
+import org.springframework.http.HttpHeaders;
 import java.math.BigDecimal;
 import java.time.LocalDate;
 import java.util.*;
@@ -245,5 +246,39 @@ public class AnalyticsController {
         utilizationReport.put("utilizationByCategory", utilizationByCategory);
         
         return ResponseEntity.ok(utilizationReport);
+    }
+
+    @GetMapping("/export/pdf")
+    public ResponseEntity<byte[]> exportAnalyticsPdf(
+            @RequestParam(required = false, defaultValue = "false") boolean includeCharts,
+            @RequestParam(required = false, defaultValue = "false") boolean includeDepreciation,
+            @RequestParam(required = false, defaultValue = "false") boolean includeWarranty,
+            @RequestParam(required = false, defaultValue = "false") boolean includeUtilization) {
+        
+        // Generate a simple PDF report (in a real implementation, you'd use a PDF library like iText)
+        StringBuilder pdfContent = new StringBuilder();
+        pdfContent.append("Analytics Report\n");
+        pdfContent.append("Generated on: ").append(LocalDate.now()).append("\n\n");
+        
+        if (includeCharts) {
+            pdfContent.append("Asset Distribution Charts included\n");
+        }
+        if (includeDepreciation) {
+            pdfContent.append("Depreciation Analysis included\n");
+        }
+        if (includeWarranty) {
+            pdfContent.append("Warranty Status Report included\n");
+        }
+        if (includeUtilization) {
+            pdfContent.append("Utilization Metrics included\n");
+        }
+        
+        // For now, return as plain text (in production, generate actual PDF)
+        byte[] data = pdfContent.toString().getBytes();
+        
+        return ResponseEntity.ok()
+                .header("Content-Disposition", "attachment; filename=analytics-report.pdf")
+                .contentType(org.springframework.http.MediaType.APPLICATION_PDF)
+                .body(data);
     }
 }

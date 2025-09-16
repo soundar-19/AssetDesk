@@ -12,9 +12,11 @@ public interface NotificationService {
     void createNotification(Long userId, String title, String message, Notification.Type type, Long relatedIssueId, Long relatedAssetId);
     Page<NotificationResponseDTO> getAllNotifications(Pageable pageable);
     List<NotificationResponseDTO> getNotificationsByUser(Long userId);
+    Page<NotificationResponseDTO> getNotificationsByUserPaged(Long userId, Pageable pageable);
     List<NotificationResponseDTO> getUnreadNotificationsByUser(Long userId);
     Long getUnreadNotificationCount(Long userId);
     void markAsRead(Long notificationId);
     void markAllAsRead(Long userId);
     void deleteNotification(Long id);
+    Page<NotificationResponseDTO> getUnreadNotificationsByUserPaged(Long userId, Pageable pageable);
 }

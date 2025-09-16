@@ -10,7 +10,7 @@ export const jwtInterceptor: HttpInterceptorFn = (req, next) => {
   const url = new URL(req.url, window.location.origin);
   const isAuthEndpoint = url.pathname.startsWith('/api/auth/');
   
-  console.log('JWT Interceptor:', { url: req.url, hasToken: !!token, isAuthEndpoint });
+
   
   if (token && !isAuthEndpoint) {
     req = req.clone({

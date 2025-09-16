@@ -1,228 +1,319 @@
 <main class="page-container standardized-layout" role="main">
   <header class="page-header">
-    <p class="page-description">{{ isEditMode ? 'Update asset information' : 'Create a new asset in the system' }}</p>
+    <div class="header-content">
+      <h1 class="page-title">{{ isEditMode ? 'Edit Asset' : 'Add New Asset' }}</h1>
+      <p class="page-description">{{ isEditMode ? 'Update asset information and details' : 'Create a new asset in the system with all required information' }}</p>
+    </div>
+    <div class="form-progress" *ngIf="!isEditMode">
+      <div class="progress-icon">
+        <svg width="20" height="20" viewBox="0 0 20 20" fill="currentColor">
+          <path d="M9 2a1 1 0 000 2h2a1 1 0 100-2H9z"/>
+          <path fill-rule="evenodd" d="M4 5a2 2 0 012-2v1a1 1 0 102 0V3h4v1a1 1 0 102 0V3a2 2 0 012 2v6a2 2 0 01-2 2H6a2 2 0 01-2-2V5zm3 4a1 1 0 000 2h.01a1 1 0 100-2H7zm3 0a1 1 0 000 2h3a1 1 0 100-2h-3zm-3 4a1 1 0 100 2h.01a1 1 0 100-2H7zm3 0a1 1 0 100 2h3a1 1 0 100-2h-3z" clip-rule="evenodd"/>
+        </svg>
+      </div>
+      <span class="progress-text">Fill out the form below to add a new asset</span>
+    </div>
   </header>
 
-  <section class="card" aria-label="Asset Form">
-    <form [formGroup]="assetForm" (ngSubmit)="onSubmit()" class="form" novalidate>
-    <fieldset class="field-group">
-      <legend class="field-group-title">Basic Information</legend>
-      <div class="form-row">
-        <div class="form-group">
-          <label for="assetTag" class="required">Asset Tag</label>
-        <input
-          id="assetTag"
-          type="text"
-          formControlName="assetTag"
-          class="form-control"
-          [class.error]="assetForm.get('assetTag')?.invalid && assetForm.get('assetTag')?.touched">
-        <div *ngIf="assetForm.get('assetTag')?.invalid && assetForm.get('assetTag')?.touched" class="error-message">
-          Asset tag is required
+  <section class="modern-form-card" aria-label="Asset Form">
+    <form [formGroup]="assetForm" (ngSubmit)="onSubmit()" class="modern-form" novalidate>
+    <div class="form-section">
+      <div class="section-header">
+        <h2 class="section-title">
+          <svg width="20" height="20" viewBox="0 0 20 20" fill="currentColor">
+            <path fill-rule="evenodd" d="M3 4a1 1 0 011-1h12a1 1 0 011 1v2a1 1 0 01-1 1H4a1 1 0 01-1-1V4zm0 4a1 1 0 011-1h12a1 1 0 011 1v2a1 1 0 01-1 1H4a1 1 0 01-1-1V8zm0 4a1 1 0 011-1h12a1 1 0 011 1v2a1 1 0 01-1 1H4a1 1 0 01-1-1v-2z" clip-rule="evenodd"/>
+          </svg>
+          Basic Information
+        </h2>
+        <p class="section-description">Essential details to identify and categorize the asset</p>
+      </div>
+      
+      <div class="form-grid">
+        <div class="form-field">
+          <label for="assetTag" class="field-label required">Asset Tag</label>
+          <div class="input-wrapper">
+            <input
+              id="assetTag"
+              type="text"
+              formControlName="assetTag"
+              class="form-input"
+              placeholder="Enter unique asset tag"
+              [class.error]="assetForm.get('assetTag')?.invalid && assetForm.get('assetTag')?.touched">
+          </div>
+          <div *ngIf="assetForm.get('assetTag')?.invalid && assetForm.get('assetTag')?.touched" class="field-error">
+            Asset tag is required
+          </div>
+        </div>
+
+        <div class="form-field">
+          <label for="name" class="field-label required">Asset Name</label>
+          <div class="input-wrapper">
+            <input
+              id="name"
+              type="text"
+              formControlName="name"
+              class="form-input"
+              placeholder="Enter asset name"
+              [class.error]="assetForm.get('name')?.invalid && assetForm.get('name')?.touched">
+          </div>
+          <div *ngIf="assetForm.get('name')?.invalid && assetForm.get('name')?.touched" class="field-error">
+            Asset name is required
+          </div>
+        </div>
+
+        <div class="form-field">
+          <label for="category" class="field-label required">Category</label>
+          <div class="select-wrapper">
+            <select
+              id="category"
+              formControlName="category"
+              class="form-select">
+              <option value="">Choose category</option>
+              <option *ngFor="let category of categories" [value]="category">
+                {{ category }}
+              </option>
+            </select>
+          </div>
+        </div>
+
+        <div class="form-field">
+          <label for="type" class="field-label required">Asset Type</label>
+          <div class="select-wrapper">
+            <select
+              id="type"
+              formControlName="type"
+              class="form-select">
+              <option value="">Choose type</option>
+              <option *ngFor="let type of types" [value]="type">
+                {{ type }}
+              </option>
+            </select>
+          </div>
         </div>
       </div>
+    </div>
 
-        <div class="form-group">
-          <label for="name" class="required">Name</label>
-        <input
-          id="name"
-          type="text"
-          formControlName="name"
-          class="form-control"
-          [class.error]="assetForm.get('name')?.invalid && assetForm.get('name')?.touched">
-        <div *ngIf="assetForm.get('name')?.invalid && assetForm.get('name')?.touched" class="error-message">
-          Name is required
+    <div class="form-section conditional-section" *ngIf="isFieldVisible('model')">
+      <div class="section-header">
+        <h2 class="section-title">
+          <svg width="20" height="20" viewBox="0 0 20 20" fill="currentColor">
+            <path fill-rule="evenodd" d="M11.3 1.046A1 1 0 0112 2v5h4a1 1 0 01.82 1.573l-7 10A1 1 0 018 18v-5H4a1 1 0 01-.82-1.573l7-10a1 1 0 011.12-.38z" clip-rule="evenodd"/>
+          </svg>
+          Hardware Details
+        </h2>
+        <p class="section-description">Technical specifications and identification numbers</p>
+      </div>
+      
+      <div class="form-grid">
+        <div class="form-field">
+          <label for="model" class="field-label required">Model</label>
+          <div class="input-wrapper">
+            <input
+              id="model"
+              type="text"
+              formControlName="model"
+              class="form-input"
+              placeholder="Enter model number"
+              [class.error]="assetForm.get('model')?.invalid && assetForm.get('model')?.touched">
+          </div>
+          <div *ngIf="assetForm.get('model')?.invalid && assetForm.get('model')?.touched" class="field-error">
+            Model is required
+          </div>
+        </div>
+
+        <div class="form-field">
+          <label for="serialNumber" class="field-label required">Serial Number</label>
+          <div class="input-wrapper">
+            <input
+              id="serialNumber"
+              type="text"
+              formControlName="serialNumber"
+              class="form-input"
+              placeholder="Enter serial number"
+              [class.error]="assetForm.get('serialNumber')?.invalid && assetForm.get('serialNumber')?.touched">
+          </div>
+          <div *ngIf="assetForm.get('serialNumber')?.invalid && assetForm.get('serialNumber')?.touched" class="field-error">
+            Serial number is required
+          </div>
         </div>
       </div>
-      </div>
+    </div>
 
-      <div class="form-row">
-        <div class="form-group">
-          <label for="category" class="required">Category</label>
-        <select
-          id="category"
-          formControlName="category"
-          class="form-control">
-          <option value="">Select Category</option>
-          <option *ngFor="let category of categories" [value]="category">
-            {{ category }}
-          </option>
-        </select>
+    <div class="form-section conditional-section" *ngIf="isFieldVisible('totalLicenses')">
+      <div class="section-header">
+        <h2 class="section-title">
+          <svg width="20" height="20" viewBox="0 0 20 20" fill="currentColor">
+            <path fill-rule="evenodd" d="M6 2a2 2 0 00-2 2v12a2 2 0 002 2h8a2 2 0 002-2V4a2 2 0 00-2-2H6zm1 2a1 1 0 000 2h6a1 1 0 100-2H7zm6 7a1 1 0 011 1v3a1 1 0 11-2 0v-3a1 1 0 011-1zm-3 3a1 1 0 100 2h.01a1 1 0 100-2H10zm-4 1a1 1 0 011-1h.01a1 1 0 110 2H7a1 1 0 01-1-1zm1-4a1 1 0 100 2h.01a1 1 0 100-2H7zm2 0a1 1 0 100 2h.01a1 1 0 100-2H9zm2 0a1 1 0 100 2h.01a1 1 0 100-2H11z" clip-rule="evenodd"/>
+          </svg>
+          License Information
+        </h2>
+        <p class="section-description">Software licensing details and usage limits</p>
       </div>
+      
+      <div class="form-grid">
+        <div class="form-field">
+          <label for="totalLicenses" class="field-label required">Total Licenses</label>
+          <div class="input-wrapper">
+            <input
+              id="totalLicenses"
+              type="number"
+              formControlName="totalLicenses"
+              class="form-input"
+              placeholder="Number of licenses"
+              min="1"
+              [class.error]="assetForm.get('totalLicenses')?.invalid && assetForm.get('totalLicenses')?.touched">
+          </div>
+          <div *ngIf="assetForm.get('totalLicenses')?.invalid && assetForm.get('totalLicenses')?.touched" class="field-error">
+            Total licenses is required and must be at least 1
+          </div>
+        </div>
 
-        <div class="form-group">
-          <label for="type" class="required">Type</label>
-        <select
-          id="type"
-          formControlName="type"
-          class="form-control">
-          <option value="">Select Type</option>
-          <option *ngFor="let type of types" [value]="type">
-            {{ type }}
-          </option>
-        </select>
-      </div>
-      </div>
-    </fieldset>
+        <div class="form-field">
+          <label for="version" class="field-label required">Version</label>
+          <div class="input-wrapper">
+            <input
+              id="version"
+              type="text"
+              formControlName="version"
+              class="form-input"
+              placeholder="Software version"
+              [class.error]="assetForm.get('version')?.invalid && assetForm.get('version')?.touched">
+          </div>
+          <div *ngIf="assetForm.get('version')?.invalid && assetForm.get('version')?.touched" class="field-error">
+            Version is required
+          </div>
+        </div>
 
-    <fieldset class="field-group conditional-field" *ngIf="isFieldVisible('model')">
-      <legend class="field-group-title">Hardware Details</legend>
-      <div class="form-row">
-        <div class="form-group">
-          <label for="model" class="required">Model</label>
-        <input
-          id="model"
-          type="text"
-          formControlName="model"
-          class="form-control"
-          [class.error]="assetForm.get('model')?.invalid && assetForm.get('model')?.touched">
-        <div *ngIf="assetForm.get('model')?.invalid && assetForm.get('model')?.touched" class="error-message">
-          Model is required
+        <div class="form-field">
+          <label for="licenseKey" class="field-label">License Key</label>
+          <div class="input-wrapper">
+            <input
+              id="licenseKey"
+              type="text"
+              formControlName="licenseKey"
+              class="form-input"
+              placeholder="Enter license key (optional)">
+          </div>
+        </div>
+
+        <div class="form-field">
+          <label for="licenseExpiryDate" class="field-label">License Expiry</label>
+          <div class="input-wrapper">
+            <input
+              id="licenseExpiryDate"
+              type="date"
+              formControlName="licenseExpiryDate"
+              class="form-input">
+          </div>
         </div>
       </div>
+    </div>
 
-        <div class="form-group">
-          <label for="serialNumber" class="required">Serial Number</label>
-        <input
-          id="serialNumber"
-          type="text"
-          formControlName="serialNumber"
-          class="form-control"
-          [class.error]="assetForm.get('serialNumber')?.invalid && assetForm.get('serialNumber')?.touched">
-        <div *ngIf="assetForm.get('serialNumber')?.invalid && assetForm.get('serialNumber')?.touched" class="error-message">
-          Serial number is required
+    <div class="form-section">
+      <div class="section-header">
+        <h2 class="section-title">
+          <svg width="20" height="20" viewBox="0 0 20 20" fill="currentColor">
+            <path d="M8.433 7.418c.155-.103.346-.196.567-.267v1.698a2.305 2.305 0 01-.567-.267C8.07 8.34 8 8.114 8 8c0-.114.07-.34.433-.582zM11 12.849v-1.698c.22.071.412.164.567.267.364.243.433.468.433.582 0 .114-.07.34-.433.582a2.305 2.305 0 01-.567.267z"/>
+            <path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm1-13a1 1 0 10-2 0v.092a4.535 4.535 0 00-1.676.662C6.602 6.234 6 7.009 6 8c0 .99.602 1.765 1.324 2.246.48.32 1.054.545 1.676.662v1.941c-.391-.127-.68-.317-.843-.504a1 1 0 10-1.51 1.31c.562.649 1.413 1.076 2.353 1.253V15a1 1 0 102 0v-.092a4.535 4.535 0 001.676-.662C13.398 13.766 14 12.991 14 12c0-.99-.602-1.765-1.324-2.246A4.535 4.535 0 0011 9.092V7.151c.391.127.68.317.843.504a1 1 0 101.511-1.31c-.563-.649-1.413-1.076-2.354-1.253V5z" clip-rule="evenodd"/>
+          </svg>
+          Purchase & Warranty
+        </h2>
+        <p class="section-description">Financial information and warranty details</p>
+      </div>
+      
+      <div class="form-grid">
+        <div class="form-field">
+          <label for="purchaseDate" class="field-label">Purchase Date</label>
+          <div class="input-wrapper">
+            <input
+              id="purchaseDate"
+              type="date"
+              formControlName="purchaseDate"
+              class="form-input">
+          </div>
+        </div>
+
+        <div class="form-field">
+          <label for="warrantyExpiryDate" class="field-label">Warranty Expiry</label>
+          <div class="input-wrapper">
+            <input
+              id="warrantyExpiryDate"
+              type="date"
+              formControlName="warrantyExpiryDate"
+              class="form-input">
+          </div>
+        </div>
+
+        <div class="form-field">
+          <label for="cost" class="field-label">Cost (₹)</label>
+          <div class="input-wrapper">
+            <input
+              id="cost"
+              type="number"
+              formControlName="cost"
+              class="form-input"
+              placeholder="0.00"
+              min="0"
+              step="0.01">
+          </div>
+        </div>
+
+        <div class="form-field">
+          <label for="status" class="field-label required">Status</label>
+          <div class="select-wrapper">
+            <select
+              id="status"
+              formControlName="status"
+              class="form-select">
+              <option *ngFor="let status of statuses" [value]="status">
+                {{ status }}
+              </option>
+            </select>
+          </div>
+        </div>
+
+        <div class="form-field full-width">
+          <label for="vendorId" class="field-label">Vendor</label>
+          <div class="select-wrapper">
+            <select
+              id="vendorId"
+              formControlName="vendorId"
+              class="form-select">
+              <option value="">Choose vendor (optional)</option>
+              <option *ngFor="let vendor of vendors" [value]="vendor.id">
+                {{ vendor.name }}
+              </option>
+            </select>
+          </div>
         </div>
       </div>
-      </div>
-    </fieldset>
+    </div>
 
-    <!-- License specific fields -->
-    <fieldset class="field-group conditional-field" *ngIf="isFieldVisible('totalLicenses')">
-      <legend class="field-group-title">License Information</legend>
-      <div class="form-row">
-        <div class="form-group">
-          <label for="totalLicenses" class="required">Total Licenses</label>
-        <input
-          id="totalLicenses"
-          type="number"
-          formControlName="totalLicenses"
-          class="form-control"
-          min="1"
-          [class.error]="assetForm.get('totalLicenses')?.invalid && assetForm.get('totalLicenses')?.touched">
-        <div *ngIf="assetForm.get('totalLicenses')?.invalid && assetForm.get('totalLicenses')?.touched" class="error-message">
-          Total licenses is required and must be at least 1
-        </div>
+    <div class="form-actions">
+      <div class="actions-wrapper">
+        <button type="button" 
+                class="btn btn-secondary" 
+                (click)="cancel()" 
+                [attr.aria-label]="'Cancel and return to assets list'">
+          <svg class="btn-icon" width="16" height="16" viewBox="0 0 20 20" fill="currentColor">
+            <path fill-rule="evenodd" d="M4.293 4.293a1 1 0 011.414 0L10 8.586l4.293-4.293a1 1 0 111.414 1.414L11.414 10l4.293 4.293a1 1 0 01-1.414 1.414L10 11.414l-4.293 4.293a1 1 0 01-1.414-1.414L8.586 10 4.293 5.707a1 1 0 010-1.414z" clip-rule="evenodd"/>
+          </svg>
+          Cancel
+        </button>
+        <button type="submit" 
+                class="btn btn-primary btn-lg"
+                [disabled]="assetForm.invalid || loading"
+                [class.btn-loading]="loading"
+                [attr.aria-label]="loading ? 'Saving asset...' : (isEditMode ? 'Update asset' : 'Create new asset')">
+          <svg *ngIf="!loading" class="btn-icon" width="16" height="16" viewBox="0 0 20 20" fill="currentColor">
+            <path *ngIf="isEditMode" fill-rule="evenodd" d="M3 17a1 1 0 011-1h12a1 1 0 110 2H4a1 1 0 01-1-1zm3.293-7.707a1 1 0 011.414 0L9 10.586V3a1 1 0 112 0v7.586l1.293-1.293a1 1 0 111.414 1.414l-3 3a1 1 0 01-1.414 0l-3-3a1 1 0 010-1.414z" clip-rule="evenodd"/>
+            <path *ngIf="!isEditMode" fill-rule="evenodd" d="M10 3a1 1 0 011 1v5h5a1 1 0 110 2h-5v5a1 1 0 11-2 0v-5H4a1 1 0 110-2h5V4a1 1 0 011-1z" clip-rule="evenodd"/>
+          </svg>
+          <span *ngIf="loading" class="loading-spinner" aria-hidden="true"></span>
+          {{ loading ? 'Saving...' : (isEditMode ? 'Update Asset' : 'Create Asset') }}
+        </button>
       </div>
-
-        <div class="form-group">
-          <label for="version" class="required">Version</label>
-        <input
-          id="version"
-          type="text"
-          formControlName="version"
-          class="form-control"
-          [class.error]="assetForm.get('version')?.invalid && assetForm.get('version')?.touched">
-        <div *ngIf="assetForm.get('version')?.invalid && assetForm.get('version')?.touched" class="error-message">
-          Version is required
-        </div>
-      </div>
-      </div>
-
-      <div class="form-row">
-        <div class="form-group">
-          <label for="licenseKey">License Key</label>
-        <input
-          id="licenseKey"
-          type="text"
-          formControlName="licenseKey"
-          class="form-control">
-      </div>
-
-        <div class="form-group">
-          <label for="licenseExpiryDate">License Expiry</label>
-        <input
-          id="licenseExpiryDate"
-          type="date"
-          formControlName="licenseExpiryDate"
-          class="form-control">
-      </div>
-      </div>
-    </fieldset>
-
-    <fieldset class="field-group">
-      <legend class="field-group-title">Purchase & Warranty</legend>
-      <div class="form-row">
-        <div class="form-group">
-          <label for="purchaseDate">Purchase Date</label>
-        <input
-          id="purchaseDate"
-          type="date"
-          formControlName="purchaseDate"
-          class="form-control">
-      </div>
-
-        <div class="form-group">
-          <label for="warrantyExpiryDate">Warranty Expiry</label>
-        <input
-          id="warrantyExpiryDate"
-          type="date"
-          formControlName="warrantyExpiryDate"
-          class="form-control">
-      </div>
-      </div>
-
-      <div class="form-row">
-        <div class="form-group">
-          <label for="cost">Cost</label>
-        <input
-          id="cost"
-          type="number"
-          formControlName="cost"
-          class="form-control"
-          min="0"
-          step="0.01">
-      </div>
-
-        <div class="form-group">
-          <label for="status" class="required">Status</label>
-        <select
-          id="status"
-          formControlName="status"
-          class="form-control">
-          <option *ngFor="let status of statuses" [value]="status">
-            {{ status }}
-          </option>
-        </select>
-      </div>
-      </div>
-
-      <div class="form-row">
-        <div class="form-group">
-          <label for="vendorId">Vendor</label>
-        <select
-          id="vendorId"
-          formControlName="vendorId"
-          class="form-control">
-          <option value="">Select Vendor</option>
-          <option *ngFor="let vendor of vendors" [value]="vendor.id">
-            {{ vendor.name }}
-          </option>
-        </select>
-      </div>
-      </div>
-    </fieldset>
-
-    <footer class="form-actions">
-      <button type="button" class="btn btn-outline" (click)="cancel()" [attr.aria-label]="'Cancel and return to assets list'">
-        Cancel
-      </button>
-      <button type="submit" 
-              class="btn btn-primary"
-              [disabled]="assetForm.invalid || loading"
-              [attr.aria-label]="loading ? 'Saving asset...' : (isEditMode ? 'Update asset' : 'Create new asset')">
-        <span *ngIf="loading" class="loading-spinner" aria-hidden="true"></span>
-        {{ loading ? 'Saving...' : (isEditMode ? 'Update Asset' : 'Create Asset') }}
-      </button>
-    </footer>
+    </div>
     </form>
   </section>
 </main>

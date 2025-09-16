@@ -2,20 +2,23 @@
   <!-- Header -->
   <div class="page-header">
     <div class="header-content">
-      <h1 class="page-title">Service Records Management</h1>
-      <p class="page-description">Comprehensive maintenance tracking and cost analysis</p>
+      <div class="header-title-section">
+        <h1 class="page-title">Service Records Management</h1>
+        <p class="page-description">Comprehensive maintenance tracking and cost analysis</p>
+      </div>
+      <div class="header-actions">
+        <button class="btn btn-outline" (click)="exportRecords()" title="Export service records">
+          📊 Export
+        </button>
+        <button class="btn btn-outline" (click)="refreshRecords()" title="Refresh data">
+          🔄 Refresh
+        </button>
+        <button *ngIf="roleService.canManageAssets()" class="btn btn-primary" (click)="createRecord()" title="Create new service record">
+          + New Record
+        </button>
+      </div>
     </div>
-    <div class="header-actions">
-      <button class="btn btn-outline" (click)="exportRecords()" title="Export service records">
-        📊 Export
-      </button>
-      <button class="btn btn-outline" (click)="refreshRecords()" title="Refresh data">
-        🔄 Refresh
-      </button>
-      <button *ngIf="roleService.canManageAssets()" class="btn btn-primary" (click)="createRecord()" title="Create new service record">
-        + New Record
-      </button>
-    </div>
+
   </div>
 
   <!-- View Mode Tabs -->
@@ -247,7 +250,8 @@
             [columns]="columns"
             [actions]="actions"
             [pagination]="pagination"
-            [rowClickAction]="viewRecord.bind(this)"
+            [rowClickAction]="true"
+            (rowClick)="viewRecord($event)"
             (pageChange)="onPageChange($event)">
           </app-data-table>
         </div>

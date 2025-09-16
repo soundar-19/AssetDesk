@@ -40,6 +40,8 @@ public class AssetRequestDTO {
     
     private String imageUrl;
     
+    private Boolean isShareable = false;
+    
     // Software license specific fields
     private Integer totalLicenses;
     private Integer usedLicenses;
@@ -61,6 +63,7 @@ public class AssetRequestDTO {
         asset.setUsefulLifeYears(this.usefulLifeYears);
         asset.setStatus(this.status);
         asset.setImageUrl(this.imageUrl);
+        asset.setIsShareable(this.isShareable);
         asset.setTotalLicenses(this.totalLicenses);
         asset.setUsedLicenses(this.usedLicenses);
         asset.setLicenseExpiryDate(this.licenseExpiryDate);

@@ -37,22 +37,22 @@ import { InputModalService } from '../../shared/components/input-modal/input-mod
           <div class="stat-card total">
             <div class="stat-icon">📋</div>
             <div class="stat-content">
-              <div class="stat-value">{{ warrantyStats?.total || 0 }}</div>
+              <div class="stat-value">{{ getTotalAssets() }}</div>
               <div class="stat-label">Total Assets</div>
             </div>
           </div>
           <div class="stat-card valid">
             <div class="stat-icon">✅</div>
             <div class="stat-content">
-              <div class="stat-value">{{ warrantyStats?.valid || 0 }}</div>
+              <div class="stat-value">{{ validPagination?.totalElements || 0 }}</div>
               <div class="stat-label">Valid Warranties</div>
-              <div class="stat-percentage">{{ getPercentage(warrantyStats?.valid, warrantyStats?.total) }}%</div>
+              <div class="stat-percentage">{{ getPercentage(validPagination?.totalElements, getTotalAssets()) }}%</div>
             </div>
           </div>
           <div class="stat-card expiring">
             <div class="stat-icon">⚠️</div>
             <div class="stat-content">
-              <div class="stat-value">{{ warrantyStats?.expiringSoon || 0 }}</div>
+              <div class="stat-value">{{ expiringPagination?.totalElements || 0 }}</div>
               <div class="stat-label">Expiring Soon</div>
               <div class="stat-sublabel">(Next 30 days)</div>
             </div>
@@ -60,9 +60,9 @@ import { InputModalService } from '../../shared/components/input-modal/input-mod
           <div class="stat-card expired">
             <div class="stat-icon">❌</div>
             <div class="stat-content">
-              <div class="stat-value">{{ warrantyStats?.expired || 0 }}</div>
+              <div class="stat-value">{{ expiredPagination?.totalElements || 0 }}</div>
               <div class="stat-label">Expired</div>
-              <div class="stat-percentage">{{ getPercentage(warrantyStats?.expired, warrantyStats?.total) }}%</div>
+              <div class="stat-percentage">{{ getPercentage(expiredPagination?.totalElements, getTotalAssets()) }}%</div>
             </div>
           </div>
         </div>
@@ -74,17 +74,17 @@ import { InputModalService } from '../../shared/components/input-modal/input-mod
           <button class="tab" 
                   [class.active]="activeTab === 'expiring'" 
                   (click)="setActiveTab('expiring')">
-            Expiring Soon ({{ expiringAssets.length }})
+            Expiring Soon ({{ expiringPagination?.totalElements || 0 }})
           </button>
           <button class="tab" 
                   [class.active]="activeTab === 'expired'" 
                   (click)="setActiveTab('expired')">
-            Expired ({{ expiredAssets.length }})
+            Expired ({{ expiredPagination?.totalElements || 0 }})
           </button>
           <button class="tab" 
                   [class.active]="activeTab === 'valid'" 
                   (click)="setActiveTab('valid')">
-            Valid ({{ validAssets.length }})
+            Valid ({{ validPagination?.totalElements || 0 }})
           </button>
           <button class="tab" 
                   [class.active]="activeTab === 'all'" 
@@ -122,7 +122,8 @@ import { InputModalService } from '../../shared/components/input-modal/input-mod
             [columns]="getColumnsForTab('expiring')"
             [actions]="actions"
             [pagination]="expiringPagination"
-            [rowClickAction]="viewAsset.bind(this)"
+            [rowClickAction]="true"
+            (rowClick)="viewAsset($event)"
             (pageChange)="onPageChange('expiring', $event)">
           </app-data-table>
         </div>
@@ -137,7 +138,8 @@ import { InputModalService } from '../../shared/components/input-modal/input-mod
             [columns]="getColumnsForTab('expired')"
             [actions]="actions"
             [pagination]="expiredPagination"
-            [rowClickAction]="viewAsset.bind(this)"
+            [rowClickAction]="true"
+            (rowClick)="viewAsset($event)"
             (pageChange)="onPageChange('expired', $event)">
           </app-data-table>
         </div>
@@ -148,7 +150,8 @@ import { InputModalService } from '../../shared/components/input-modal/input-mod
             [columns]="getColumnsForTab('valid')"
             [actions]="actions"
             [pagination]="validPagination"
-            [rowClickAction]="viewAsset.bind(this)"
+            [rowClickAction]="true"
+            (rowClick)="viewAsset($event)"
             (pageChange)="onPageChange('valid', $event)">
           </app-data-table>
         </div>
@@ -159,7 +162,8 @@ import { InputModalService } from '../../shared/components/input-modal/input-mod
             [columns]="getColumnsForTab('all')"
             [actions]="actions"
             [pagination]="allPagination"
-            [rowClickAction]="viewAsset.bind(this)"
+            [rowClickAction]="true"
+            (rowClick)="viewAsset($event)"
             (pageChange)="onPageChange('all', $event)">
           </app-data-table>
         </div>
@@ -712,6 +716,13 @@ export class WarrantyManagementComponent implements OnInit {
   getPercentage(value: number | undefined, total: number | undefined): number {
     if (!value || !total || total === 0) return 0;
     return Math.round((value / total) * 100);
+  }
+  
+  getTotalAssets(): number {
+    const valid = this.validPagination?.totalElements || 0;
+    const expiring = this.expiringPagination?.totalElements || 0;
+    const expired = this.expiredPagination?.totalElements || 0;
+    return valid + expiring + expired;
   }
 
   applyFilters() {

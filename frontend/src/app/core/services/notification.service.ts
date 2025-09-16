@@ -66,4 +66,13 @@ export class NotificationService {
     }
     return this.api.get<number>(`${this.endpoint}/user/${user.id}/unread/count`);
   }
+
+  sendNotification(userId: number, title: string, message: string, type: string = 'INFO'): Observable<any> {
+    return this.api.post(`${this.endpoint}`, {
+      userId,
+      title,
+      message,
+      type
+    });
+  }
 }

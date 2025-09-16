@@ -37,6 +37,7 @@ export class AssetRequestFormComponent implements OnInit {
       assetType: ['', [Validators.required]],
       assetName: ['', [Validators.required]],
       preferredModel: [''],
+      estimatedCost: ['', [Validators.min(0)]],
 
       businessJustification: ['', [Validators.required, Validators.minLength(20)]],
       priority: ['', [Validators.required]],
@@ -88,6 +89,7 @@ export class AssetRequestFormComponent implements OnInit {
           assetType: request.assetType,
           assetName: request.assetName,
           preferredModel: request.preferredModel || '',
+        estimatedCost: request.estimatedCost || '',
 
           businessJustification: request.businessJustification,
           priority: request.priority,
@@ -157,6 +159,7 @@ export class AssetRequestFormComponent implements OnInit {
         assetType: formValue.assetType,
         assetName: formValue.assetName,
         preferredModel: formValue.preferredModel || '',
+        estimatedCost: formValue.estimatedCost ? parseFloat(formValue.estimatedCost) : null,
 
         businessJustification: formValue.businessJustification,
         priority: formValue.priority,

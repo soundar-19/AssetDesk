@@ -101,7 +101,220 @@ import { ToastService } from '../../../shared/components/toast/toast.service';
       </div>
     </main>
   `,
-  styles: []
+  styles: [`
+    .page-container {
+      padding: var(--space-6);
+      max-width: 800px;
+      margin: 0 auto;
+    }
+
+    .form-container {
+      background: white;
+      border-radius: var(--radius-lg);
+      box-shadow: var(--shadow-sm);
+      border: 1px solid var(--gray-200);
+      overflow: hidden;
+    }
+
+    .form-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: flex-start;
+      padding: var(--space-6);
+      border-bottom: 1px solid var(--gray-200);
+      background: var(--gray-50);
+    }
+
+    .form-title {
+      margin: 0 0 var(--space-1) 0;
+      color: var(--gray-900);
+      font-size: 1.5rem;
+      font-weight: 700;
+    }
+
+    .form-subtitle {
+      margin: 0;
+      color: var(--gray-600);
+      font-size: 0.875rem;
+    }
+
+    .form {
+      padding: var(--space-6);
+    }
+
+    .form-section {
+      margin-bottom: var(--space-8);
+    }
+
+    .section-title {
+      margin: 0 0 var(--space-4) 0;
+      color: var(--gray-900);
+      font-size: 1.125rem;
+      font-weight: 600;
+      border-bottom: 1px solid var(--gray-200);
+      padding-bottom: var(--space-2);
+    }
+
+    .form-grid {
+      display: grid;
+      gap: var(--space-4);
+    }
+
+    .grid-1 {
+      grid-template-columns: 1fr;
+    }
+
+    .grid-2 {
+      grid-template-columns: 1fr 1fr;
+    }
+
+    .form-group {
+      display: flex;
+      flex-direction: column;
+    }
+
+    .form-label {
+      font-weight: 500;
+      color: var(--gray-700);
+      margin-bottom: var(--space-2);
+      font-size: 0.875rem;
+    }
+
+    .form-label.required::after {
+      content: ' *';
+      color: var(--error-500);
+    }
+
+    .form-control {
+      padding: var(--space-3);
+      border: 1px solid var(--gray-300);
+      border-radius: var(--radius-md);
+      font-size: 0.875rem;
+      transition: all var(--transition-fast);
+      background: white;
+    }
+
+    .form-control:focus {
+      outline: none;
+      border-color: var(--primary-500);
+      box-shadow: 0 0 0 3px var(--primary-100);
+    }
+
+    .form-control.error {
+      border-color: var(--error-500);
+      box-shadow: 0 0 0 3px var(--error-100);
+    }
+
+    .form-control:disabled {
+      background: var(--gray-100);
+      color: var(--gray-500);
+      cursor: not-allowed;
+    }
+
+    textarea.form-control {
+      resize: vertical;
+      min-height: 100px;
+    }
+
+    .form-error {
+      color: var(--error-600);
+      font-size: 0.75rem;
+      margin-top: var(--space-1);
+    }
+
+    .form-actions {
+      display: flex;
+      gap: var(--space-3);
+      justify-content: flex-end;
+      padding-top: var(--space-6);
+      border-top: 1px solid var(--gray-200);
+      margin-top: var(--space-6);
+    }
+
+    .btn {
+      padding: var(--space-3) var(--space-4);
+      border-radius: var(--radius-md);
+      font-weight: 500;
+      font-size: 0.875rem;
+      cursor: pointer;
+      transition: all var(--transition-fast);
+      border: 1px solid transparent;
+      display: inline-flex;
+      align-items: center;
+      gap: var(--space-2);
+      text-decoration: none;
+    }
+
+    .btn:disabled {
+      opacity: 0.6;
+      cursor: not-allowed;
+    }
+
+    .btn-primary {
+      background: var(--primary-600);
+      color: white;
+      border-color: var(--primary-600);
+    }
+
+    .btn-primary:hover:not(:disabled) {
+      background: var(--primary-700);
+      border-color: var(--primary-700);
+      transform: translateY(-1px);
+      box-shadow: var(--shadow-md);
+    }
+
+    .btn-outline {
+      background: white;
+      color: var(--gray-700);
+      border-color: var(--gray-300);
+    }
+
+    .btn-outline:hover {
+      background: var(--gray-50);
+      border-color: var(--gray-400);
+    }
+
+    .loading-spinner {
+      width: 16px;
+      height: 16px;
+      border: 2px solid transparent;
+      border-top: 2px solid currentColor;
+      border-radius: 50%;
+      animation: spin 1s linear infinite;
+    }
+
+    @keyframes spin {
+      to { transform: rotate(360deg); }
+    }
+
+    @media (max-width: 768px) {
+      .page-container {
+        padding: var(--space-4);
+      }
+
+      .form-header {
+        flex-direction: column;
+        gap: var(--space-4);
+        align-items: stretch;
+      }
+
+      .form {
+        padding: var(--space-4);
+      }
+
+      .grid-2 {
+        grid-template-columns: 1fr;
+      }
+
+      .form-actions {
+        flex-direction: column-reverse;
+      }
+
+      .btn {
+        justify-content: center;
+      }
+    }
+  `]
 })
 export class IssueFormComponent implements OnInit {
   issueForm: FormGroup;
@@ -120,8 +333,8 @@ export class IssueFormComponent implements OnInit {
     private toastService: ToastService
   ) {
     this.issueForm = this.fb.group({
-      title: ['', Validators.required],
-      description: ['', Validators.required],
+      title: ['', [Validators.required, Validators.minLength(5), Validators.maxLength(200)]],
+      description: ['', [Validators.required, Validators.minLength(10)]],
       type: ['HARDWARE_MALFUNCTION', Validators.required],
       priority: ['MEDIUM', Validators.required]
     });

@@ -24,6 +24,7 @@ public class AssetResponseDTO {
     private Asset.Status status;
     private String imageUrl;
     private Integer usefulLifeYears;
+    private Boolean isShareable;
     
     // Software license specific fields
     private Integer totalLicenses;
@@ -53,8 +54,9 @@ public class AssetResponseDTO {
         dto.setStatus(asset.getStatus());
         dto.setImageUrl(asset.getImageUrl());
         dto.setUsefulLifeYears(asset.getUsefulLifeYears());
+        dto.setIsShareable(asset.getIsShareable());
         dto.setTotalLicenses(asset.getTotalLicenses());
-        dto.setUsedLicenses(asset.getUsedLicenses());
+        dto.setUsedLicenses(asset.getUsedLicenses() != null ? asset.getUsedLicenses() : 0);
         dto.setLicenseExpiryDate(asset.getLicenseExpiryDate());
         dto.setLicenseKey(asset.getLicenseKey());
         dto.setVersion(asset.getVersion());

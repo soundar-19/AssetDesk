@@ -8,12 +8,12 @@ import { Issue, Asset } from '../../../core/models';
 import { AuthService } from '../../../core/services/auth.service';
 import { ToastService } from '../../../shared/components/toast/toast.service';
 import { IssueChatComponent } from '../issue-chat/issue-chat.component';
-import { InputModalService } from '../../../shared/components/input-modal/input-modal.service';
+import { ResolveModalComponent, ResolveModalResult } from '../../../shared/components/resolve-modal/resolve-modal.component';
 
 @Component({
   selector: 'app-issue-detail',
   standalone: true,
-  imports: [CommonModule, FormsModule, IssueChatComponent],
+  imports: [CommonModule, FormsModule, IssueChatComponent, ResolveModalComponent],
   template: `
     <div class="issue-detail" *ngIf="issue">
       <div class="header">
@@ -172,12 +172,6 @@ import { InputModalService } from '../../../shared/components/input-modal/input-
         <div class="sidebar">
           <div class="quick-actions">
             <h4>Quick Actions</h4>
-            <button class="action-btn" *ngIf="canAssign()" (click)="assignIssue()">
-              <i class="icon-user"></i> Assign Issue
-            </button>
-            <button class="action-btn" *ngIf="canResolve()" (click)="resolveIssue()">
-              <i class="icon-check"></i> Resolve Issue
-            </button>
             <button class="action-btn" *ngIf="canClose()" (click)="closeIssue()">
               <i class="icon-x"></i> Close Issue
             </button>
@@ -204,6 +198,12 @@ import { InputModalService } from '../../../shared/components/input-modal/input-
         </div>
       </div>
     </div>
+    
+    <app-resolve-modal
+      [visible]="showResolveModal"
+      (confirm)="onResolveConfirm($event)"
+      (cancel)="onResolveCancel()">
+    </app-resolve-modal>
   `,
   styles: [`
     .issue-detail { 
@@ -849,6 +849,7 @@ export class IssueDetailComponent implements OnInit {
   relatedAsset: Asset | null = null;
   activeTab = 'overview';
   isFullscreen = false;
+  showResolveModal = false;
 
   constructor(
     private route: ActivatedRoute,
@@ -856,8 +857,7 @@ export class IssueDetailComponent implements OnInit {
     private issueService: IssueService,
     private assetService: AssetService,
     private authService: AuthService,
-    private toastService: ToastService,
-    private inputModalService: InputModalService
+    private toastService: ToastService
   ) {}
 
   ngOnInit() {
@@ -922,16 +922,23 @@ export class IssueDetailComponent implements OnInit {
 
   canAssign(): boolean {
     const user = this.authService.getCurrentUser();
-    return user?.role === 'IT_SUPPORT' && 
+    return (user?.role === 'IT_SUPPORT' || user?.role === 'ADMIN') && 
            this.issue?.status === 'OPEN' && 
            !this.issue?.assignedToName;
   }
 
   canResolve(): boolean {
     const user = this.authService.getCurrentUser();
-    return this.issue?.status === 'IN_PROGRESS' && 
-           user?.role === 'IT_SUPPORT' && 
-           this.issue?.assignedToId === user?.id;
+    if (!user || !this.issue) return false;
+    
+    // Only IT_SUPPORT and ADMIN can resolve issues
+    if (user.role !== 'IT_SUPPORT' && user.role !== 'ADMIN') return false;
+    
+    // Issue must be in progress
+    if (this.issue.status !== 'IN_PROGRESS') return false;
+    
+    // IT_SUPPORT and ADMIN can only resolve issues assigned to them
+    return this.issue.assignedToId === user.id;
   }
 
   canClose(): boolean {
@@ -943,7 +950,7 @@ export class IssueDetailComponent implements OnInit {
   assignIssue() {
     if (this.issue) {
       const user = this.authService.getCurrentUser();
-      if (user?.role === 'IT_SUPPORT') {
+      if (user?.role === 'IT_SUPPORT' || user?.role === 'ADMIN') {
         const issueId = this.issue.id;
         console.log('=== FRONTEND ASSIGN DEBUG ===');
         console.log('Issue ID:', issueId);
@@ -972,37 +979,32 @@ export class IssueDetailComponent implements OnInit {
     }
   }
 
-  async resolveIssue() {
-    if (this.issue) {
-      const resolutionNotes = await this.inputModalService.promptTextarea(
-        'Resolve Issue',
-        'Enter resolution notes:',
-        'Describe how the issue was resolved...'
-      );
-      
-      if (resolutionNotes) {
-        const costStr = await this.inputModalService.promptNumber(
-          'Resolution Cost',
-          'Enter approximate cost (optional):',
-          'Cost (leave empty if no cost)',
-          false
-        );
-        
-        const cost = costStr ? parseFloat(costStr) : undefined;
-        
-        this.issueService.resolveIssueWithCost(this.issue.id, resolutionNotes, cost).subscribe({
-          next: () => {
-            this.toastService.success('Issue resolved successfully');
-            if (this.issue) {
-              this.loadIssue(this.issue.id);
-            }
-          },
-          error: (error) => {
-            this.toastService.error(error.error?.message || 'Failed to resolve issue');
-          }
-        });
-      }
+  resolveIssue() {
+    if (!this.canResolve()) {
+      this.toastService.error('You can only resolve issues assigned to you');
+      return;
     }
+    
+    this.showResolveModal = true;
+  }
+
+  onResolveConfirm(result: ResolveModalResult) {
+    if (this.issue) {
+      this.issueService.resolveIssueWithCost(this.issue.id, result.notes, result.cost).subscribe({
+        next: () => {
+          this.toastService.success('Issue resolved successfully');
+          this.loadIssue(this.issue!.id);
+        },
+        error: (error) => {
+          this.toastService.error(error.error?.message || 'Failed to resolve issue');
+        }
+      });
+    }
+    this.showResolveModal = false;
+  }
+
+  onResolveCancel() {
+    this.showResolveModal = false;
   }
 
   closeIssue() {

@@ -1,7 +1,8 @@
-import { Component, OnInit, Input, Output, EventEmitter } from '@angular/core';
+import { Component, OnInit, OnChanges, SimpleChanges, Input, Output, EventEmitter } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { UserService } from '../../../core/services/user.service';
+import { AllocationService } from '../../../core/services/allocation.service';
 import { User } from '../../../core/models';
 
 @Component({
@@ -12,7 +13,7 @@ import { User } from '../../../core/models';
     <div class="dialog-overlay" (click)="cancel()">
       <div class="dialog-content" (click)="$event.stopPropagation()">
         <div class="dialog-header">
-          <h2>{{ singleUser ? 'Select User for Asset Allocation' : 'Select Users for License Allocation' }}</h2>
+          <h2>{{ mode === 'return' ? (singleUser ? 'Select User to Return Asset' : 'Select Users to Return License') : (singleUser ? 'Select User for Asset Allocation' : 'Select Users for License Allocation') }}</h2>
           <p>{{ singleUser ? 'Assign ' + licenseName + ' to one user' : licenseCount + ' seats available for ' + licenseName }}</p>
         </div>
 
@@ -32,6 +33,7 @@ import { User } from '../../../core/models';
             <div class="user-checkbox">
               <input type="checkbox" 
                      [checked]="selectedUsers.has(user.id)"
+                     (change)="toggleUser(user)"
                      (click)="$event.stopPropagation()">
             </div>
             <div class="user-info">
@@ -49,9 +51,9 @@ import { User } from '../../../core/models';
           <div class="dialog-actions">
             <button class="btn btn-secondary" (click)="cancel()">Cancel</button>
             <button class="btn btn-primary" 
-                    [disabled]="selectedUsers.size === 0 || (singleUser && selectedUsers.size > 1) || (!singleUser && selectedUsers.size > licenseCount)"
+                    [disabled]="selectedUsers.size === 0 || (singleUser && selectedUsers.size !== 1) || (!singleUser && selectedUsers.size > licenseCount)"
                     (click)="confirm()">
-              {{ singleUser ? 'Allocate to User' : 'Allocate to ' + selectedUsers.size + ' Users' }}
+              {{ mode === 'return' ? (singleUser ? 'Return from User' : 'Return from ' + selectedUsers.size + ' Users') : (singleUser ? 'Allocate to User' : 'Allocate to ' + selectedUsers.size + ' Users') }}
             </button>
           </div>
         </div>
@@ -88,7 +90,7 @@ import { User } from '../../../core/models';
     .btn-primary:disabled { background: #9ca3af; cursor: not-allowed; }
   `]
 })
-export class UserSelectorDialogComponent implements OnInit {
+export class UserSelectorDialogComponent implements OnInit, OnChanges {
   users: User[] = [];
   filteredUsers: User[] = [];
   selectedUsers = new Set<number>();
@@ -96,24 +98,77 @@ export class UserSelectorDialogComponent implements OnInit {
   @Input() licenseCount = 0;
   @Input() licenseName = '';
   @Input() singleUser = false;
+  @Input() allocatedUsers: User[] = []; // Pre-filtered list of users
+  @Input() mode: 'allocate' | 'return' = 'allocate';
+  @Input() show = false; // Add show input to track when dialog is displayed
+  @Input() assetId: number | null = null; // Asset ID for filtering allocated users
   @Output() onConfirm = new EventEmitter<User[]>();
   @Output() onCancel = new EventEmitter<void>();
 
-  constructor(private userService: UserService) {}
+  constructor(
+    private userService: UserService,
+    private allocationService: AllocationService
+  ) {}
 
   ngOnInit() {
-    this.loadUsers();
+    // Users will be loaded when needed
+  }
+  
+  ngOnChanges(changes: SimpleChanges) {
+    // Reload users whenever the dialog is shown or inputs change
+    if (changes['show'] && this.show) {
+      // Dialog is being shown, load fresh user data
+      setTimeout(() => this.loadUsers(), 0);
+    } else if (changes['allocatedUsers'] || changes['mode'] || 
+        (changes['licenseCount'] && this.licenseCount > 0)) {
+      this.loadUsers();
+    }
   }
 
   loadUsers() {
-    this.userService.getUsers().subscribe({
-      next: (response) => {
-        this.users = response?.content || [];
+    // Clear previous selections when loading users
+    this.selectedUsers.clear();
+    
+    if (this.allocatedUsers.length > 0) {
+      // Use pre-filtered allocated users (for return mode)
+      console.log('Using allocated users:', this.allocatedUsers);
+      this.users = [...this.allocatedUsers]; // Create new array to avoid reference issues
+      this.filteredUsers = [...this.users];
+    } else {
+      // Load all active users and filter for allocation mode
+      console.log('Loading all users from service');
+      this.userService.getActiveUsers(0, 100).subscribe({
+        next: (response) => {
+          const allUsers = response?.content || [];
+          
+          if (this.mode === 'allocate' && this.assetId) {
+            // For allocation mode, filter out already allocated users
+            this.filterAllocatedUsers(allUsers);
+          } else {
+            this.users = allUsers;
+            this.filteredUsers = [...this.users];
+          }
+        },
+        error: () => {
+          this.users = [];
+          this.filteredUsers = [];
+        }
+      });
+    }
+  }
+  
+  private filterAllocatedUsers(allUsers: User[]) {
+    this.allocationService.getAllocatedUserIds(this.assetId!).subscribe({
+      next: (allocatedUserIds) => {
+        console.log('Allocated user IDs:', allocatedUserIds);
+        this.users = allUsers.filter(user => !allocatedUserIds.includes(user.id));
         this.filteredUsers = [...this.users];
+        console.log('Filtered users (excluding allocated):', this.users);
       },
       error: () => {
-        this.users = [];
-        this.filteredUsers = [];
+        console.log('Failed to get allocated users, showing all users');
+        this.users = allUsers;
+        this.filteredUsers = [...this.users];
       }
     });
   }
@@ -138,8 +193,11 @@ export class UserSelectorDialogComponent implements OnInit {
     } else if (this.singleUser) {
       this.selectedUsers.clear();
       this.selectedUsers.add(user.id);
-    } else if (this.selectedUsers.size < this.licenseCount) {
-      this.selectedUsers.add(user.id);
+    } else {
+      // For multi-user mode, add user if within license limit
+      if (this.selectedUsers.size < this.licenseCount) {
+        this.selectedUsers.add(user.id);
+      }
     }
   }
 

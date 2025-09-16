@@ -5,6 +5,7 @@ import lombok.Data;
 import java.math.BigDecimal;
 import java.time.LocalDate;
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
+import com.fasterxml.jackson.annotation.JsonIgnore;
 
 @Entity
 @Table(name = "assets")
@@ -46,6 +47,9 @@ public class Asset {
     private Status status;
     
     private String imageUrl;
+    
+    // Asset sharing configuration
+    private Boolean isShareable = false; // true for software licenses, false for hardware
     
     // Software license specific fields
     private Integer totalLicenses; // Total number of licenses available

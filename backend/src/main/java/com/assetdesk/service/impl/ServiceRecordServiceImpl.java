@@ -136,11 +136,30 @@ public class ServiceRecordServiceImpl implements ServiceRecordService {
     
     @Transactional(readOnly = true)
     public Page<ServiceRecordResponseDTO> getAllServiceRecordsDTO(Pageable pageable) {
-        Page<ServiceRecord> records = serviceRecordRepository.findAllWithAssetAndVendor(pageable);
-        List<ServiceRecordResponseDTO> dtos = records.getContent().stream()
-            .map(this::convertToDTO)
-            .collect(Collectors.toList());
-        return new PageImpl<>(dtos, pageable, records.getTotalElements());
+        try {
+            Page<ServiceRecord> records = serviceRecordRepository.findAllServiceRecordsExcludingAllocations(pageable);
+            System.out.println("Found " + records.getTotalElements() + " service records (excluding allocations)");
+            
+            List<ServiceRecordResponseDTO> dtos = records.getContent().stream()
+                .map(record -> {
+                    try {
+                        return this.convertToDTO(record);
+                    } catch (Exception e) {
+                        System.err.println("Error converting record " + record.getId() + ": " + e.getMessage());
+                        e.printStackTrace();
+                        return null;
+                    }
+                })
+                .filter(dto -> dto != null)
+                .collect(Collectors.toList());
+                
+            System.out.println("Converted " + dtos.size() + " DTOs successfully");
+            return new PageImpl<>(dtos, pageable, records.getTotalElements());
+        } catch (Exception e) {
+            System.err.println("Error in getAllServiceRecordsDTO: " + e.getMessage());
+            e.printStackTrace();
+            throw e;
+        }
     }
     
     private ServiceRecordResponseDTO convertToDTO(ServiceRecord record) {
@@ -150,9 +169,9 @@ public class ServiceRecordServiceImpl implements ServiceRecordService {
             .description(record.getServiceDescription())
             .cost(record.getServiceCost() != null ? record.getServiceCost() : record.getCost())
             .nextServiceDate(record.getNextServiceDate())
-            .serviceType(record.getServiceType())
+            .serviceType(record.getServiceType() != null ? record.getServiceType() : "MAINTENANCE")
             .performedBy(record.getPerformedBy())
-            .status(record.getStatus())
+            .status(record.getStatus() != null ? record.getStatus() : "COMPLETED")
             .notes(record.getNotes());
         
         if (record.getAsset() != null) {
@@ -176,8 +195,6 @@ public class ServiceRecordServiceImpl implements ServiceRecordService {
                 .name(vendor.getName())
                 .build());
         }
-        
-
         
         return builder.build();
     }

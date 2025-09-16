@@ -5,6 +5,7 @@ export interface ServiceRecord {
     assetTag: string;
     name: string;
     category?: string;
+    type?: string;
     model?: string;
     serialNumber?: string;
     status?: string;

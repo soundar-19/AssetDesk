@@ -19,8 +19,9 @@ import { ToastService } from '../../../shared/components/toast/toast.service';
       <div class="messages-container" #messagesContainer>
         <div class="messages-list">
           <div *ngFor="let message of messages" class="message-wrapper" 
-               [class.own-message]="message.senderId == currentUserId">
-            <div class="message-bubble">
+               [class.own-message]="message.senderId == currentUserId"
+               [class.system-message]="message.messageType === 'SYSTEM_MESSAGE'">
+            <div class="message-bubble" *ngIf="message.messageType !== 'SYSTEM_MESSAGE'">
               <div class="message-header">
                 <span class="sender-name">{{ message.senderName }}</span>
                 <span class="message-time">{{ message.timestamp | date:'MMM d, h:mm a' }}</span>
@@ -59,6 +60,15 @@ import { ToastService } from '../../../shared/components/toast/toast.service';
                     </div>
                   </div>
                 </div>
+              </div>
+            </div>
+            
+            <!-- System Message -->
+            <div class="system-message-bubble" *ngIf="message.messageType === 'SYSTEM_MESSAGE'">
+              <div class="system-icon">🤖</div>
+              <div class="system-content">
+                <span class="system-text">{{ message.messageText }}</span>
+                <span class="system-time">{{ message.timestamp | date:'MMM d, h:mm a' }}</span>
               </div>
             </div>
           </div>
@@ -141,8 +151,9 @@ import { ToastService } from '../../../shared/components/toast/toast.service';
     .chat-layout {
       display: flex;
       flex-direction: column;
-      height: 100vh;
+      height: 100%;
       background: white;
+      position: relative;
     }
 
 
@@ -150,7 +161,8 @@ import { ToastService } from '../../../shared/components/toast/toast.service';
     .messages-container {
       flex: 1;
       overflow-y: auto;
-      padding: 1rem 1rem 6rem 1rem;
+      padding: 1rem;
+      padding-bottom: 120px;
       background: #f8fafc;
       min-height: 0;
     }
@@ -283,12 +295,12 @@ import { ToastService } from '../../../shared/components/toast/toast.service';
 
     .chat-input-area {
       padding: var(--space-4) var(--space-6);
-      position: fixed;
-      bottom: 1rem;
-      left: 50%;
-      transform: translateX(-50%);
-      max-width: 800px;
-      width: calc(100% - 2rem);
+      position: absolute;
+      bottom: 0;
+      left: 0;
+      right: 0;
+      background: white;
+      border-top: 1px solid var(--gray-200);
       z-index: 10;
     }
 
@@ -324,8 +336,7 @@ import { ToastService } from '../../../shared/components/toast/toast.service';
     }
 
     .message-form {
-      max-width: 800px;
-      margin: 0 auto;
+      width: 100%;
     }
 
     .file-preview {
@@ -500,6 +511,43 @@ import { ToastService } from '../../../shared/components/toast/toast.service';
       max-width: 100%;
       max-height: 100%;
       border-radius: var(--radius-lg);
+    }
+
+    .message-wrapper.system-message {
+      justify-content: center;
+      margin: var(--space-4) 0;
+    }
+
+    .system-message-bubble {
+      display: flex;
+      align-items: center;
+      gap: var(--space-2);
+      padding: var(--space-2) var(--space-4);
+      background: var(--gray-100);
+      border-radius: var(--radius-xl);
+      border: 1px solid var(--gray-200);
+      max-width: 80%;
+    }
+
+    .system-icon {
+      font-size: 1rem;
+    }
+
+    .system-content {
+      display: flex;
+      flex-direction: column;
+      gap: var(--space-1);
+    }
+
+    .system-text {
+      color: var(--gray-700);
+      font-size: 0.875rem;
+      font-weight: 500;
+    }
+
+    .system-time {
+      color: var(--gray-500);
+      font-size: 0.75rem;
     }
   `]
 })

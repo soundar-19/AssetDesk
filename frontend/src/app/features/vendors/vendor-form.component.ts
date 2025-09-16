@@ -10,40 +10,51 @@ import { ToastService } from '../../shared/components/toast/toast.service';
   standalone: true,
   imports: [CommonModule, ReactiveFormsModule],
   template: `
-    <main class="page-container" role="main">
-      <div class="form-container">
-        <div class="form-header">
+    <main class="page-container standardized-layout" role="main">
+      <header class="page-header">
+        <div class="header-content">
           <div>
-            <h1 class="form-title">{{ isEditMode ? 'Edit Vendor' : 'Add Vendor' }}</h1>
-            <p class="form-subtitle">{{ isEditMode ? 'Update vendor information and contact details' : 'Register a new vendor in the system' }}</p>
+            <h1 class="page-title">{{ isEditMode ? 'Edit Vendor' : 'Add New Vendor' }}</h1>
+            <p class="page-description">{{ isEditMode ? 'Update vendor information and contact details' : 'Register a new vendor in the system' }}</p>
           </div>
           <button class="btn btn-outline" (click)="goBack()" type="button">
-            <svg width="16" height="16" viewBox="0 0 20 20" fill="currentColor">
+            <svg class="btn-icon" width="16" height="16" viewBox="0 0 20 20" fill="currentColor">
               <path fill-rule="evenodd" d="M9.707 16.707a1 1 0 01-1.414 0l-6-6a1 1 0 010-1.414l6-6a1 1 0 011.414 1.414L5.414 9H17a1 1 0 110 2H5.414l4.293 4.293a1 1 0 010 1.414z" clip-rule="evenodd" />
             </svg>
-            Back
+            Back to Vendors
           </button>
         </div>
+      </header>
 
-        <form [formGroup]="vendorForm" (ngSubmit)="onSubmit()" class="form" novalidate>
+      <section class="modern-form-card" aria-label="Vendor Form">
+        <form [formGroup]="vendorForm" (ngSubmit)="onSubmit()" class="modern-form" novalidate>
           <div class="form-section">
-            <h2 class="section-title">Vendor Information</h2>
-            <div class="form-grid grid-1">
-              <div class="form-group">
-                <label for="name" class="form-label required">Company Name</label>
-                <div class="input-with-icon">
-                  <svg class="input-icon" width="16" height="16" viewBox="0 0 20 20" fill="currentColor">
-                    <path fill-rule="evenodd" d="M4 4a2 2 0 012-2h8a2 2 0 012 2v12a1 1 0 110 2h-3a1 1 0 01-1-1v-6a1 1 0 00-1-1H9a1 1 0 00-1 1v6a1 1 0 01-1 1H4a1 1 0 110-2V4zm3 8a1 1 0 011-1h4a1 1 0 011 1v4H7v-4z" clip-rule="evenodd" />
-                  </svg>
+            <div class="section-header">
+              <h2 class="section-title">
+                <svg width="20" height="20" viewBox="0 0 20 20" fill="currentColor">
+                  <path fill-rule="evenodd" d="M4 4a2 2 0 012-2h8a2 2 0 012 2v12a1 1 0 110 2h-3a1 1 0 01-1-1v-6a1 1 0 00-1-1H9a1 1 0 00-1 1v6a1 1 0 01-1 1H4a1 1 0 110-2V4zm3 8a1 1 0 011-1h4a1 1 0 011 1v4H7v-4z" clip-rule="evenodd" />
+                </svg>
+                Company Information
+              </h2>
+              <p class="section-description">Basic vendor details and company information</p>
+            </div>
+            
+            <div class="form-grid">
+              <div class="form-field full-width">
+                <label for="name" class="field-label required">Company Name</label>
+                <div class="input-wrapper">
                   <input
                     id="name"
                     type="text"
                     formControlName="name"
-                    class="form-control"
+                    class="form-input"
                     [class.error]="vendorForm.get('name')?.invalid && vendorForm.get('name')?.touched"
                     placeholder="Enter company name">
                 </div>
-                <div *ngIf="vendorForm.get('name')?.invalid && vendorForm.get('name')?.touched" class="form-error">
+                <div *ngIf="vendorForm.get('name')?.invalid && vendorForm.get('name')?.touched" class="field-error">
+                  <svg class="error-icon" width="16" height="16" viewBox="0 0 20 20" fill="currentColor">
+                    <path fill-rule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7 4a1 1 0 11-2 0 1 1 0 012 0zm-1-9a1 1 0 00-1 1v4a1 1 0 102 0V6a1 1 0 00-1-1z" clip-rule="evenodd" />
+                  </svg>
                   Company name is required
                 </div>
               </div>
@@ -51,86 +62,96 @@ import { ToastService } from '../../shared/components/toast/toast.service';
           </div>
 
           <div class="form-section">
-            <h2 class="section-title">Contact Information</h2>
-            <div class="form-grid grid-2">
-              <div class="form-group">
-                <label for="contactPerson" class="form-label optional">Contact Person</label>
-                <div class="input-with-icon">
-                  <svg class="input-icon" width="16" height="16" viewBox="0 0 20 20" fill="currentColor">
-                    <path fill-rule="evenodd" d="M10 9a3 3 0 100-6 3 3 0 000 6zm-7 9a7 7 0 1114 0H3z" clip-rule="evenodd" />
-                  </svg>
+            <div class="section-header">
+              <h2 class="section-title">
+                <svg width="20" height="20" viewBox="0 0 20 20" fill="currentColor">
+                  <path d="M2.003 5.884L10 9.882l7.997-3.998A2 2 0 0016 4H4a2 2 0 00-1.997 1.884z"/>
+                  <path d="M18 8.118l-8 4-8-4V14a2 2 0 002 2h12a2 2 0 002-2V8.118z"/>
+                </svg>
+                Contact Information
+              </h2>
+              <p class="section-description">Contact details and communication preferences</p>
+            </div>
+            
+            <div class="form-grid">
+              <div class="form-field">
+                <label for="contactPerson" class="field-label optional">Contact Person</label>
+                <div class="input-wrapper">
                   <input
                     id="contactPerson"
                     type="text"
                     formControlName="contactPerson"
-                    class="form-control"
+                    class="form-input"
                     placeholder="Enter contact person name">
                 </div>
               </div>
 
-              <div class="form-group">
-                <label for="phoneNumber" class="form-label optional">Phone Number</label>
-                <div class="input-with-icon">
-                  <svg class="input-icon" width="16" height="16" viewBox="0 0 20 20" fill="currentColor">
-                    <path d="M2 3a1 1 0 011-1h2.153a1 1 0 01.986.836l.74 4.435a1 1 0 01-.54 1.06l-1.548.773a11.037 11.037 0 006.105 6.105l.774-1.548a1 1 0 011.059-.54l4.435.74a1 1 0 01.836.986V17a1 1 0 01-1 1h-2C7.82 18 2 12.18 2 5V3z"/>
-                  </svg>
+              <div class="form-field">
+                <label for="phoneNumber" class="field-label optional">Phone Number</label>
+                <div class="input-wrapper">
                   <input
                     id="phoneNumber"
                     type="tel"
                     formControlName="phoneNumber"
-                    class="form-control"
+                    class="form-input"
                     placeholder="Enter phone number">
                 </div>
               </div>
-            </div>
 
-            <div class="form-grid grid-1">
-              <div class="form-group">
-                <label for="email" class="form-label optional">Email Address</label>
-                <div class="input-with-icon">
-                  <svg class="input-icon" width="16" height="16" viewBox="0 0 20 20" fill="currentColor">
-                    <path d="M2.003 5.884L10 9.882l7.997-3.998A2 2 0 0016 4H4a2 2 0 00-1.997 1.884z"/>
-                    <path d="M18 8.118l-8 4-8-4V14a2 2 0 002 2h12a2 2 0 002-2V8.118z"/>
-                  </svg>
+              <div class="form-field">
+                <label for="email" class="field-label optional">Email Address</label>
+                <div class="input-wrapper">
                   <input
                     id="email"
                     type="email"
                     formControlName="email"
-                    class="form-control"
+                    class="form-input"
                     [class.error]="vendorForm.get('email')?.invalid && vendorForm.get('email')?.touched"
                     placeholder="Enter email address">
                 </div>
-                <div *ngIf="vendorForm.get('email')?.invalid && vendorForm.get('email')?.touched" class="form-error">
+                <div *ngIf="vendorForm.get('email')?.invalid && vendorForm.get('email')?.touched" class="field-error">
+                  <svg class="error-icon" width="16" height="16" viewBox="0 0 20 20" fill="currentColor">
+                    <path fill-rule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7 4a1 1 0 11-2 0 1 1 0 012 0zm-1-9a1 1 0 00-1 1v4a1 1 0 102 0V6a1 1 0 00-1-1z" clip-rule="evenodd" />
+                  </svg>
                   Please enter a valid email address
                 </div>
               </div>
-            </div>
 
-            <div class="form-grid grid-1">
-              <div class="form-group">
-                <label for="status" class="form-label required">Status</label>
-                <select
-                  id="status"
-                  formControlName="status"
-                  class="form-control">
-                  <option value="ACTIVE">Active</option>
-                  <option value="INACTIVE">Inactive</option>
-                </select>
+              <div class="form-field">
+                <label for="status" class="field-label required">Status</label>
+                <div class="select-wrapper">
+                  <select
+                    id="status"
+                    formControlName="status"
+                    class="form-select">
+                    <option value="ACTIVE">Active</option>
+                    <option value="INACTIVE">Inactive</option>
+                  </select>
+                </div>
               </div>
             </div>
           </div>
 
           <div class="form-actions">
-            <button type="button" class="btn btn-outline" (click)="goBack()">
-              Cancel
-            </button>
-            <button type="submit" class="btn btn-primary" [disabled]="vendorForm.invalid || loading">
-              <span *ngIf="loading" class="loading-spinner"></span>
-              {{ loading ? 'Saving...' : (isEditMode ? 'Update Vendor' : 'Create Vendor') }}
-            </button>
+            <div class="actions-wrapper">
+              <button type="button" class="btn btn-secondary" (click)="goBack()">
+                <svg class="btn-icon" width="16" height="16" viewBox="0 0 20 20" fill="currentColor">
+                  <path fill-rule="evenodd" d="M4.293 4.293a1 1 0 011.414 0L10 8.586l4.293-4.293a1 1 0 111.414 1.414L11.414 10l4.293 4.293a1 1 0 01-1.414 1.414L10 11.414l-4.293 4.293a1 1 0 01-1.414-1.414L8.586 10 4.293 5.707a1 1 0 010-1.414z" clip-rule="evenodd"/>
+                </svg>
+                Cancel
+              </button>
+              <button type="submit" class="btn btn-primary btn-lg" [disabled]="vendorForm.invalid || loading" [class.btn-loading]="loading">
+                <svg *ngIf="!loading" class="btn-icon" width="16" height="16" viewBox="0 0 20 20" fill="currentColor">
+                  <path *ngIf="isEditMode" fill-rule="evenodd" d="M3 17a1 1 0 011-1h12a1 1 0 110 2H4a1 1 0 01-1-1zm3.293-7.707a1 1 0 011.414 0L9 10.586V3a1 1 0 112 0v7.586l1.293-1.293a1 1 0 111.414 1.414l-3 3a1 1 0 01-1.414 0l-3-3a1 1 0 010-1.414z" clip-rule="evenodd"/>
+                  <path *ngIf="!isEditMode" fill-rule="evenodd" d="M10 3a1 1 0 011 1v5h5a1 1 0 110 2h-5v5a1 1 0 11-2 0v-5H4a1 1 0 110-2h5V4a1 1 0 011-1z" clip-rule="evenodd"/>
+                </svg>
+                <span *ngIf="loading" class="loading-spinner" aria-hidden="true"></span>
+                {{ loading ? 'Saving...' : (isEditMode ? 'Update Vendor' : 'Create Vendor') }}
+              </button>
+            </div>
           </div>
         </form>
-      </div>
+      </section>
     </main>
   `,
   styles: []
@@ -149,11 +170,11 @@ export class VendorFormComponent implements OnInit {
     private toastService: ToastService
   ) {
     this.vendorForm = this.fb.group({
-      name: ['', Validators.required],
+      name: ['', [Validators.required, Validators.minLength(2), Validators.maxLength(100)]],
       contactPerson: [''],
       email: ['', Validators.email],
       phoneNumber: [''],
-      status: ['ACTIVE']
+      status: ['ACTIVE', Validators.required]
     });
   }
 

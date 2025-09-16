@@ -35,6 +35,12 @@ public class AssetAllocationController {
         return ResponseEntity.ok(AssetAllocationResponseDTO.fromEntity(allocation));
     }
     
+    @PostMapping("/return-from-user")
+    public ResponseEntity<AssetAllocationResponseDTO> returnAssetFromUser(@RequestParam Long assetId, @RequestParam Long userId, @RequestParam(required = false) String remarks) {
+        AssetAllocation allocation = assetAllocationService.returnAssetFromUser(assetId, userId, LocalDate.now(), remarks);
+        return ResponseEntity.ok(AssetAllocationResponseDTO.fromEntity(allocation));
+    }
+    
     @GetMapping("/asset/{assetId}/history")
     public ResponseEntity<List<AssetAllocation>> getAllocationHistory(@PathVariable Long assetId) {
         List<AssetAllocation> history = assetAllocationService.getAllocationHistory(assetId);
@@ -96,14 +102,43 @@ public class AssetAllocationController {
     }
     
     @GetMapping("/asset/{assetId}/current")
-    public ResponseEntity<AssetAllocation> getCurrentAllocation(@PathVariable Long assetId) {
+    public ResponseEntity<AssetAllocationResponseDTO> getCurrentAllocation(@PathVariable Long assetId) {
         AssetAllocation allocation = assetAllocationService.getCurrentAllocation(assetId);
-        return ResponseEntity.ok(allocation);
+        if (allocation == null) {
+            return ResponseEntity.notFound().build();
+        }
+        return ResponseEntity.ok(AssetAllocationResponseDTO.fromEntity(allocation));
     }
     
     @PostMapping("/request-return/{assetId}")
     public ResponseEntity<AssetAllocationResponseDTO> requestReturn(@PathVariable Long assetId, @RequestParam(required = false) String remarks) {
         AssetAllocation allocation = assetAllocationService.requestReturn(assetId, remarks);
         return ResponseEntity.ok(AssetAllocationResponseDTO.fromEntity(allocation));
+    }
+    
+    @PostMapping("/acknowledge-return/{assetId}")
+    public ResponseEntity<AssetAllocationResponseDTO> acknowledgeReturnRequest(@PathVariable Long assetId, @RequestParam Long userId) {
+        AssetAllocation allocation = assetAllocationService.acknowledgeReturnRequest(assetId, userId);
+        return ResponseEntity.ok(AssetAllocationResponseDTO.fromEntity(allocation));
+    }
+    
+    @GetMapping("/user/{userId}/return-requests")
+    public ResponseEntity<List<AssetAllocationResponseDTO>> getUserReturnRequests(@PathVariable Long userId) {
+        List<AssetAllocation> requests = assetAllocationService.getUserReturnRequests(userId);
+        List<AssetAllocationResponseDTO> dtos = requests.stream().map(AssetAllocationResponseDTO::fromEntity).toList();
+        return ResponseEntity.ok(dtos);
+    }
+    
+    @GetMapping("/pending-returns")
+    public ResponseEntity<List<AssetAllocationResponseDTO>> getPendingReturns() {
+        List<AssetAllocation> pending = assetAllocationService.getPendingReturns();
+        List<AssetAllocationResponseDTO> dtos = pending.stream().map(AssetAllocationResponseDTO::fromEntity).toList();
+        return ResponseEntity.ok(dtos);
+    }
+    
+    @GetMapping("/asset/{assetId}/allocated-users")
+    public ResponseEntity<List<Long>> getAllocatedUserIds(@PathVariable Long assetId) {
+        List<Long> allocatedUserIds = assetAllocationService.getAllocatedUserIds(assetId);
+        return ResponseEntity.ok(allocatedUserIds);
     }
 }

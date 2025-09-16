@@ -24,6 +24,7 @@ public class AssetAllocationResponseDTO {
     private LocalDate returnRequestDate;
     private String returnRequestRemarks;
     private boolean returnRequested;
+    private String returnStatus;
     
     public static AssetAllocationResponseDTO fromEntity(AssetAllocation allocation) {
         AssetAllocationResponseDTO dto = new AssetAllocationResponseDTO();
@@ -61,6 +62,7 @@ public class AssetAllocationResponseDTO {
         dto.setReturnRequestDate(allocation.getReturnRequestDate());
         dto.setReturnRequestRemarks(allocation.getReturnRequestRemarks());
         dto.setReturnRequested(allocation.getReturnRequestDate() != null);
+        dto.setReturnStatus(allocation.getReturnStatus() != null ? allocation.getReturnStatus().toString() : "NONE");
         
         return dto;
     }

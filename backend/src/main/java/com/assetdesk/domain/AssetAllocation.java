@@ -20,8 +20,6 @@ public class AssetAllocation {
     private Asset asset;
 
     @ManyToOne(fetch = FetchType.EAGER)
-
-
     @JoinColumn(name = "user_id", nullable = false)
     private User user;
 
@@ -37,4 +35,14 @@ public class AssetAllocation {
     
     @Column(columnDefinition = "TEXT")
     private String returnRequestRemarks;
+    
+    @Enumerated(EnumType.STRING)
+    private ReturnStatus returnStatus = ReturnStatus.NONE;
+    
+    public enum ReturnStatus {
+        NONE,           // No return request
+        REQUESTED,      // Admin/IT requested return
+        ACKNOWLEDGED,   // User acknowledged the request
+        COMPLETED       // Return completed
+    }
 }

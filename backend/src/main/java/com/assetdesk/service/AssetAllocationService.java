@@ -10,6 +10,7 @@ public interface AssetAllocationService {
     
     AssetAllocation allocateAsset(Long assetId, Long userId, LocalDate allocatedDate, String remarks);
     AssetAllocation returnAsset(Long assetId, LocalDate returnedDate, String remarks);
+    AssetAllocation returnAssetFromUser(Long assetId, Long userId, LocalDate returnedDate, String remarks);
     List<AssetAllocation> getAllocationHistory(Long assetId);
     List<AssetAllocation> getUserAllocations(Long userId);
     Page<AssetAllocation> getAllAllocations(Pageable pageable);
@@ -21,4 +22,8 @@ public interface AssetAllocationService {
     AssetAllocation requestReturn(Long assetId, String remarks);
     List<AssetAllocation> getUserAllocationsWithHistory(Long userId);
     List<AssetAllocation> getAssetAllocationsWithHistory(Long assetId);
+    AssetAllocation acknowledgeReturnRequest(Long assetId, Long userId);
+    List<AssetAllocation> getUserReturnRequests(Long userId);
+    List<AssetAllocation> getPendingReturns();
+    List<Long> getAllocatedUserIds(Long assetId);
 }

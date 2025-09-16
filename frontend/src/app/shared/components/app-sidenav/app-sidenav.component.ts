@@ -57,6 +57,20 @@ import { filter } from 'rxjs/operators';
             </svg>
             <span *ngIf="!collapsed">Asset Requests</span>
           </a>
+          
+          <a routerLink="/return-requests" class="nav-item" routerLinkActive="active" *ngIf="roleService.isEmployee()">
+            <svg class="nav-icon" width="20" height="20" viewBox="0 0 20 20" fill="currentColor">
+              <path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm.707-10.293a1 1 0 00-1.414-1.414l-3 3a1 1 0 000 1.414l3 3a1 1 0 001.414-1.414L9.414 11H13a1 1 0 100-2H9.414l1.293-1.293z"/>
+            </svg>
+            <span *ngIf="!collapsed">Return Requests</span>
+          </a>
+          
+          <a routerLink="/admin/return-requests" class="nav-item" routerLinkActive="active" *ngIf="roleService.canManageAssets()">
+            <svg class="nav-icon" width="20" height="20" viewBox="0 0 20 20" fill="currentColor">
+              <path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm.707-10.293a1 1 0 00-1.414-1.414l-3 3a1 1 0 000 1.414l3 3a1 1 0 001.414-1.414L9.414 11H13a1 1 0 100-2H9.414l1.293-1.293z"/>
+            </svg>
+            <span *ngIf="!collapsed">Assets Return</span>
+          </a>
         </div>
 
         <div class="nav-section">

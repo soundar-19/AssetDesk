@@ -11,7 +11,7 @@ export class UserService {
 
   constructor(private api: ApiService) {}
 
-  getUsers(page: number = 0, size: number = 10, sortBy?: string, sortDir?: string): Observable<PageResponse<User>> {
+  getUsers(page: number = 0, size: number = 50, sortBy?: string, sortDir?: string): Observable<PageResponse<User>> {
     const params: any = {};
     if (sortBy) params.sortBy = sortBy;
     if (sortDir) params.sortDir = sortDir;
@@ -27,7 +27,7 @@ export class UserService {
     status?: string;
     sortBy?: string;
     sortDir?: string;
-  }, page: number = 0, size: number = 10): Observable<PageResponse<User>> {
+  }, page: number = 0, size: number = 50): Observable<PageResponse<User>> {
     const searchParams = new URLSearchParams();
     searchParams.append('page', page.toString());
     searchParams.append('size', size.toString());
@@ -60,15 +60,15 @@ export class UserService {
     return this.api.get<User>(`${this.endpoint}/email/${email.trim()}`);
   }
 
-  getUsersByRole(role: string, page: number = 0, size: number = 10): Observable<PageResponse<User>> {
+  getUsersByRole(role: string, page: number = 0, size: number = 50): Observable<PageResponse<User>> {
     return this.api.getPagedData<User>(`${this.endpoint}/role/${role}`, page, size);
   }
 
-  getUsersByDepartment(department: string, page: number = 0, size: number = 10): Observable<PageResponse<User>> {
+  getUsersByDepartment(department: string, page: number = 0, size: number = 50): Observable<PageResponse<User>> {
     return this.api.getPagedData<User>(`${this.endpoint}/department/${department}`, page, size);
   }
 
-  getActiveUsers(page: number = 0, size: number = 10): Observable<PageResponse<User>> {
+  getActiveUsers(page: number = 0, size: number = 50): Observable<PageResponse<User>> {
     return this.api.getPagedData<User>(`${this.endpoint}/status/ACTIVE`, page, size);
   }
 

@@ -86,9 +86,6 @@ import { InputModalService } from '../../shared/components/input-modal/input-mod
                   [disabled]="groupSummary.available === 0">
             Quick Allocate ({{ groupSummary.available }} available)
           </button>
-          <button class="btn btn-outline" (click)="bulkUpdateStatus()">
-            Bulk Update Status
-          </button>
         </div>
       </div>
 
@@ -112,7 +109,7 @@ import { InputModalService } from '../../shared/components/input-modal/input-mod
         
         <div class="view-options">
           <label class="checkbox-label">
-            <input type="checkbox" [(ngModel)]="showOnlyAvailable" (change)="applyFilters()">
+            <input type="checkbox" [(ngModel)]="showOnlyAvailable" (click)="onShowOnlyAvailableChange()">
             Show only available
           </label>
         </div>
@@ -125,7 +122,8 @@ import { InputModalService } from '../../shared/components/input-modal/input-mod
           [columns]="columns"
           [actions]="actions"
           [pagination]="pagination"
-          [rowClickAction]="viewAsset.bind(this)"
+          [rowClickAction]="true"
+          (rowClick)="viewAsset($event)"
           (pageChange)="onPageChange($event)">
         </app-data-table>
       </div>
@@ -235,16 +233,16 @@ import { InputModalService } from '../../shared/components/input-modal/input-mod
     
     .summary-cards {
       display: grid;
-      grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
-      gap: var(--space-4);
-      margin-bottom: var(--space-6);
+      grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+      gap: var(--space-3);
+      margin-bottom: var(--space-4);
     }
     
     .summary-card {
       display: flex;
       align-items: center;
-      gap: var(--space-4);
-      padding: var(--space-4);
+      gap: var(--space-3);
+      padding: var(--space-3);
       border-radius: var(--radius-md);
       transition: transform var(--transition-fast);
     }
@@ -279,11 +277,11 @@ import { InputModalService } from '../../shared/components/input-modal/input-mod
     }
     
     .card-icon {
-      font-size: 2rem;
+      font-size: 1.5rem;
     }
     
     .card-value {
-      font-size: 2rem;
+      font-size: 1.5rem;
       font-weight: 700;
       color: var(--gray-900);
       line-height: 1;
@@ -291,7 +289,7 @@ import { InputModalService } from '../../shared/components/input-modal/input-mod
     
     .card-label {
       color: var(--gray-600);
-      font-size: 0.875rem;
+      font-size: 0.75rem;
       font-weight: 500;
       text-transform: uppercase;
       letter-spacing: 0.025em;
@@ -534,8 +532,15 @@ export class AssetsByGroupComponent implements OnInit {
   groupSummary: any = null;
   assets: Asset[] = [];
   filteredAssets: Asset[] = [];
-  pagination: any = null;
+  pagination: any = {
+    page: 0,
+    size: 10,
+    totalElements: 0,
+    totalPages: 0
+  };
   loading = true;
+  currentPage = 0;
+  pageSize = 20;
   
   // Filters
   statusFilter = '';
@@ -550,7 +555,7 @@ export class AssetsByGroupComponent implements OnInit {
   columns: TableColumn[] = [
     { key: 'assetTag', label: 'Asset Tag', sortable: true },
     { key: 'serialNumber', label: 'Serial Number' },
-    { key: 'status', label: 'Status' },
+    { key: 'status', label: 'Status', badge: true },
     { key: 'purchaseDate', label: 'Purchase Date', pipe: 'date' },
     { key: 'warrantyExpiryDate', label: 'Warranty Expiry', pipe: 'date' },
     { key: 'allocatedTo', label: 'Allocated To', render: (asset: Asset) => asset.allocatedTo?.name || 'N/A' }
@@ -610,18 +615,8 @@ export class AssetsByGroupComponent implements OnInit {
       }
     });
     
-    // Load assets by name (group)
-    this.assetService.getAssetsByName(this.groupName, 0, 100).subscribe({
-      next: (response) => {
-        this.assets = response.content || [];
-        this.applyFilters();
-        this.loading = false;
-      },
-      error: () => {
-        this.toastService.error('Failed to load group assets');
-        this.loading = false;
-      }
-    });
+    // Load assets by name (group) with pagination
+    this.loadAssets();
   }
 
   applyFilters() {
@@ -660,10 +655,37 @@ export class AssetsByGroupComponent implements OnInit {
   hasActiveFilters(): boolean {
     return !!(this.statusFilter || this.searchTerm || this.showOnlyAvailable);
   }
+  
+  onShowOnlyAvailableChange() {
+    setTimeout(() => {
+      console.log('Show only available changed:', this.showOnlyAvailable);
+      this.applyFilters();
+    }, 0);
+  }
 
   onPageChange(page: number) {
-    // For now, we load all assets at once
-    // In a real implementation, you might want to implement server-side pagination
+    this.currentPage = page;
+    this.loadAssets();
+  }
+  
+  loadAssets() {
+    this.assetService.getAssetsByName(this.groupName, this.currentPage, this.pageSize).subscribe({
+      next: (response) => {
+        this.assets = response.content || [];
+        this.pagination = {
+          page: response.number || 0,
+          size: response.size || this.pageSize,
+          totalElements: response.totalElements || 0,
+          totalPages: response.totalPages || 0
+        };
+        this.filteredAssets = [...this.assets];
+        this.loading = false;
+      },
+      error: () => {
+        this.toastService.error('Failed to load group assets');
+        this.loading = false;
+      }
+    });
   }
 
   goBack() {
@@ -683,22 +705,16 @@ export class AssetsByGroupComponent implements OnInit {
   }
 
   async quickAllocate() {
-    const userIdStr = await this.inputModalService.promptNumber(
+    const employeeId = await this.inputModalService.promptText(
       'Quick Allocate Asset',
-      'Enter user ID to allocate an available asset:',
-      'User ID'
+      'Enter employee ID to allocate an available asset:',
+      'Employee ID (e.g., EMP001)'
     );
     
-    if (!userIdStr) return;
-    
-    const userId = Number(userIdStr);
-    if (isNaN(userId)) {
-      this.toastService.error('Invalid user ID');
-      return;
-    }
+    if (!employeeId || !employeeId.trim()) return;
     
     const remarks = `Quick allocated from group ${this.groupName}`;
-    this.assetService.allocateFromGroup(this.groupName, userId, remarks).subscribe({
+    this.assetService.allocateFromGroupByEmployeeId(this.groupName, employeeId.trim(), remarks).subscribe({
       next: () => {
         this.toastService.success('Asset allocated successfully');
         this.loadGroupData();
@@ -707,10 +723,6 @@ export class AssetsByGroupComponent implements OnInit {
         this.toastService.error(error.error?.message || 'Failed to allocate asset');
       }
     });
-  }
-
-  bulkUpdateStatus() {
-    this.toastService.info('Bulk update feature coming soon');
   }
 
   getUserAssetCount(userId: number): number {
@@ -729,21 +741,15 @@ export class AssetsByGroupComponent implements OnInit {
   }
 
   async allocateAsset(asset: Asset) {
-    const userIdStr = await this.inputModalService.promptNumber(
+    const employeeId = await this.inputModalService.promptText(
       'Allocate Asset',
-      'Enter user ID to allocate this asset:',
-      'User ID'
+      'Enter employee ID to allocate this asset:',
+      'Employee ID (e.g., EMP001)'
     );
     
-    if (!userIdStr) return;
+    if (!employeeId || !employeeId.trim()) return;
     
-    const userId = Number(userIdStr);
-    if (isNaN(userId)) {
-      this.toastService.error('Invalid user ID');
-      return;
-    }
-    
-    this.assetService.allocateAsset(asset.id, userId).subscribe({
+    this.assetService.allocateAssetByEmployeeId(asset.id, employeeId.trim()).subscribe({
       next: () => {
         this.toastService.success('Asset allocated successfully');
         this.loadGroupData();
@@ -752,13 +758,21 @@ export class AssetsByGroupComponent implements OnInit {
     });
   }
 
-  returnAsset(asset: Asset) {
-    this.assetService.returnAsset(asset.id).subscribe({
+  async returnAsset(asset: Asset) {
+    const remarks = await this.inputModalService.promptTextarea(
+      'Request Asset Return',
+      'Please provide a reason for returning this asset:',
+      'Enter return reason...'
+    );
+    
+    if (!remarks || !remarks.trim()) return;
+    
+    this.assetService.requestAssetReturn(asset.id, remarks.trim()).subscribe({
       next: () => {
-        this.toastService.success('Asset returned successfully');
+        this.toastService.success('Asset return request sent successfully');
         this.loadGroupData();
       },
-      error: () => this.toastService.error('Failed to return asset')
+      error: () => this.toastService.error('Failed to send return request')
     });
   }
 }
