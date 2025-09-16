@@ -17,7 +17,16 @@ import { ToastService } from '../../shared/components/toast/toast.service';
     <div class="page-container">
       <div class="page-header">
         <div>
+          <h1 class="page-title">My Assets</h1>
           <p class="page-description">Assets allocated to you</p>
+        </div>
+        <div class="header-actions">
+          <button class="btn btn-outline" (click)="refreshAssets()">
+            🔄 Refresh
+          </button>
+          <button class="btn btn-primary" (click)="requestAsset()">
+            + Request Asset
+          </button>
         </div>
       </div>
 
@@ -39,14 +48,15 @@ import { ToastService } from '../../shared/components/toast/toast.service';
                 <h3 class="asset-name">{{ asset.name }}</h3>
                 <span class="asset-tag">{{ asset.assetTag }}</span>
               </div>
-
+              <div class="asset-badges">
+                <span class="badge badge-category">{{ asset.category }}</span>
+                <span class="badge badge-expired" *ngIf="asset.warrantyExpiryDate && isWarrantyExpired(asset.warrantyExpiryDate)">
+                  Expired
+                </span>
+              </div>
             </div>
             
             <div class="asset-details">
-              <div class="detail-item">
-                <span class="detail-label">Category</span>
-                <span class="detail-value">{{ asset.category }}</span>
-              </div>
               <div class="detail-item">
                 <span class="detail-label">Type</span>
                 <span class="detail-value">{{ asset.type }}</span>
@@ -56,7 +66,7 @@ import { ToastService } from '../../shared/components/toast/toast.service';
                 <span class="detail-value">{{ asset.model }}</span>
               </div>
               <div class="detail-item" *ngIf="asset.warrantyExpiryDate">
-                <span class="detail-label">Warranty</span>
+                <span class="detail-label">Warranty Expires</span>
                 <span class="detail-value" [class.expired]="isWarrantyExpired(asset.warrantyExpiryDate)">{{ formatDate(asset.warrantyExpiryDate) }}</span>
               </div>
             </div>
@@ -99,8 +109,84 @@ import { ToastService } from '../../shared/components/toast/toast.service';
     </div>
   `,
   styles: [`
+    .page-container {
+      max-width: var(--container-xl);
+      margin: 0 auto;
+      padding: var(--space-6);
+      min-height: 100vh;
+      box-sizing: border-box;
+    }
     .page-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: flex-start;
       margin-bottom: var(--space-6);
+      padding: var(--space-6);
+      background: white;
+      border-radius: var(--radius-xl);
+      box-shadow: var(--shadow-sm);
+      border: 1px solid var(--gray-200);
+      gap: var(--space-4);
+    }
+    .page-title {
+      font-size: var(--text-2xl);
+      font-weight: var(--font-bold);
+      color: var(--gray-900);
+      margin: 0 0 var(--space-1) 0;
+      line-height: var(--leading-tight);
+    }
+    .page-description {
+      color: var(--gray-600);
+      margin: 0;
+      font-size: var(--text-sm);
+      line-height: var(--leading-relaxed);
+    }
+    .header-actions {
+      display: flex;
+      gap: var(--space-3);
+      align-items: center;
+      flex-shrink: 0;
+    }
+    .btn {
+      padding: var(--space-3) var(--space-4);
+      border-radius: var(--radius-md);
+      font-weight: var(--font-medium);
+      font-size: var(--text-sm);
+      cursor: pointer;
+      transition: var(--transition-all);
+      border: 1px solid transparent;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      gap: var(--space-2);
+      white-space: nowrap;
+      font-family: inherit;
+      line-height: var(--leading-tight);
+    }
+    .btn-primary {
+      background: var(--primary-600);
+      color: white;
+      border-color: var(--primary-600);
+      box-shadow: var(--shadow-xs);
+    }
+    .btn-primary:hover {
+      background: var(--primary-700);
+      border-color: var(--primary-700);
+      transform: translateY(-1px);
+      box-shadow: var(--shadow-sm);
+    }
+    .btn-outline {
+      background: white;
+      color: var(--gray-700);
+      border-color: var(--gray-300);
+      box-shadow: var(--shadow-xs);
+    }
+    .btn-outline:hover {
+      background: var(--gray-50);
+      border-color: var(--gray-400);
+      color: var(--gray-900);
+      transform: translateY(-1px);
+      box-shadow: var(--shadow-sm);
     }
 
     .search-section {
@@ -167,6 +253,39 @@ import { ToastService } from '../../shared/components/toast/toast.service';
       justify-content: space-between;
       align-items: flex-start;
       margin-bottom: 1rem;
+    }
+    .asset-badges {
+      display: flex;
+      flex-direction: column;
+      gap: 0.5rem;
+      align-items: flex-end;
+    }
+    .badge {
+      display: inline-flex;
+      align-items: center;
+      padding: 0.25rem 0.75rem;
+      border-radius: var(--radius-full);
+      font-size: 0.75rem;
+      font-weight: 500;
+      text-transform: uppercase;
+      letter-spacing: 0.025em;
+      border: 1px solid transparent;
+      white-space: nowrap;
+    }
+    .badge-category {
+      background: var(--primary-100);
+      color: var(--primary-700);
+      border-color: var(--primary-200);
+    }
+    .badge-warranty {
+      background: var(--success-100);
+      color: var(--success-700);
+      border-color: var(--success-200);
+    }
+    .badge-expired {
+      background: var(--error-100);
+      color: var(--error-700);
+      border-color: var(--error-200);
     }
 
     .asset-name {
@@ -272,12 +391,12 @@ import { ToastService } from '../../shared/components/toast/toast.service';
     }
 
     .action-btn.warning {
-      background: var(--warning-600);
+      background: var(--error-600);
       color: white;
     }
 
     .action-btn.warning:hover {
-      background: var(--warning-700);
+      background: var(--error-700);
       transform: translateY(-1px);
     }
 
@@ -315,6 +434,23 @@ import { ToastService } from '../../shared/components/toast/toast.service';
     }
 
     @media (max-width: 768px) {
+      .page-container {
+        padding: var(--space-3);
+      }
+      .page-header {
+        flex-direction: column;
+        gap: var(--space-4);
+        align-items: stretch;
+        padding: var(--space-4);
+      }
+      .header-actions {
+        justify-content: stretch;
+        flex-wrap: wrap;
+      }
+      .header-actions .btn {
+        flex: 1;
+        min-width: 0;
+      }
       .assets-grid {
         grid-template-columns: 1fr;
       }
@@ -427,6 +563,14 @@ export class UserAssetsPageComponent implements OnInit {
 
   isWarrantyExpired(warrantyDate: string): boolean {
     return new Date(warrantyDate) < new Date();
+  }
+
+  refreshAssets() {
+    this.loadMyAssets();
+  }
+
+  requestAsset() {
+    this.router.navigate(['/requests/new']);
   }
 
 }

@@ -12,6 +12,8 @@ public interface AssetRequestRepository extends JpaRepository<AssetRequest, Long
     Page<AssetRequest> findByRequestedById(Long requesterId, Pageable pageable);
     
     // Dashboard specific queries
+    Long countByRequestedById(Long userId);
+    
     Long countByRequestedByIdAndStatus(Long userId, AssetRequest.Status status);
     
     Long countByStatus(AssetRequest.Status status);

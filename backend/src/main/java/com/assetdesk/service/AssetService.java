@@ -35,4 +35,5 @@ public interface AssetService {
     Page<AssetResponseDTO> getExpiredWarranties(Pageable pageable);
     Page<AssetResponseDTO> getValidWarranties(Pageable pageable);
     long getFilteredCount(String category, String type, String status, String dateFrom, String dateTo, String costMin, String costMax);
+    AssetResponseDTO retireAsset(Long id, String remarks);
 }

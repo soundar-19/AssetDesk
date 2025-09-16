@@ -10,18 +10,62 @@ export class ConfirmDialogService {
   constructor(private dialog: MatDialog) {}
 
   confirm(title: string, message: string): Observable<boolean> {
-    return new Observable(observer => {
-      const result = window.confirm(`${title}\n\n${message}`);
-      observer.next(result);
-      observer.complete();
+    const dialogRef = this.dialog.open(ConfirmDialogComponent, {
+      width: '420px',
+      maxWidth: '90vw',
+      disableClose: false,
+      hasBackdrop: true,
+      backdropClass: 'confirm-dialog-backdrop',
+      panelClass: 'confirm-dialog-panel',
+      data: { 
+        title, 
+        message,
+        type: 'info',
+        confirmText: 'Confirm',
+        cancelText: 'Cancel'
+      }
     });
+    
+    return dialogRef.afterClosed();
   }
 
   confirmDelete(itemName: string = 'item'): Observable<boolean> {
-    return this.confirm('Confirm Delete', `Are you sure you want to delete this ${itemName}? This action cannot be undone.`);
+    const dialogRef = this.dialog.open(ConfirmDialogComponent, {
+      width: '420px',
+      maxWidth: '90vw',
+      disableClose: false,
+      hasBackdrop: true,
+      backdropClass: 'confirm-dialog-backdrop',
+      panelClass: 'confirm-dialog-panel',
+      data: { 
+        title: 'Confirm Delete', 
+        message: `Are you sure you want to delete this ${itemName}? This action cannot be undone.`,
+        type: 'danger',
+        confirmText: 'Delete',
+        cancelText: 'Cancel'
+      }
+    });
+    
+    return dialogRef.afterClosed();
   }
 
   confirmAction(title: string, message: string, confirmText: string = 'Confirm'): Observable<boolean> {
-    return this.confirm(title, message);
+    const dialogRef = this.dialog.open(ConfirmDialogComponent, {
+      width: '420px',
+      maxWidth: '90vw',
+      disableClose: false,
+      hasBackdrop: true,
+      backdropClass: 'confirm-dialog-backdrop',
+      panelClass: 'confirm-dialog-panel',
+      data: { 
+        title, 
+        message,
+        type: 'warning',
+        confirmText,
+        cancelText: 'Cancel'
+      }
+    });
+    
+    return dialogRef.afterClosed();
   }
 }

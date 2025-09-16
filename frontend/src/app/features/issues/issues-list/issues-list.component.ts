@@ -45,29 +45,58 @@ export class IssuesListComponent implements OnInit {
   actions: TableAction[] = [
     {
       label: 'Start Work',
-      icon: '🔧',
       action: (issue) => this.startWork(issue.id),
       condition: (issue) => issue.status === 'OPEN' && (this.isITSupport() || this.authService.getCurrentUser()?.role === 'ADMIN')
     },
     {
       label: 'Resolve',
-      icon: '✅',
       action: (issue) => this.resolveIssue(issue),
       condition: (issue) => issue.status === 'IN_PROGRESS' && (this.isITSupport() || this.isAdmin()) && this.isAssignedToMe(issue)
     },
     {
       label: 'Close',
-      icon: '🔒',
       action: (issue) => this.closeIssue(issue.id),
       condition: (issue) => issue.status === 'RESOLVED' && (this.isIssueReporter(issue) || this.isITSupport())
-    },
-    {
-      label: 'Delete',
-      icon: '🗑',
-      action: (issue) => this.deleteIssue(issue.id),
-      condition: (issue) => this.canDeleteIssue(issue)
     }
   ];
+
+  getPrimaryAction(issue: any): TableAction | null {
+    // Return the single most appropriate action based on issue status
+    if (issue.status === 'OPEN' && (this.isITSupport() || this.authService.getCurrentUser()?.role === 'ADMIN')) {
+      return this.actions.find(action => action.label === 'Start Work') || null;
+    }
+    if (issue.status === 'IN_PROGRESS' && (this.isITSupport() || this.isAdmin()) && this.isAssignedToMe(issue)) {
+      return this.actions.find(action => action.label === 'Resolve') || null;
+    }
+    if (issue.status === 'RESOLVED' && (this.isIssueReporter(issue) || this.isITSupport())) {
+      return this.actions.find(action => action.label === 'Close') || null;
+    }
+    // Fallback to View for closed issues or when no other action is available
+    return {
+      label: 'View',
+      action: (issue) => this.viewIssue(issue)
+    };
+  }
+
+  getActionsForTable(): TableAction[] {
+    return [{
+      label: (issue) => {
+        const primaryAction = this.getPrimaryAction(issue);
+        return primaryAction ? (typeof primaryAction.label === 'string' ? primaryAction.label : primaryAction.label(issue)) : 'No Action';
+      },
+      icon: (issue) => {
+        const primaryAction = this.getPrimaryAction(issue);
+        return (typeof primaryAction?.icon === 'string' ? primaryAction.icon : primaryAction?.icon?.(issue)) || '';
+      },
+      action: (issue) => {
+        const primaryAction = this.getPrimaryAction(issue);
+        if (primaryAction) {
+          primaryAction.action(issue);
+        }
+      },
+      condition: () => true
+    }];
+  }
 
   constructor(
     private issueService: IssueService,

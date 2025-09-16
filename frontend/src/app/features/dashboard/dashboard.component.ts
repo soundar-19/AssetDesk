@@ -74,7 +74,8 @@ export class DashboardComponent implements OnInit {
   }
 
   getUtilizationRate(): number {
-    return Math.round(this.dashboardStats.assetUtilizationRate || 0);
+    const rate = this.dashboardStats.assetUtilizationRate || 0;
+    return Math.max(0, Math.round(rate));
   }
 
   getTotalAssets(): number {
@@ -94,8 +95,8 @@ export class DashboardComponent implements OnInit {
     return Object.entries(this.dashboardStats.assetsByDepartment).map(([name, assetCount]) => ({
       name,
       assetCount,
-      userCount: Math.round(assetCount * 0.8),
-      utilization: Math.round(75 + Math.random() * 20)
+      userCount: assetCount,
+      utilization: this.getUtilizationRate()
     }));
   }
 
@@ -140,11 +141,17 @@ export class DashboardComponent implements OnInit {
       if (values.length >= 2) {
         const current = values[values.length - 1];
         const previous = values[values.length - 2];
-        const change = previous > 0 ? ((current - previous) / previous * 100) : 0;
+        if (previous === 0 && current === 0) {
+          return 'No change';
+        }
+        if (previous === 0) {
+          return current > 0 ? `+${current} new assets` : 'No change';
+        }
+        const change = ((current - previous) / previous * 100);
         return `${change >= 0 ? '+' : ''}${change.toFixed(1)}% this month`;
       }
     }
-    return '+5% this month';
+    return 'No data';
   }
 
   getIssueTrend(): string {
@@ -153,11 +160,17 @@ export class DashboardComponent implements OnInit {
       if (values.length >= 2) {
         const current = values[values.length - 1];
         const previous = values[values.length - 2];
-        const change = previous > 0 ? ((current - previous) / previous * 100) : 0;
+        if (previous === 0 && current === 0) {
+          return 'No change';
+        }
+        if (previous === 0) {
+          return current > 0 ? `+${current} new issues` : 'No change';
+        }
+        const change = ((current - previous) / previous * 100);
         return `${change >= 0 ? '+' : ''}${change.toFixed(1)}% this month`;
       }
     }
-    return '-8% this month';
+    return 'No data';
   }
 
   getRequestTrend(): string {
@@ -166,11 +179,17 @@ export class DashboardComponent implements OnInit {
       if (values.length >= 2) {
         const current = values[values.length - 1];
         const previous = values[values.length - 2];
-        const change = previous > 0 ? ((current - previous) / previous * 100) : 0;
+        if (previous === 0 && current === 0) {
+          return 'No change';
+        }
+        if (previous === 0) {
+          return current > 0 ? `+${current} new requests` : 'No change';
+        }
+        const change = ((current - previous) / previous * 100);
         return `${change >= 0 ? '+' : ''}${change.toFixed(1)}% this month`;
       }
     }
-    return '+12% this month';
+    return 'No data';
   }
 
   getRequestsByStatusArray() {
@@ -204,7 +223,7 @@ export class DashboardComponent implements OnInit {
   }
 
   getActiveUsers(): number {
-    return Math.round((this.dashboardStats.totalUsers || 0) * 0.8);
+    return this.dashboardStats.totalUsers || 0;
   }
 
   navigateToRequests() {

@@ -45,11 +45,12 @@
       <app-data-table
         [data]="issues"
         [columns]="columns"
-        [actions]="actions"
+        [actions]="getActionsForTable()"
         [pagination]="pagination"
         [sortColumn]="sortColumn"
         [sortDirection]="sortDirection"
         [rowClickAction]="true"
+        [singleActionButton]="true"
         (rowClick)="viewIssue($event)"
         (pageChange)="onPageChange($event)"
         (sort)="onSort($event)">

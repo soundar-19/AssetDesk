@@ -1,12 +1,12 @@
 <div class="page-container">
   <!-- Header -->
-  <div class="page-header">
-    <div class="header-content">
-      <div class="header-title-section">
-        <h1 class="page-title">Service Records Management</h1>
-        <p class="page-description">Comprehensive maintenance tracking and cost analysis</p>
+  <div class="service-records-page-header">
+    <div class="service-records-header-content">
+      <div class="service-records-header-title-section">
+        <h1 class="service-records-page-title">Service Records Management</h1>
+        <p class="service-records-page-description">Comprehensive maintenance tracking and cost analysis</p>
       </div>
-      <div class="header-actions">
+      <div class="service-records-header-actions">
         <button class="btn btn-outline" (click)="exportRecords()" title="Export service records">
           📊 Export
         </button>
@@ -172,16 +172,16 @@
           <h3 class="chart-title">Quick Actions</h3>
           <div class="quick-actions">
             <button class="action-btn primary" (click)="createRecord()" title="Create new service record">
-              📝 New Service Record
+              New Service Record
             </button>
             <button class="action-btn info" (click)="exportRecords()" title="Export data to CSV">
-              📊 Export CSV
+              Export CSV
             </button>
             <button class="action-btn secondary" (click)="generateMaintenanceReport()" title="Generate maintenance report">
-              📋 Generate Report
+              Generate Report
             </button>
             <button class="action-btn info" (click)="setViewMode('assets')" title="View asset analysis">
-              📦 Asset Analysis
+              Asset Analysis
             </button>
           </div>
         </section>

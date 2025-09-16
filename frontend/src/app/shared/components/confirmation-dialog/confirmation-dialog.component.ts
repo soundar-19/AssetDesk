@@ -43,8 +43,9 @@ import { CommonModule } from '@angular/common';
     
     .dialog-content {
       background: white;
-      border-radius: 0.5rem;
-      box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1);
+      border-radius: 0.75rem;
+      box-shadow: 0 35px 70px -15px rgba(0, 0, 0, 0.4), 0 10px 25px -5px rgba(0, 0, 0, 0.2), inset 0 1px 0 rgba(255, 255, 255, 0.1);
+      border: 3px solid rgba(59, 130, 246, 0.2);
       width: 90%;
       max-width: 400px;
       overflow: hidden;

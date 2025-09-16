@@ -6,6 +6,7 @@ import com.assetdesk.service.VendorService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
 
 import jakarta.validation.Valid;
@@ -23,6 +24,7 @@ public class VendorController {
     private final VendorService vendorService;
     
     @PostMapping
+    @PreAuthorize("hasRole('ADMIN')")
     public ResponseEntity<VendorResponseDTO> createVendor(@Valid @RequestBody VendorRequestDTO vendorRequestDTO) {
         VendorResponseDTO createdVendor = vendorService.createVendor(vendorRequestDTO);
         return new ResponseEntity<>(createdVendor, HttpStatus.CREATED);
@@ -98,12 +100,14 @@ public class VendorController {
     }
     
     @PutMapping("/{id}")
+    @PreAuthorize("hasRole('ADMIN')")
     public ResponseEntity<VendorResponseDTO> updateVendor(@PathVariable Long id, @Valid @RequestBody VendorRequestDTO vendorRequestDTO) {
         VendorResponseDTO updatedVendor = vendorService.updateVendor(id, vendorRequestDTO);
         return ResponseEntity.ok(updatedVendor);
     }
     
     @DeleteMapping("/{id}")
+    @PreAuthorize("hasRole('ADMIN')")
     public ResponseEntity<Void> deleteVendor(@PathVariable Long id) {
         vendorService.deleteVendor(id);
         return ResponseEntity.noContent().build();

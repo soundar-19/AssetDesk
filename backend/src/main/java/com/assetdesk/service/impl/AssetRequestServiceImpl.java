@@ -18,6 +18,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.time.LocalDateTime;
+import java.util.List;
 
 @Service
 @RequiredArgsConstructor
@@ -28,6 +29,7 @@ public class AssetRequestServiceImpl implements AssetRequestService {
     private final UserRepository userRepository;
     private final AssetRepository assetRepository;
     private final AssetAllocationService assetAllocationService;
+    private final com.assetdesk.service.NotificationService notificationService;
 
     @Override
     public AssetRequestResponseDTO createRequest(Long requesterId, AssetRequestCreateDTO dto) {
@@ -50,7 +52,24 @@ public class AssetRequestServiceImpl implements AssetRequestService {
         ar.setStatus(AssetRequest.Status.PENDING);
         ar.setRequestedDate(LocalDateTime.now());
 
-        return AssetRequestResponseDTO.fromEntity(assetRequestRepository.save(ar));
+        AssetRequest savedRequest = assetRequestRepository.save(ar);
+        
+        // Create notification for new request to admins
+        try {
+            List<com.assetdesk.domain.User> admins = userRepository.findByRole(com.assetdesk.domain.User.Role.ADMIN);
+            for (com.assetdesk.domain.User admin : admins) {
+                notificationService.createNotification(
+                    admin.getId(),
+                    "New Asset Request",
+                    "New asset request for '" + ar.getAssetName() + "' submitted by " + requester.getName(),
+                    com.assetdesk.domain.Notification.Type.INFO
+                );
+            }
+        } catch (Exception e) {
+            System.out.println("Failed to create request notification: " + e.getMessage());
+        }
+        
+        return AssetRequestResponseDTO.fromEntity(savedRequest);
     }
 
     @Override
@@ -107,7 +126,21 @@ public class AssetRequestServiceImpl implements AssetRequestService {
         ar.setApprovedBy(approver);
         ar.setApprovedDate(LocalDateTime.now());
         ar.setRemarks(remarks);
-        return AssetRequestResponseDTO.fromEntity(assetRequestRepository.save(ar));
+        AssetRequest savedRequest = assetRequestRepository.save(ar);
+        
+        // Create notification for approval
+        try {
+            notificationService.createNotification(
+                ar.getRequestedBy().getId(),
+                "Request Approved",
+                "Your asset request for '" + ar.getAssetName() + "' has been approved",
+                com.assetdesk.domain.Notification.Type.SUCCESS
+            );
+        } catch (Exception e) {
+            System.out.println("Failed to create approval notification: " + e.getMessage());
+        }
+        
+        return AssetRequestResponseDTO.fromEntity(savedRequest);
     }
 
     @Override
@@ -120,7 +153,21 @@ public class AssetRequestServiceImpl implements AssetRequestService {
         ar.setRejectedBy(approver);
         ar.setRejectedDate(LocalDateTime.now());
         ar.setRejectionReason(remarks);
-        return AssetRequestResponseDTO.fromEntity(assetRequestRepository.save(ar));
+        AssetRequest savedRequest = assetRequestRepository.save(ar);
+        
+        // Create notification for rejection
+        try {
+            notificationService.createNotification(
+                ar.getRequestedBy().getId(),
+                "Request Rejected",
+                "Your asset request for '" + ar.getAssetName() + "' has been rejected. Reason: " + remarks,
+                com.assetdesk.domain.Notification.Type.WARNING
+            );
+        } catch (Exception e) {
+            System.out.println("Failed to create rejection notification: " + e.getMessage());
+        }
+        
+        return AssetRequestResponseDTO.fromEntity(savedRequest);
     }
 
     @Override
@@ -151,6 +198,22 @@ public class AssetRequestServiceImpl implements AssetRequestService {
         ar.setAllocatedAsset(asset);
         ar.setRemarks(remarks);
         
-        return AssetRequestResponseDTO.fromEntity(assetRequestRepository.save(ar));
+        AssetRequest savedRequest = assetRequestRepository.save(ar);
+        
+        // Create notification for fulfillment
+        try {
+            notificationService.createNotification(
+                ar.getRequestedBy().getId(),
+                "Request Fulfilled",
+                "Your asset request for '" + ar.getAssetName() + "' has been fulfilled with asset: " + asset.getName(),
+                com.assetdesk.domain.Notification.Type.SUCCESS,
+                null,
+                asset.getId()
+            );
+        } catch (Exception e) {
+            System.out.println("Failed to create fulfillment notification: " + e.getMessage());
+        }
+        
+        return AssetRequestResponseDTO.fromEntity(savedRequest);
     }
 }

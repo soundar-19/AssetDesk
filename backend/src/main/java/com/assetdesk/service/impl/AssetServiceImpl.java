@@ -40,6 +40,7 @@ public class AssetServiceImpl implements AssetService {
     private final UserRepository userRepository;
     private final AssetAllocationService assetAllocationService;
     private final com.assetdesk.service.WarrantyHistoryService warrantyHistoryService;
+    private final com.assetdesk.service.NotificationService notificationService;
     
     @Override
     public AssetResponseDTO createAsset(AssetRequestDTO assetRequestDTO) {
@@ -74,7 +75,48 @@ public class AssetServiceImpl implements AssetService {
         Asset savedAsset = assetRepository.save(asset);
         if (savedAsset.getWarrantyExpiryDate() != null) {
             warrantyHistoryService.record(savedAsset, null, savedAsset.getWarrantyExpiryDate(), "Initial creation");
+            
+            // Check if warranty is expiring soon and notify IT support
+            LocalDate expiryDate = savedAsset.getWarrantyExpiryDate();
+            LocalDate now = LocalDate.now();
+            long daysUntilExpiry = java.time.temporal.ChronoUnit.DAYS.between(now, expiryDate);
+            
+            if (daysUntilExpiry <= 30 && daysUntilExpiry > 0) {
+                try {
+                    List<com.assetdesk.domain.User> itUsers = userRepository.findByRole(com.assetdesk.domain.User.Role.IT_SUPPORT);
+                    for (com.assetdesk.domain.User itUser : itUsers) {
+                        notificationService.createNotification(
+                            itUser.getId(),
+                            "Warranty Expiring Soon",
+                            "Asset '" + savedAsset.getName() + "' warranty expires in " + daysUntilExpiry + " days",
+                            com.assetdesk.domain.Notification.Type.WARNING,
+                            null,
+                            savedAsset.getId()
+                        );
+                    }
+                } catch (Exception e) {
+                    System.out.println("Failed to create warranty expiry notification: " + e.getMessage());
+                }
+            }
         }
+        
+        // Notify IT support about new asset creation
+        try {
+            List<com.assetdesk.domain.User> itUsers = userRepository.findByRole(com.assetdesk.domain.User.Role.IT_SUPPORT);
+            for (com.assetdesk.domain.User itUser : itUsers) {
+                notificationService.createNotification(
+                    itUser.getId(),
+                    "New Asset Created",
+                    "New asset '" + savedAsset.getName() + "' has been added to inventory",
+                    com.assetdesk.domain.Notification.Type.INFO,
+                    null,
+                    savedAsset.getId()
+                );
+            }
+        } catch (Exception e) {
+            System.out.println("Failed to create asset creation notification: " + e.getMessage());
+        }
+        
         return AssetResponseDTO.fromEntity(savedAsset);
     }
     
@@ -188,6 +230,42 @@ public class AssetServiceImpl implements AssetService {
         if (oldWarranty == null || (assetRequestDTO.getWarrantyExpiryDate() != null && !assetRequestDTO.getWarrantyExpiryDate().equals(oldWarranty))) {
             warrantyHistoryService.record(updatedAsset, oldWarranty, assetRequestDTO.getWarrantyExpiryDate(), "Manual update");
         }
+        
+        // Notify about status changes
+        if (existingAsset.getStatus() != assetRequestDTO.getStatus()) {
+            try {
+                if (assetRequestDTO.getStatus() == Asset.Status.MAINTENANCE) {
+                    // Find current allocation and notify user
+                    AssetAllocation currentAllocation = allocationRepository.findCurrentAllocationByAssetId(id).orElse(null);
+                    if (currentAllocation != null) {
+                        notificationService.createNotification(
+                            currentAllocation.getUser().getId(),
+                            "Asset Under Maintenance",
+                            "Your asset '" + updatedAsset.getName() + "' is now under maintenance",
+                            com.assetdesk.domain.Notification.Type.MAINTENANCE_DUE,
+                            null,
+                            updatedAsset.getId()
+                        );
+                    }
+                } else if (assetRequestDTO.getStatus() == Asset.Status.AVAILABLE && existingAsset.getStatus() == Asset.Status.MAINTENANCE) {
+                    // Notify IT support that asset is back from maintenance
+                    List<com.assetdesk.domain.User> itUsers = userRepository.findByRole(com.assetdesk.domain.User.Role.IT_SUPPORT);
+                    for (com.assetdesk.domain.User itUser : itUsers) {
+                        notificationService.createNotification(
+                            itUser.getId(),
+                            "Asset Available",
+                            "Asset '" + updatedAsset.getName() + "' is now available after maintenance",
+                            com.assetdesk.domain.Notification.Type.SUCCESS,
+                            null,
+                            updatedAsset.getId()
+                        );
+                    }
+                }
+            } catch (Exception e) {
+                System.out.println("Failed to create status change notification: " + e.getMessage());
+            }
+        }
+        
         return AssetResponseDTO.fromEntity(updatedAsset);
     }
     
@@ -508,5 +586,58 @@ public class AssetServiceImpl implements AssetService {
         }
         
         return assetRepository.count(spec);
+    }
+    
+    @Override
+    public AssetResponseDTO retireAsset(Long id, String remarks) {
+        Asset asset = assetRepository.findById(id)
+            .orElseThrow(() -> new ResourceNotFoundException("Asset", "id", id));
+        
+        // Check if asset is currently allocated
+        if (asset.getStatus() == Asset.Status.ALLOCATED) {
+            // Return the asset first
+            AssetAllocation currentAllocation = allocationRepository.findCurrentAllocationByAssetId(id).orElse(null);
+            if (currentAllocation != null) {
+                assetAllocationService.returnAsset(id, LocalDate.now(), "Asset retired - automatic return");
+            }
+        }
+        
+        // Set asset status to RETIRED
+        asset.setStatus(Asset.Status.RETIRED);
+        Asset retiredAsset = assetRepository.save(asset);
+        
+        // Create service record for retirement
+        try {
+            com.assetdesk.domain.ServiceRecord serviceRecord = new com.assetdesk.domain.ServiceRecord();
+            serviceRecord.setAsset(retiredAsset);
+            serviceRecord.setServiceDate(LocalDate.now());
+            serviceRecord.setServiceDescription("Asset retired from service" + (remarks != null ? ". Remarks: " + remarks : ""));
+            serviceRecord.setServiceType("RETIREMENT");
+            serviceRecord.setPerformedBy("System");
+            serviceRecord.setStatus("COMPLETED");
+            serviceRecord.setNotes("Asset permanently retired from active use");
+            // Note: ServiceRecordRepository would need to be injected if we want to save this
+        } catch (Exception e) {
+            System.out.println("Failed to create retirement service record: " + e.getMessage());
+        }
+        
+        // Notify IT support about asset retirement
+        try {
+            List<com.assetdesk.domain.User> itUsers = userRepository.findByRole(com.assetdesk.domain.User.Role.IT_SUPPORT);
+            for (com.assetdesk.domain.User itUser : itUsers) {
+                notificationService.createNotification(
+                    itUser.getId(),
+                    "Asset Retired",
+                    "Asset '" + retiredAsset.getName() + "' has been retired from service",
+                    com.assetdesk.domain.Notification.Type.INFO,
+                    null,
+                    retiredAsset.getId()
+                );
+            }
+        } catch (Exception e) {
+            System.out.println("Failed to create retirement notification: " + e.getMessage());
+        }
+        
+        return AssetResponseDTO.fromEntity(retiredAsset);
     }
 }

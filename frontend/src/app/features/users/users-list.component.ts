@@ -117,27 +117,39 @@ import { InputModalService } from '../../shared/components/input-modal/input-mod
     }
 
     .page-header-pro {
+      background: white;
+      border-radius: var(--radius-xl);
+      padding: var(--space-6);
       margin-bottom: var(--space-6);
+      box-shadow: var(--shadow-sm);
+      border: 1px solid var(--gray-200);
     }
 
     .header-content {
       display: flex;
       justify-content: space-between;
-      align-items: center;
+      align-items: flex-start;
       gap: var(--space-4);
     }
 
+    .title-section {
+      display: flex;
+      flex-direction: column;
+    }
+
     .title-section h1 {
-      font-size: var(--text-xl);
-      font-weight: var(--font-semibold);
+      font-size: var(--text-2xl);
+      font-weight: var(--font-bold);
       color: var(--gray-900);
-      margin: 0 0 var(--space-1) 0;
+      margin: 0 0 var(--space-1-5) 0;
+      line-height: var(--leading-tight);
     }
 
     .title-section p {
       color: var(--gray-600);
-      font-size: var(--text-sm);
+      font-size: var(--text-base);
       margin: 0;
+      line-height: 1.5;
     }
 
     .header-actions .btn-pro {

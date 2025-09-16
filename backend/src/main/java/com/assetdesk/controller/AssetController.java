@@ -33,6 +33,7 @@ public class AssetController {
     private final DepreciationService depreciationService;
     
     @PostMapping
+    @PreAuthorize("hasRole('ADMIN')")
     public ResponseEntity<AssetResponseDTO> createAsset(@Valid @RequestBody AssetRequestDTO assetRequestDTO) {
         AssetResponseDTO createdAsset = assetService.createAsset(assetRequestDTO);
         return new ResponseEntity<>(createdAsset, HttpStatus.CREATED);
@@ -137,12 +138,14 @@ public class AssetController {
     }
     
     @PutMapping("/{id}")
+    @PreAuthorize("hasRole('ADMIN')")
     public ResponseEntity<AssetResponseDTO> updateAsset(@PathVariable Long id, @Valid @RequestBody AssetRequestDTO assetRequestDTO) {
         AssetResponseDTO updatedAsset = assetService.updateAsset(id, assetRequestDTO);
         return ResponseEntity.ok(updatedAsset);
     }
     
     @DeleteMapping("/{id}")
+    @PreAuthorize("hasRole('ADMIN')")
     public ResponseEntity<Void> deleteAsset(@PathVariable Long id) {
         assetService.deleteAsset(id);
         return ResponseEntity.noContent().build();
@@ -301,5 +304,12 @@ public class AssetController {
         
         long count = assetService.getFilteredCount(category, type, status, dateFrom, dateTo, costMin, costMax);
         return ResponseEntity.ok(count);
+    }
+    
+    @PostMapping("/{id}/retire")
+    @PreAuthorize("hasRole('ADMIN') or hasRole('IT_SUPPORT')")
+    public ResponseEntity<AssetResponseDTO> retireAsset(@PathVariable Long id, @RequestParam(required = false) String remarks) {
+        AssetResponseDTO retiredAsset = assetService.retireAsset(id, remarks);
+        return ResponseEntity.ok(retiredAsset);
     }
 }

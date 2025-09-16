@@ -53,26 +53,81 @@ public class DashboardServiceImpl implements DashboardService {
     }
 
     private DashboardStatsDTO getEmployeeDashboard(User user) {
-        return DashboardStatsDTO.builder()
-                .myAssets(allocationRepository.countCurrentAllocationsByUserId(user.getId()))
-                .myIssues(issueRepository.countByReportedById(user.getId()))
-                .pendingRequests(requestRepository.countByRequestedByIdAndStatus(user.getId(), AssetRequest.Status.PENDING))
-                .assetsByCategory(getMyAssetsByCategory(user.getId()))
-                .issuesByStatus(getMyIssuesByStatus(user.getId()))
-                .recentActivities(getMyRecentActivities(user.getId()))
-                .upcomingWarranties(getMyUpcomingWarranties(user.getId()))
-                .topIssues(getMyTopIssues(user.getId()))
-                .build();
+        System.out.println("Building employee dashboard for user: " + user.getId());
+        
+        try {
+            System.out.println("Querying data for user ID: " + user.getId() + ", Email: " + user.getEmail());
+            
+            // Check if user has any allocations at all
+            List<com.assetdesk.domain.AssetAllocation> allAllocations = allocationRepository.findByUserId(user.getId());
+            System.out.println("Total allocations for user (all time): " + allAllocations.size());
+            
+            List<com.assetdesk.domain.AssetAllocation> currentAllocations = allocationRepository.findCurrentAllocationsByUserId(user.getId());
+            System.out.println("Current allocations for user: " + currentAllocations.size());
+            
+            Long myAssets = allocationRepository.countCurrentAllocationsByUserId(user.getId());
+            Long myIssues = issueRepository.countByReportedById(user.getId());
+            Long myRequests = requestRepository.countByRequestedById(user.getId());
+            Long pendingRequests = requestRepository.countByRequestedByIdAndStatus(user.getId(), AssetRequest.Status.PENDING);
+            
+            System.out.println("Raw query results - Assets: " + myAssets + ", Issues: " + myIssues + ", Requests: " + myRequests + ", Pending: " + pendingRequests);
+            
+            // Ensure non-null values
+            myAssets = myAssets != null ? myAssets : 0L;
+            myIssues = myIssues != null ? myIssues : 0L;
+            myRequests = myRequests != null ? myRequests : 0L;
+            pendingRequests = pendingRequests != null ? pendingRequests : 0L;
+            
+            System.out.println("Final employee stats - Assets: " + myAssets + ", Issues: " + myIssues + ", Requests: " + myRequests + ", Pending: " + pendingRequests);
+            
+            return DashboardStatsDTO.builder()
+                    .myAssets(myAssets)
+                    .myIssues(myIssues)
+                    .myRequests(myRequests)
+                    .pendingRequests(pendingRequests)
+                    .assetsByCategory(getMyAssetsByCategory(user.getId()))
+                    .issuesByStatus(getMyIssuesByStatus(user.getId()))
+                    .recentActivities(getMyRecentActivities(user.getId()))
+                    .upcomingWarranties(getMyUpcomingWarranties(user.getId()))
+                    .topIssues(getMyTopIssues(user.getId()))
+                    .build();
+        } catch (Exception e) {
+            System.err.println("Error building employee dashboard: " + e.getMessage());
+            e.printStackTrace();
+            // Return dashboard with zero values instead of failing
+            return DashboardStatsDTO.builder()
+                    .myAssets(0L)
+                    .myIssues(0L)
+                    .myRequests(0L)
+                    .pendingRequests(0L)
+                    .assetsByCategory(new HashMap<>())
+                    .issuesByStatus(new HashMap<>())
+                    .recentActivities(new ArrayList<>())
+                    .upcomingWarranties(new ArrayList<>())
+                    .topIssues(new ArrayList<>())
+                    .build();
+        }
     }
 
     private DashboardStatsDTO getITSupportDashboard(User user) {
+        System.out.println("Building IT Support dashboard for user: " + user.getId());
+        
+        Long totalAssets = assetRepository.count();
+        Long availableAssets = assetRepository.countByStatus(Asset.Status.AVAILABLE);
+        Long allocatedAssets = assetRepository.countByStatus(Asset.Status.ALLOCATED);
+        Long totalIssues = issueRepository.count();
+        Long openIssues = issueRepository.count();
+        Long pendingRequests = requestRepository.countByStatus(AssetRequest.Status.PENDING);
+        
+        System.out.println("IT Support stats - Total Assets: " + totalAssets + ", Available: " + availableAssets + ", Issues: " + totalIssues);
+        
         return DashboardStatsDTO.builder()
-                .totalAssets(assetRepository.count())
-                .availableAssets(assetRepository.countByStatus(Asset.Status.AVAILABLE))
-                .allocatedAssets(assetRepository.countByStatus(Asset.Status.ALLOCATED))
-                .totalIssues(issueRepository.count())
-                .openIssues(issueRepository.countByStatusIn(Arrays.asList(Issue.Status.OPEN, Issue.Status.IN_PROGRESS)))
-                .pendingRequests(requestRepository.countByStatus(AssetRequest.Status.PENDING))
+                .totalAssets(totalAssets)
+                .availableAssets(availableAssets)
+                .allocatedAssets(allocatedAssets)
+                .totalIssues(totalIssues)
+                .openIssues(openIssues)
+                .pendingRequests(pendingRequests)
                 .warrantyExpiringCount(getWarrantyExpiringCount())
                 .maintenanceDueCount(getMaintenanceDueCount())
                 .assetsByCategory(getAssetsByCategory())
@@ -91,14 +146,26 @@ public class DashboardServiceImpl implements DashboardService {
     }
 
     private DashboardStatsDTO getAdminDashboard(User user) {
+        System.out.println("Building Admin dashboard for user: " + user.getId());
+        
+        Long totalAssets = assetRepository.count();
+        Long availableAssets = assetRepository.countByStatus(Asset.Status.AVAILABLE);
+        Long allocatedAssets = assetRepository.countByStatus(Asset.Status.ALLOCATED);
+        Long totalIssues = issueRepository.count();
+        Long openIssues = issueRepository.count();
+        Long totalUsers = userRepository.count();
+        Long pendingRequests = requestRepository.countByStatus(AssetRequest.Status.PENDING);
+        
+        System.out.println("Admin stats - Total Assets: " + totalAssets + ", Users: " + totalUsers + ", Issues: " + totalIssues);
+        
         return DashboardStatsDTO.builder()
-                .totalAssets(assetRepository.count())
-                .availableAssets(assetRepository.countByStatus(Asset.Status.AVAILABLE))
-                .allocatedAssets(assetRepository.countByStatus(Asset.Status.ALLOCATED))
-                .totalIssues(issueRepository.count())
-                .openIssues(issueRepository.countByStatusIn(Arrays.asList(Issue.Status.OPEN, Issue.Status.IN_PROGRESS)))
-                .totalUsers(userRepository.count())
-                .pendingRequests(requestRepository.countByStatus(AssetRequest.Status.PENDING))
+                .totalAssets(totalAssets)
+                .availableAssets(availableAssets)
+                .allocatedAssets(allocatedAssets)
+                .totalIssues(totalIssues)
+                .openIssues(openIssues)
+                .totalUsers(totalUsers)
+                .pendingRequests(pendingRequests)
                 .warrantyExpiringCount(getWarrantyExpiringCount())
                 .maintenanceDueCount(getMaintenanceDueCount())
                 .assetsByCategory(getAssetsByCategory())
@@ -212,16 +279,21 @@ public class DashboardServiceImpl implements DashboardService {
     private Map<String, Long> getMonthlyAssetTrends() {
         Map<String, Long> trends = new LinkedHashMap<>();
         LocalDate now = LocalDate.now();
-        for (int i = 5; i >= 0; i--) {
-            LocalDate monthStart = now.minusMonths(i).withDayOfMonth(1);
-            LocalDate monthEnd = monthStart.plusMonths(1).minusDays(1);
-            String monthKey = monthStart.format(DateTimeFormatter.ofPattern("MMM yyyy"));
-            Long count = assetRepository.findAll().stream()
-                    .filter(asset -> asset.getPurchaseDate() != null &&
-                            !asset.getPurchaseDate().isBefore(monthStart) &&
-                            !asset.getPurchaseDate().isAfter(monthEnd))
-                    .count();
-            trends.put(monthKey, count);
+        try {
+            for (int i = 5; i >= 0; i--) {
+                LocalDate monthStart = now.minusMonths(i).withDayOfMonth(1);
+                LocalDate monthEnd = monthStart.plusMonths(1).minusDays(1);
+                String monthKey = monthStart.format(DateTimeFormatter.ofPattern("MMM yyyy"));
+                Long count = assetRepository.findAll().stream()
+                        .filter(asset -> asset.getPurchaseDate() != null &&
+                                !asset.getPurchaseDate().isBefore(monthStart) &&
+                                !asset.getPurchaseDate().isAfter(monthEnd))
+                        .count();
+                trends.put(monthKey, count);
+            }
+        } catch (Exception e) {
+            System.err.println("Error calculating monthly asset trends: " + e.getMessage());
+            // Return empty trends to prevent errors
         }
         return trends;
     }
@@ -229,16 +301,21 @@ public class DashboardServiceImpl implements DashboardService {
     private Map<String, Long> getMonthlyIssueTrends() {
         Map<String, Long> trends = new LinkedHashMap<>();
         LocalDateTime now = LocalDateTime.now();
-        for (int i = 5; i >= 0; i--) {
-            LocalDateTime monthStart = now.minusMonths(i).withDayOfMonth(1).withHour(0).withMinute(0).withSecond(0);
-            LocalDateTime monthEnd = monthStart.plusMonths(1).minusSeconds(1);
-            String monthKey = monthStart.format(DateTimeFormatter.ofPattern("MMM yyyy"));
-            Long count = issueRepository.findAll().stream()
-                    .filter(issue -> issue.getCreatedAt() != null &&
-                            !issue.getCreatedAt().isBefore(monthStart) &&
-                            !issue.getCreatedAt().isAfter(monthEnd))
-                    .count();
-            trends.put(monthKey, count);
+        try {
+            for (int i = 5; i >= 0; i--) {
+                LocalDateTime monthStart = now.minusMonths(i).withDayOfMonth(1).withHour(0).withMinute(0).withSecond(0);
+                LocalDateTime monthEnd = monthStart.plusMonths(1).minusSeconds(1);
+                String monthKey = monthStart.format(DateTimeFormatter.ofPattern("MMM yyyy"));
+                Long count = issueRepository.findAll().stream()
+                        .filter(issue -> issue.getCreatedAt() != null &&
+                                !issue.getCreatedAt().isBefore(monthStart) &&
+                                !issue.getCreatedAt().isAfter(monthEnd))
+                        .count();
+                trends.put(monthKey, count);
+            }
+        } catch (Exception e) {
+            System.err.println("Error calculating monthly issue trends: " + e.getMessage());
+            // Return empty trends to prevent errors
         }
         return trends;
     }
@@ -307,40 +384,57 @@ public class DashboardServiceImpl implements DashboardService {
     private List<DashboardStatsDTO.RecentActivityDTO> getMyRecentActivities(Long userId) {
         List<DashboardStatsDTO.RecentActivityDTO> activities = new ArrayList<>();
         
-        // My recent allocations
-        allocationRepository.findTop10ByUserIdAndReturnedDateIsNullOrderByAllocatedDateDesc(userId).stream()
-                .limit(3)
-                .forEach(allocation -> {
-                    activities.add(DashboardStatsDTO.RecentActivityDTO.builder()
-                            .type("ALLOCATION")
-                            .description("Asset " + allocation.getAsset().getAssetTag() + " allocated to you")
-                            .timestamp(allocation.getAllocatedDate().toString())
-                            .user(allocation.getUser().getName())
-                            .status("ACTIVE")
-                            .build());
-                });
+        try {
+            // My recent allocations
+            allocationRepository.findTop10ByUserIdAndReturnedDateIsNullOrderByAllocatedDateDesc(userId).stream()
+                    .limit(3)
+                    .filter(allocation -> allocation.getAsset() != null && allocation.getUser() != null)
+                    .forEach(allocation -> {
+                        activities.add(DashboardStatsDTO.RecentActivityDTO.builder()
+                                .type("ALLOCATION")
+                                .description("Asset " + (allocation.getAsset().getAssetTag() != null ? allocation.getAsset().getAssetTag() : "Unknown") + " allocated to you")
+                                .timestamp(allocation.getAllocatedDate() != null ? allocation.getAllocatedDate().toString() : "")
+                                .user(allocation.getUser().getName() != null ? allocation.getUser().getName() : "Unknown")
+                                .status("ACTIVE")
+                                .build());
+                    });
+        } catch (Exception e) {
+            System.err.println("Error getting user allocations: " + e.getMessage());
+        }
         
-        // My recent issues
-        issueRepository.findTop5ByReportedByIdOrderByCreatedAtDesc(userId).forEach(issue -> {
-            activities.add(DashboardStatsDTO.RecentActivityDTO.builder()
-                    .type("ISSUE")
-                    .description("You reported: " + issue.getTitle())
-                    .timestamp(issue.getCreatedAt().toString())
-                    .user(issue.getReportedBy().getName())
-                    .status(issue.getStatus().toString())
-                    .build());
-        });
+        try {
+            // My recent issues
+            issueRepository.findTop5ByReportedByIdOrderByCreatedAtDesc(userId).stream()
+                    .filter(issue -> issue.getReportedBy() != null)
+                    .forEach(issue -> {
+                        activities.add(DashboardStatsDTO.RecentActivityDTO.builder()
+                                .type("ISSUE")
+                                .description("You reported: " + (issue.getTitle() != null ? issue.getTitle() : "Unknown"))
+                                .timestamp(issue.getCreatedAt() != null ? issue.getCreatedAt().toString() : "")
+                                .user(issue.getReportedBy().getName() != null ? issue.getReportedBy().getName() : "Unknown")
+                                .status(issue.getStatus() != null ? issue.getStatus().toString() : "UNKNOWN")
+                                .build());
+                    });
+        } catch (Exception e) {
+            System.err.println("Error getting user issues: " + e.getMessage());
+        }
         
-        // My recent requests
-        requestRepository.findTop5ByRequestedByIdOrderByRequestedDateDesc(userId).forEach(request -> {
-            activities.add(DashboardStatsDTO.RecentActivityDTO.builder()
-                    .type("REQUEST")
-                    .description("You requested: " + request.getRequestType().toString())
-                    .timestamp(request.getRequestedDate().toString())
-                    .user(request.getRequestedBy().getName())
-                    .status(request.getStatus().toString())
-                    .build());
-        });
+        try {
+            // My recent requests
+            requestRepository.findTop5ByRequestedByIdOrderByRequestedDateDesc(userId).stream()
+                    .filter(request -> request.getRequestedBy() != null)
+                    .forEach(request -> {
+                        activities.add(DashboardStatsDTO.RecentActivityDTO.builder()
+                                .type("REQUEST")
+                                .description("You requested: " + (request.getRequestType() != null ? request.getRequestType().toString() : "Unknown"))
+                                .timestamp(request.getRequestedDate() != null ? request.getRequestedDate().toString() : "")
+                                .user(request.getRequestedBy().getName() != null ? request.getRequestedBy().getName() : "Unknown")
+                                .status(request.getStatus() != null ? request.getStatus().toString() : "UNKNOWN")
+                                .build());
+                    });
+        } catch (Exception e) {
+            System.err.println("Error getting user requests: " + e.getMessage());
+        }
         
         return activities.stream()
                 .sorted((a, b) -> b.getTimestamp().compareTo(a.getTimestamp()))
@@ -370,19 +464,25 @@ public class DashboardServiceImpl implements DashboardService {
     }
 
     private List<DashboardStatsDTO.UpcomingWarrantyDTO> getMyUpcomingWarranties(Long userId) {
-        LocalDate now = LocalDate.now();
-        LocalDate thirtyDaysFromNow = now.plusDays(30);
-        return warrantyRepository.findWarrantiesExpiringBetweenByUserId(thirtyDaysFromNow, userId).stream()
-                .map(warranty -> DashboardStatsDTO.UpcomingWarrantyDTO.builder()
-                        .assetId(warranty.getAsset().getId())
-                        .assetName(warranty.getAsset().getName())
-                        .warrantyEndDate(warranty.getNewExpiryDate().toString())
-                        .daysRemaining(java.time.temporal.ChronoUnit.DAYS.between(now, warranty.getNewExpiryDate()))
-                        .vendor(warranty.getAsset().getVendor() != null ? warranty.getAsset().getVendor().getName() : "Unknown")
-                        .build())
-                .sorted((a, b) -> Long.compare(a.getDaysRemaining(), b.getDaysRemaining()))
-                .limit(10)
-                .collect(Collectors.toList());
+        try {
+            LocalDate now = LocalDate.now();
+            LocalDate thirtyDaysFromNow = now.plusDays(30);
+            return warrantyRepository.findWarrantiesExpiringBetweenByUserId(thirtyDaysFromNow, userId).stream()
+                    .filter(warranty -> warranty.getAsset() != null && warranty.getNewExpiryDate() != null)
+                    .map(warranty -> DashboardStatsDTO.UpcomingWarrantyDTO.builder()
+                            .assetId(warranty.getAsset().getId())
+                            .assetName(warranty.getAsset().getName() != null ? warranty.getAsset().getName() : "Unknown")
+                            .warrantyEndDate(warranty.getNewExpiryDate().toString())
+                            .daysRemaining(java.time.temporal.ChronoUnit.DAYS.between(now, warranty.getNewExpiryDate()))
+                            .vendor(warranty.getAsset().getVendor() != null ? warranty.getAsset().getVendor().getName() : "Unknown")
+                            .build())
+                    .sorted((a, b) -> Long.compare(a.getDaysRemaining(), b.getDaysRemaining()))
+                    .limit(10)
+                    .collect(Collectors.toList());
+        } catch (Exception e) {
+            System.err.println("Error getting user warranties: " + e.getMessage());
+            return new ArrayList<>();
+        }
     }
 
     private List<DashboardStatsDTO.TopIssueDTO> getTopIssues() {
@@ -405,17 +505,23 @@ public class DashboardServiceImpl implements DashboardService {
     }
 
     private List<DashboardStatsDTO.TopIssueDTO> getMyTopIssues(Long userId) {
-        return issueRepository.findTop10ByReportedByIdAndOpenStatusOrderByPriorityDesc(userId).stream()
-                .limit(5)
-                .map(issue -> DashboardStatsDTO.TopIssueDTO.builder()
-                        .issueId(issue.getId())
-                        .title(issue.getTitle())
-                        .priority(issue.getPriority().toString())
-                        .status(issue.getStatus().toString())
-                        .reportedBy(issue.getReportedBy().getName())
-                        .createdAt(issue.getCreatedAt().toString())
-                        .build())
-                .collect(Collectors.toList());
+        try {
+            return issueRepository.findTop10ByReportedByIdAndOpenStatusOrderByPriorityDesc(userId).stream()
+                    .limit(5)
+                    .filter(issue -> issue.getReportedBy() != null)
+                    .map(issue -> DashboardStatsDTO.TopIssueDTO.builder()
+                            .issueId(issue.getId())
+                            .title(issue.getTitle() != null ? issue.getTitle() : "Unknown")
+                            .priority(issue.getPriority() != null ? issue.getPriority().toString() : "UNKNOWN")
+                            .status(issue.getStatus() != null ? issue.getStatus().toString() : "UNKNOWN")
+                            .reportedBy(issue.getReportedBy().getName() != null ? issue.getReportedBy().getName() : "Unknown")
+                            .createdAt(issue.getCreatedAt() != null ? issue.getCreatedAt().toString() : "")
+                            .build())
+                    .collect(Collectors.toList());
+        } catch (Exception e) {
+            System.err.println("Error getting user top issues: " + e.getMessage());
+            return new ArrayList<>();
+        }
     }
 
     private Long getWarrantyExpiringCount() {
@@ -433,8 +539,15 @@ public class DashboardServiceImpl implements DashboardService {
     }
 
     private Double getAssetUtilizationRate() {
-        long totalAssets = assetRepository.count();
-        long allocatedAssets = assetRepository.countByStatus(Asset.Status.ALLOCATED);
-        return totalAssets > 0 ? (double) allocatedAssets / totalAssets * 100 : 0.0;
+        try {
+            long totalAssets = assetRepository.count();
+            long allocatedAssets = assetRepository.countByStatus(Asset.Status.ALLOCATED);
+            if (totalAssets <= 0) return 0.0;
+            double rate = (double) allocatedAssets / totalAssets * 100;
+            return Math.max(0.0, Math.min(100.0, rate));
+        } catch (Exception e) {
+            System.err.println("Error calculating asset utilization rate: " + e.getMessage());
+            return 0.0;
+        }
     }
 }

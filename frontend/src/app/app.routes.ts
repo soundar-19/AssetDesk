@@ -186,6 +186,7 @@ export const routes: Routes = [
       },
 
 
+
       {
         path: 'service-records',
         loadComponent: () => import('./features/service-records/service-records-list.component').then(m => m.ServiceRecordsListComponent),

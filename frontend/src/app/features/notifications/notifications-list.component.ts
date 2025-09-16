@@ -130,38 +130,46 @@ import { ToastService } from '../../shared/components/toast/toast.service';
       display: flex;
       justify-content: space-between;
       align-items: flex-start;
-      margin-bottom: 2rem;
-      padding: 1.5rem;
+      margin: 1rem 0 1rem 0;
+      padding: 1rem;
       background: white;
-      border-radius: 12px;
+      border-radius: 8px;
       box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
     }
 
+    .header-content {
+      display: flex;
+      flex-direction: column;
+      gap: 0.5rem;
+    }
+
     .header-content .page-title {
-      font-size: 2rem;
+      font-size: 1.5rem;
       font-weight: 700;
       color: #1f2937;
-      margin: 0 0 0.5rem 0;
+      margin: 0;
+      line-height: 1;
     }
 
     .header-content .page-subtitle {
       color: #6b7280;
       margin: 0;
-      font-size: 1rem;
+      font-size: 0.875rem;
     }
 
     .header-actions .btn {
       display: inline-flex;
       align-items: center;
-      gap: 0.5rem;
-      padding: 0.75rem 1.5rem;
-      border: 2px solid #e5e7eb;
+      gap: 0.25rem;
+      padding: 0.5rem 1rem;
+      border: 1px solid #e5e7eb;
       background: white;
       color: #374151;
-      border-radius: 8px;
+      border-radius: 6px;
       font-weight: 500;
       cursor: pointer;
       transition: all 0.2s;
+      font-size: 0.875rem;
     }
 
     .header-actions .btn:hover:not(:disabled) {
@@ -175,27 +183,28 @@ import { ToastService } from '../../shared/components/toast/toast.service';
     }
 
     .filter-section {
-      margin-bottom: 1.5rem;
+      margin-bottom: 1rem;
     }
 
     .filter-tabs {
       display: flex;
       background: white;
-      border-radius: 8px;
-      padding: 0.25rem;
+      border-radius: 6px;
+      padding: 0.125rem;
       box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
     }
 
     .filter-tab {
       flex: 1;
-      padding: 0.75rem 1rem;
+      padding: 0.5rem 0.75rem;
       border: none;
       background: transparent;
       color: #6b7280;
       font-weight: 500;
-      border-radius: 6px;
+      border-radius: 4px;
       cursor: pointer;
       transition: all 0.2s;
+      font-size: 0.875rem;
     }
 
     .filter-tab.active {
@@ -206,20 +215,20 @@ import { ToastService } from '../../shared/components/toast/toast.service';
     .notifications-list {
       display: flex;
       flex-direction: column;
-      gap: 1rem;
+      gap: 0.5rem;
     }
 
     .notification-card {
       display: flex;
       align-items: flex-start;
-      gap: 1rem;
-      padding: 1.5rem;
+      gap: 0.75rem;
+      padding: 1rem;
       background: white;
-      border-radius: 12px;
+      border-radius: 8px;
       box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
       cursor: pointer;
       transition: all 0.2s;
-      border-left: 4px solid transparent;
+      border-left: 3px solid transparent;
     }
 
     .notification-card:hover {
@@ -234,13 +243,13 @@ import { ToastService } from '../../shared/components/toast/toast.service';
 
     .notification-icon {
       flex-shrink: 0;
-      width: 48px;
-      height: 48px;
+      width: 36px;
+      height: 36px;
       border-radius: 50%;
       display: flex;
       align-items: center;
       justify-content: center;
-      font-size: 1.25rem;
+      font-size: 1rem;
     }
 
     .notification-icon .icon.info { background: #dbeafe; color: #3b82f6; }
@@ -262,23 +271,23 @@ import { ToastService } from '../../shared/components/toast/toast.service';
       display: flex;
       justify-content: space-between;
       align-items: flex-start;
-      margin-bottom: 0.5rem;
-      gap: 1rem;
+      margin-bottom: 0.25rem;
+      gap: 0.75rem;
     }
 
     .notification-title {
-      font-size: 1.1rem;
+      font-size: 1rem;
       font-weight: 600;
       color: #1f2937;
       margin: 0;
-      line-height: 1.4;
+      line-height: 1.3;
     }
 
     .notification-meta {
       display: flex;
       flex-direction: column;
       align-items: flex-end;
-      gap: 0.25rem;
+      gap: 0.125rem;
       flex-shrink: 0;
     }
 
@@ -308,8 +317,9 @@ import { ToastService } from '../../shared/components/toast/toast.service';
 
     .notification-message {
       color: #4b5563;
-      line-height: 1.5;
+      line-height: 1.4;
       margin: 0;
+      font-size: 0.875rem;
     }
 
     .notification-actions {
@@ -325,15 +335,15 @@ import { ToastService } from '../../shared/components/toast/toast.service';
     }
 
     .action-btn {
-      width: 32px;
-      height: 32px;
+      width: 28px;
+      height: 28px;
       border: none;
-      border-radius: 6px;
+      border-radius: 4px;
       cursor: pointer;
       display: flex;
       align-items: center;
       justify-content: center;
-      font-size: 1rem;
+      font-size: 0.875rem;
       transition: all 0.2s;
     }
 
@@ -384,11 +394,11 @@ import { ToastService } from '../../shared/components/toast/toast.service';
       display: flex;
       justify-content: center;
       align-items: center;
-      gap: 1rem;
-      margin-top: 2rem;
-      padding: 1rem;
+      gap: 0.75rem;
+      margin-top: 1rem;
+      padding: 0.75rem;
       background: white;
-      border-radius: 8px;
+      border-radius: 6px;
       box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
     }
 

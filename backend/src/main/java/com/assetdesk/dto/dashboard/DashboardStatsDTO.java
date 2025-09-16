@@ -21,6 +21,7 @@ public class DashboardStatsDTO {
     // Role-specific stats
     private Long myAssets;
     private Long myIssues;
+    private Long myRequests;
     private Long availableAssets;
     private Long allocatedAssets;
     private Long openIssues;

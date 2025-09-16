@@ -93,4 +93,8 @@ export class UserService {
     const payload = { newPassword };
     return this.api.put<void>(`${this.endpoint}/${userId}/admin-reset-password`, payload);
   }
+
+  updateUserStatus(userId: number, status: string): Observable<User> {
+    return this.api.put<User>(`${this.endpoint}/${userId}/status`, { status });
+  }
 }

@@ -26,6 +26,8 @@ public class ServiceRecordServiceImpl implements ServiceRecordService {
     private final ServiceRecordRepository serviceRecordRepository;
     private final AssetRepository assetRepository;
     private final VendorRepository vendorRepository;
+    private final com.assetdesk.service.NotificationService notificationService;
+    private final com.assetdesk.repository.UserRepository userRepository;
     
     @Override
     @Transactional
@@ -50,7 +52,27 @@ public class ServiceRecordServiceImpl implements ServiceRecordService {
                 .orElseThrow(() -> new ResourceNotFoundException("Vendor", "id", request.getVendorId())));
         }
         
-        return serviceRecordRepository.save(serviceRecord);
+        ServiceRecord savedRecord = serviceRecordRepository.save(serviceRecord);
+        
+        // Create notification for service completion
+        try {
+            // Notify IT support
+            List<com.assetdesk.domain.User> itUsers = userRepository.findByRole(com.assetdesk.domain.User.Role.IT_SUPPORT);
+            for (com.assetdesk.domain.User itUser : itUsers) {
+                notificationService.createNotification(
+                    itUser.getId(),
+                    "Service Record Created",
+                    "New service record created for asset '" + serviceRecord.getAsset().getName() + "'",
+                    com.assetdesk.domain.Notification.Type.INFO,
+                    null,
+                    serviceRecord.getAsset().getId()
+                );
+            }
+        } catch (Exception e) {
+            System.out.println("Failed to create service notification: " + e.getMessage());
+        }
+        
+        return savedRecord;
     }
     
     @Override

@@ -73,8 +73,8 @@
         </app-metric-card>
         <app-metric-card 
           [value]="dashboardStats.openIssues || 0" 
-          label="Open Issues" 
-          [trend]="(dashboardStats.averageResolutionTime || 0) + 'h avg'" 
+          label="Issues" 
+          [trend]="getIssueTrend()" 
           variant="warning">
         </app-metric-card>
         <app-metric-card 

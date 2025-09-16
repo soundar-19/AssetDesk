@@ -34,7 +34,7 @@ import { IssueService } from '../../../core/services/issue.service';
               placeholder="Search assets, users, issues..."
               [(ngModel)]="searchQuery"
               (input)="onSearchInput()"
-              (keydown.enter)="performSearch()"
+              (keydown)="onKeyDown($event)"
               (focus)="showResults = true">
             <button class="search-btn" (click)="performSearch()">
               <svg width="16" height="16" viewBox="0 0 20 20" fill="currentColor">
@@ -42,7 +42,10 @@ import { IssueService } from '../../../core/services/issue.service';
               </svg>
             </button>
             <div class="search-results" *ngIf="showResults && searchResults.length > 0" (click)="$event.stopPropagation()">
-              <div class="result-item" *ngFor="let result of searchResults" (click)="navigateToResult(result)">
+              <div class="result-item" 
+                   *ngFor="let result of searchResults; let i = index" 
+                   [class.selected]="selectedIndex === i"
+                   (click)="navigateToResult(result)">
                 <div class="result-icon">{{ getResultIcon(result.type) }}</div>
                 <div class="result-content">
                   <div class="result-title">{{ result.title }}</div>
@@ -176,7 +179,8 @@ import { IssueService } from '../../../core/services/issue.service';
       border-bottom: none;
     }
 
-    .result-item:hover {
+    .result-item:hover,
+    .result-item.selected {
       background: var(--gray-50);
     }
 
@@ -489,6 +493,7 @@ export class AppHeaderComponent implements OnInit {
   searchResults: any[] = [];
   showResults = false;
   searchTimeout: any;
+  selectedIndex = -1;
 
   constructor(
     private authService: AuthService,
@@ -615,6 +620,7 @@ export class AppHeaderComponent implements OnInit {
 
   onSearchInput() {
     clearTimeout(this.searchTimeout);
+    this.selectedIndex = -1;
     if (this.searchQuery.length < 2) {
       this.searchResults = [];
       this.showResults = false;
@@ -623,10 +629,54 @@ export class AppHeaderComponent implements OnInit {
     this.searchTimeout = setTimeout(() => this.performSearch(), 300);
   }
 
+  onKeyDown(event: KeyboardEvent) {
+    if (!this.showResults || this.searchResults.length === 0) {
+      if (event.key === 'Enter') {
+        this.performSearch();
+      }
+      return;
+    }
+
+    switch (event.key) {
+      case 'ArrowDown':
+        event.preventDefault();
+        this.selectedIndex = Math.min(this.selectedIndex + 1, this.searchResults.length - 1);
+        this.scrollToSelected();
+        break;
+      case 'ArrowUp':
+        event.preventDefault();
+        this.selectedIndex = Math.max(this.selectedIndex - 1, -1);
+        this.scrollToSelected();
+        break;
+      case 'Enter':
+        event.preventDefault();
+        if (this.selectedIndex >= 0 && this.selectedIndex < this.searchResults.length) {
+          this.navigateToResult(this.searchResults[this.selectedIndex]);
+        } else {
+          this.performSearch();
+        }
+        break;
+      case 'Escape':
+        this.showResults = false;
+        this.selectedIndex = -1;
+        break;
+    }
+  }
+
+  private scrollToSelected() {
+    setTimeout(() => {
+      const selectedElement = document.querySelector('.result-item.selected');
+      if (selectedElement) {
+        selectedElement.scrollIntoView({ block: 'nearest', behavior: 'smooth' });
+      }
+    });
+  }
+
   performSearch() {
     if (this.searchQuery.length < 2) return;
     
     this.searchResults = [];
+    this.selectedIndex = -1;
     
     // Search pages/routes
     const pages = [
