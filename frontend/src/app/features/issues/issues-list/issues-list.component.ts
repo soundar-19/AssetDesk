@@ -273,12 +273,6 @@ export class IssuesListComponent implements OnInit {
         console.log('Assigned to name:', updatedIssue.assignedToName);
         
         this.toastService.success('Issue assigned to you and status changed to In Progress');
-        // Send notification to issue reporter
-        this.issueService.sendIssueNotification(id, 'Issue In Progress', 
-          'Your issue is now being worked on by IT Support.', 'ISSUE_UPDATED').subscribe({
-          next: () => console.log('Notification sent successfully'),
-          error: (error) => console.error('Failed to send notification:', error)
-        });
         this.loadIssues();
       },
       error: (error) => {

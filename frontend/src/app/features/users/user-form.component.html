@@ -1,0 +1,129 @@
+<div class="standardized-layout">
+  <div class="user-form">
+    <app-professional-form
+      [title]="isEditMode ? 'Edit User' : 'Create New User'"
+      [description]="isEditMode ? 'Update user information and system permissions' : 'Add a new user to the asset management system'"
+      [formGroup]="userForm"
+      [actions]="formActions"
+      [headerActions]="headerActions"
+      (formSubmit)="onSubmit()">
+      
+      <app-form-section
+        title="Personal Information"
+        description="Basic user details and identification"
+        icon="personal">
+        
+        <app-form-field
+          label="Employee ID"
+          fieldId="employeeId"
+          type="text"
+          [control]="employeeIdControl"
+          placeholder="Enter unique employee ID"
+          [required]="true"
+          icon="tag">
+        </app-form-field>
+        
+        <app-form-field
+          label="Full Name"
+          fieldId="name"
+          type="text"
+          [control]="nameControl"
+          placeholder="Enter full name"
+          [required]="true"
+          icon="user">
+        </app-form-field>
+      </app-form-section>
+      
+      <app-form-section
+        title="Contact Information"
+        description="Communication details and contact preferences"
+        icon="contact">
+        
+        <app-form-field
+          label="Email Address"
+          fieldId="email"
+          type="email"
+          [control]="emailControl"
+          placeholder="Enter email address"
+          [required]="true"
+          icon="email">
+        </app-form-field>
+        
+        <app-form-field
+          label="Phone Number"
+          fieldId="phoneNumber"
+          type="tel"
+          [control]="phoneNumberControl"
+          placeholder="Enter phone number"
+          [required]="false"
+          icon="phone">
+        </app-form-field>
+      </app-form-section>
+      
+      <app-form-section
+        title="Role & Department"
+        description="System permissions and organizational details"
+        icon="role">
+        
+        <app-form-field
+          label="System Role"
+          fieldId="role"
+          type="select"
+          [control]="roleControl"
+          [required]="true"
+          icon="shield"
+          [options]="roleOptions">
+        </app-form-field>
+        
+        <app-form-field
+          label="Account Status"
+          fieldId="status"
+          type="select"
+          [control]="statusControl"
+          [required]="true"
+          icon="check"
+          [options]="statusOptions">
+        </app-form-field>
+        
+        <app-form-field
+          label="Department"
+          fieldId="department"
+          type="text"
+          [control]="departmentControl"
+          placeholder="Enter department name"
+          [required]="false"
+          icon="building">
+        </app-form-field>
+        
+        <app-form-field
+          label="Job Title"
+          fieldId="designation"
+          type="text"
+          [control]="designationControl"
+          placeholder="Enter job title or designation"
+          [required]="false"
+          icon="tag">
+        </app-form-field>
+      </app-form-section>
+      
+      <app-form-section
+        *ngIf="!isEditMode"
+        title="Security Settings"
+        description="Initial password and security configuration"
+        icon="security">
+        
+        <app-form-field
+          label="Initial Password"
+          fieldId="password"
+          type="password"
+          [control]="passwordControl"
+          placeholder="Enter initial password"
+          [required]="true"
+          icon="lock"
+          helpText="Password must be at least 6 characters long. User can change it after first login."
+          [fullWidth]="true">
+        </app-form-field>
+      </app-form-section>
+    </app-professional-form>
+  </div>
+</div>

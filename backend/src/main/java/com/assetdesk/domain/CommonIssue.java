@@ -15,8 +15,8 @@ public class CommonIssue {
     @Column(columnDefinition = "TEXT")
     private String description;
     @Column(columnDefinition = "TEXT")
-    private String steps; // simple newline separated steps
-    private String category; // e.g., Laptop, Network, Printer
+    private String steps; 
+    private String category; 
 }
 
 

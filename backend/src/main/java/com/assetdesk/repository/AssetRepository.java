@@ -42,8 +42,12 @@ public interface AssetRepository extends JpaRepository<Asset, Long>, JpaSpecific
            "SUM(CASE WHEN a.status = 'AVAILABLE' THEN 1 ELSE 0 END) as available, " +
            "SUM(CASE WHEN a.status = 'ALLOCATED' THEN 1 ELSE 0 END) as allocated, " +
            "SUM(CASE WHEN a.status = 'MAINTENANCE' THEN 1 ELSE 0 END) as maintenance, " +
-           "SUM(CASE WHEN a.status = 'RETIRED' THEN 1 ELSE 0 END) as retired " +
-           "FROM Asset a " +
+           "SUM(CASE WHEN a.status = 'RETIRED' THEN 1 ELSE 0 END) as retired, " +
+           "MIN(a.model) as model, " +
+           "MIN(a.category) as category, " +
+           "MIN(a.type) as type, " +
+           "MIN(v.name) as vendor " +
+           "FROM Asset a LEFT JOIN a.vendor v " +
            "GROUP BY a.name " +
            "ORDER BY COUNT(a) DESC")
     List<Object[]> findAssetGroupsWithDetails();

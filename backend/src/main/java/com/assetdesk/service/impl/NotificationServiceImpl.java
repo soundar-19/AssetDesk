@@ -29,9 +29,14 @@ public class NotificationServiceImpl implements NotificationService {
     
     @Override
     public void createNotification(Long userId, String title, String message, Notification.Type type, Long relatedIssueId, Long relatedAssetId) {
+        var userOptional = userRepository.findById(userId);
+        if (userOptional.isEmpty()) {
+            System.out.println("Cannot create notification: User not found with id: " + userId);
+            return;
+        }
+        
         Notification notification = new Notification();
-        notification.setUser(userRepository.findById(userId)
-            .orElseThrow(() -> new ResourceNotFoundException("User", "id", userId)));
+        notification.setUser(userOptional.get());
         notification.setTitle(title);
         notification.setMessage(message);
         notification.setType(type);

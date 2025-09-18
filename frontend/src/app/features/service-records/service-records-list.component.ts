@@ -9,6 +9,7 @@ import { DataTableComponent, TableColumn, TableAction } from '../../shared/compo
 import { ToastService } from '../../shared/components/toast/toast.service';
 import { RoleService } from '../../core/services/role.service';
 
+
 @Component({
   selector: 'app-service-records-list',
   standalone: true,
@@ -51,7 +52,7 @@ export class ServiceRecordsListComponent implements OnInit {
     { key: 'serviceType', label: 'Service Type', sortable: true },
     { key: 'description', label: 'Description', render: (record: ServiceRecord) => record.description || 'No description' },
     { key: 'provider', label: 'Provider', render: (record: ServiceRecord) => `${record.vendor?.name || 'Internal'}<br><small>${record.performedBy || 'Not specified'}</small>` },
-    { key: 'cost', label: 'Cost', pipe: 'currency' },
+    { key: 'cost', label: 'Cost', pipe: 'currencyFormat' },
     { key: 'status', label: 'Status', badge: true }
   ];
 

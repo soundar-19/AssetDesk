@@ -169,7 +169,6 @@ public class AnalyticsController {
         List<Asset> assets = assetRepository.findAll();
         
         // Simple depreciation calculation (straight-line method)
-        // Assuming 3-year depreciation period for hardware, 1-year for software
         LocalDate calculationDate = asOfDate != null ? LocalDate.parse(asOfDate) : LocalDate.now();
         
         BigDecimal totalDepreciation = BigDecimal.ZERO;

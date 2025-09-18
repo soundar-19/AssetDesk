@@ -1,6 +1,8 @@
 import { Component, Input, Output, EventEmitter, OnInit, OnDestroy, HostListener } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { EmptyStateComponent } from '../../ui/empty-state.component';
+import { CurrencyFormatPipe } from '../../pipes/currency-format.pipe';
+
 
 export interface TableColumn {
   key: string;
@@ -16,12 +18,13 @@ export interface TableAction {
   icon?: string | ((item: any) => string);
   action: (item: any) => void;
   condition?: (item: any) => boolean;
+  disabled?: (item: any) => boolean;
 }
 
 @Component({
   selector: 'app-data-table',
   standalone: true,
-  imports: [CommonModule, EmptyStateComponent],
+  imports: [CommonModule, EmptyStateComponent, CurrencyFormatPipe],
   template: `
     <div class="table-container">
       <table class="table">
@@ -73,6 +76,7 @@ export interface TableAction {
                 <ng-container *ngIf="getVisibleActions(item).length === 1; else dropdownMenu">
                   <button class="action-btn" 
                           *ngFor="let action of getVisibleActions(item)"
+                          [disabled]="isActionDisabled(action, item)"
                           (click)="executeAction(action, item)">
                     <span *ngIf="getActionIcon(action, item)" class="action-icon">{{ getActionIcon(action, item) }}</span>
                     {{ getActionLabel(action, item) }}
@@ -89,6 +93,7 @@ export interface TableAction {
                          *ngIf="openDropdown === item.id">
                       <button *ngFor="let action of getVisibleActions(item)"
                               class="dropdown-item"
+                              [disabled]="isActionDisabled(action, item)"
                               (click)="executeAction(action, item, $event)">
                         <span *ngIf="getActionIcon(action, item)" class="action-icon">{{ getActionIcon(action, item) }}</span>
                         {{ getActionLabel(action, item) }}
@@ -136,9 +141,9 @@ export interface TableAction {
       box-shadow: var(--shadow-sm);
       border: 1px solid var(--gray-200);
       overflow-x: auto;
-      overflow-y: visible;
       width: 100%;
-      padding-right: 1rem;
+      max-height: 70vh;
+      overflow-y: auto;
     }
     
     .table {
@@ -172,7 +177,7 @@ export interface TableAction {
     .table td.actions {
       overflow: visible;
       position: relative;
-      z-index: 1000;
+      z-index: 1;
     }
     
     .table th {
@@ -229,7 +234,7 @@ export interface TableAction {
     .dropdown-container {
       position: relative;
       display: inline-block;
-      z-index: 1001;
+      z-index: 9999;
     }
     
     .dropdown-btn {
@@ -262,7 +267,7 @@ export interface TableAction {
       border: 1px solid var(--gray-200);
       border-radius: var(--radius-lg);
       box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04);
-      z-index: 10000;
+      z-index: 99999;
       min-width: 160px;
       overflow: visible;
       margin-top: 4px;
@@ -317,91 +322,6 @@ export interface TableAction {
       text-align: center;
     }
     
-    .dropdown-container {
-      position: relative;
-      display: inline-block;
-      z-index: 1001;
-    }
-    
-    .dropdown-btn {
-      width: 32px;
-      height: 32px;
-      border: none;
-      border-radius: 6px;
-      cursor: pointer;
-      font-size: 18px;
-      font-weight: bold;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      background: var(--gray-100);
-      color: var(--gray-600);
-      transition: all 0.2s;
-    }
-    
-    .dropdown-btn:hover,
-    .dropdown-btn.active {
-      background: var(--gray-200);
-      color: var(--gray-800);
-    }
-    
-    .dropdown-menu {
-      position: absolute;
-      top: 100%;
-      right: 0;
-      background: white;
-      border: 1px solid var(--gray-200);
-      border-radius: var(--radius-lg);
-      box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04);
-      z-index: 10000;
-      min-width: 160px;
-      overflow: visible;
-      margin-top: 4px;
-      animation: fadeIn 0.15s ease-out;
-    }
-    
-    @keyframes fadeIn {
-      from {
-        opacity: 0;
-        transform: translateY(-4px);
-      }
-      to {
-        opacity: 1;
-        transform: translateY(0);
-      }
-    }
-    
-    .dropdown-item {
-      width: 100%;
-      padding: var(--space-3) var(--space-4);
-      border: none;
-      background: none;
-      text-align: left;
-      cursor: pointer;
-      font-size: var(--text-sm);
-      color: var(--gray-700);
-      display: flex;
-      align-items: center;
-      gap: var(--space-2);
-      transition: var(--transition-fast);
-      font-weight: var(--font-medium);
-    }
-    
-    .dropdown-item:hover {
-      background: var(--gray-50);
-      color: var(--gray-900);
-    }
-    
-    .dropdown-item:first-child {
-      border-top-left-radius: var(--radius-lg);
-      border-top-right-radius: var(--radius-lg);
-    }
-    
-    .dropdown-item:last-child {
-      border-bottom-left-radius: var(--radius-lg);
-      border-bottom-right-radius: var(--radius-lg);
-    }
-    
     .action-btn {
       display: inline-flex;
       align-items: center;
@@ -426,14 +346,14 @@ export interface TableAction {
     }
     
     .action-btn.start-work {
-      background: var(--success-50);
-      color: var(--success-700);
-      border-color: var(--success-200);
+      background: var(--primary-50);
+      color: var(--primary-700);
+      border-color: var(--primary-200);
     }
     
     .action-btn.start-work:hover:not(:disabled) {
-      background: var(--success-100);
-      border-color: var(--success-300);
+      background: var(--primary-100);
+      border-color: var(--primary-300);
       transform: translateY(-1px);
       box-shadow: var(--shadow-md);
     }
@@ -659,10 +579,15 @@ export class DataTableComponent implements OnInit, OnDestroy {
     }
     
     if (column.pipe === 'currency' && value) {
-      return new Intl.NumberFormat('en-US', {
+      return new Intl.NumberFormat('en-IN', {
         style: 'currency',
-        currency: 'USD'
+        currency: 'INR'
       }).format(value);
+    }
+    
+    if (column.pipe === 'currencyFormat' && value) {
+      const currencyPipe = new CurrencyFormatPipe();
+      return currencyPipe.transform(value);
     }
     
     // Handle warranty column fallback
@@ -674,9 +599,7 @@ export class DataTableComponent implements OnInit, OnDestroy {
   }
 
   getVisibleActions(item: any): TableAction[] {
-    const visibleActions = this.actions.filter(action => !action.condition || action.condition(item));
-    console.log('Visible actions for item:', item.id, visibleActions);
-    return visibleActions;
+    return this.actions.filter(action => !action.condition || action.condition(item));
   }
 
   onRowClick(item: any) {
@@ -734,6 +657,10 @@ export class DataTableComponent implements OnInit, OnDestroy {
   getActionClass(action: TableAction, item: any): string {
     const label = this.getActionLabel(action, item).toLowerCase().replace(' ', '-');
     return label;
+  }
+
+  isActionDisabled(action: TableAction, item: any): boolean {
+    return action.disabled ? action.disabled(item) : false;
   }
 
   @HostListener('document:click', ['$event'])

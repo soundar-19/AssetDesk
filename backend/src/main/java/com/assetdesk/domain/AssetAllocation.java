@@ -40,9 +40,9 @@ public class AssetAllocation {
     private ReturnStatus returnStatus = ReturnStatus.NONE;
     
     public enum ReturnStatus {
-        NONE,           // No return request
-        REQUESTED,      // Admin/IT requested return
-        ACKNOWLEDGED,   // User acknowledged the request
-        COMPLETED       // Return completed
+        NONE,           
+        REQUESTED,      
+        ACKNOWLEDGED,   
+        COMPLETED       
     }
 }

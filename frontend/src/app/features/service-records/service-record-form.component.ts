@@ -66,7 +66,7 @@ import { ToastService } from '../../shared/components/toast/toast.service';
           </div>
 
           <div class="form-group">
-            <label for="cost">Cost</label>
+            <label for="cost">Cost (₹)</label>
             <input type="number" id="cost" formControlName="cost" class="form-control" step="0.01" min="0">
           </div>
 

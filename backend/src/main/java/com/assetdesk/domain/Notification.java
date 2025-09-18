@@ -31,7 +31,6 @@ public class Notification {
     @Column(nullable = false)
     private LocalDateTime createdAt = LocalDateTime.now();
     
-    // Optional: Link to related entities
     private Long relatedIssueId;
     private Long relatedAssetId;
     

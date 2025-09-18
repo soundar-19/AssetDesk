@@ -48,7 +48,7 @@ import { ConfirmationDialogService } from '../../../shared/components/confirmati
             <button class="tab" [class.active]="activeTab === 'ownership'" (click)="setActiveTab('ownership')" *ngIf="canManageAssets()">Ownership History</button>
             <button class="tab" [class.active]="activeTab === 'service'" (click)="setActiveTab('service')">{{ canManageAssets() ? 'Service History' : 'Service Requests' }}</button>
 
-            <button class="tab" [class.active]="activeTab === 'warranty'" (click)="setActiveTab('warranty')" *ngIf="canManageAssets()">Warranty</button>
+            <button class="tab" [class.active]="activeTab === 'warranty'" (click)="setActiveTab('warranty')" *ngIf="canManageAssets() && asset?.category !== 'SOFTWARE'">Warranty</button>
           </div>
 
           <div class="tab-content">
@@ -89,7 +89,7 @@ import { ConfirmationDialogService } from '../../../shared/components/confirmati
                   </div>
                 </div>
 
-                <div class="info-section" *ngIf="shouldShowFinancialInfo()">
+                <div class="info-section" *ngIf="shouldShowFinancialInfo() && asset.category !== 'SOFTWARE'">
                   <h3><i class="icon-dollar"></i> Financial Information</h3>
                   <div class="info-grid">
                     <div class="info-item">
@@ -183,21 +183,27 @@ import { ConfirmationDialogService } from '../../../shared/components/confirmati
                         <label>Duration:</label>
                         <span>{{ currentAllocation.daysAllocated }} days</span>
                       </div>
-                      <div class="detail-item" *ngIf="currentAllocation.returnRequestDate">
-                        <label>Return Status:</label>
-                        <span class="status status-requested">Return Requested</span>
+                      <div class="detail-item" *ngIf="currentAllocation.remarks">
+                        <label>Allocation Remarks:</label>
+                        <span>{{ currentAllocation.remarks }}</span>
                       </div>
-                      <div class="detail-item" *ngIf="currentAllocation.returnRequestDate">
-                        <label>Return Requested:</label>
+                    </div>
+                  </div>
+                  
+                  <!-- Return Request Section - Separate from user info -->
+                  <div class="return-request-card" *ngIf="currentAllocation.returnRequestDate">
+                    <div class="return-request-header">
+                      <h4><i class="icon-return"></i> Return Request</h4>
+                      <span class="status status-requested">Pending Return</span>
+                    </div>
+                    <div class="return-request-details">
+                      <div class="detail-item">
+                        <label>Requested Date:</label>
                         <span>{{ formatDate(currentAllocation.returnRequestDate) }}</span>
                       </div>
                       <div class="detail-item" *ngIf="currentAllocation.returnRequestRemarks">
                         <label>Return Reason:</label>
                         <span>{{ currentAllocation.returnRequestRemarks }}</span>
-                      </div>
-                      <div class="detail-item" *ngIf="currentAllocation.remarks">
-                        <label>Remarks:</label>
-                        <span>{{ currentAllocation.remarks }}</span>
                       </div>
                     </div>
                   </div>
@@ -334,7 +340,7 @@ import { ConfirmationDialogService } from '../../../shared/components/confirmati
 
 
             <!-- Warranty Tab -->
-            <div *ngIf="activeTab === 'warranty'" class="tab-panel">
+            <div *ngIf="activeTab === 'warranty' && asset?.category !== 'SOFTWARE'" class="tab-panel">
               <div class="warranty-status">
                 <h3><i class="icon-shield"></i> Warranty Status</h3>
                 <div class="warranty-info">
@@ -410,7 +416,7 @@ import { ConfirmationDialogService } from '../../../shared/components/confirmati
               <label>Service Records:</label>
               <span>{{ serviceRecords.length }}</span>
             </div>
-            <div class="stat-item" *ngIf="depreciation && depreciation.yearsUsed !== null && depreciation.yearsUsed !== undefined && shouldShowFinancialInfo()">
+            <div class="stat-item" *ngIf="depreciation && depreciation.yearsUsed !== null && depreciation.yearsUsed !== undefined && shouldShowFinancialInfo() && asset?.category !== 'SOFTWARE'">
               <label>Age:</label>
               <span>{{ depreciation.yearsUsed }} years</span>
             </div>
@@ -748,6 +754,14 @@ import { ConfirmationDialogService } from '../../../shared/components/confirmati
     .allocation-details { flex: 1; }
     .detail-item { display: flex; justify-content: space-between; margin-bottom: 0.5rem; }
     .detail-item label { font-weight: 500; color: #666; }
+    
+    .return-request-card { margin-top: 1rem; padding: 1rem; background: #fff3cd; border-radius: 0.75rem; border-left: 4px solid #ffc107; }
+    .return-request-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 0.75rem; }
+    .return-request-header h4 { margin: 0; font-size: 1rem; color: #856404; display: flex; align-items: center; gap: 0.5rem; }
+    .return-request-details { display: flex; flex-direction: column; gap: 0.5rem; }
+    .return-request-details .detail-item { display: flex; justify-content: space-between; }
+    .return-request-details .detail-item label { font-weight: 500; color: #856404; }
+    .return-request-details .detail-item span { color: #1a1a1a; font-weight: 500; }
     
     .summary-cards { display: grid; grid-template-columns: repeat(4, 1fr); gap: 1rem; margin-bottom: 1.5rem; }
     .summary-card { text-align: center; padding: 1.5rem; background: #f8f9fa; border-radius: 0.75rem; }
@@ -1371,7 +1385,7 @@ export class AssetDetailComponent implements OnInit {
   }
 
   shouldShowFinancialInfo(): boolean {
-    return this.permissions.canManageAssets || this.permissions.canManageSystem;
+    return (this.permissions.canManageAssets || this.permissions.canManageSystem) && this.asset?.category !== 'SOFTWARE';
   }
 
 

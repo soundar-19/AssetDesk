@@ -50,6 +50,16 @@
   gap: 1rem;
 }
 
+/* IT Support Dashboard - Equal sized cards */
+.support-view .widgets {
+  grid-template-columns: repeat(3, 1fr) !important;
+  min-height: 250px;
+}
+
+.support-view .widgets .widget {
+  min-height: 250px;
+}
+
 .widgets.admin-layout {
   grid-template-columns: 1fr 1.5fr;
   gap: 1.5rem;
@@ -393,7 +403,8 @@
   }
   
   .widgets,
-  .widgets.admin-layout {
+  .widgets.admin-layout,
+  .support-view .widgets {
     grid-template-columns: 1fr;
   }
   

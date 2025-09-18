@@ -26,6 +26,7 @@ public class MessageServiceImpl implements MessageService {
     private final IssueRepository issueRepository;
     private final UserRepository userRepository;
     private final AppConfig appConfig;
+    private final com.assetdesk.service.NotificationService notificationService;
     
     @Override
     public MessageResponseDTO sendMessage(MessageRequestDTO messageRequestDTO, Long senderId) {
@@ -39,10 +40,43 @@ public class MessageServiceImpl implements MessageService {
         
         Message message = messageRequestDTO.toEntity();
         message.setIssue(issue);
-        message.setSender(userRepository.findById(senderId)
-            .orElseThrow(() -> new ResourceNotFoundException("User", "id", senderId)));
+        var sender = userRepository.findById(senderId)
+            .orElseThrow(() -> new ResourceNotFoundException("User", "id", senderId));
+        message.setSender(sender);
         
         Message savedMessage = messageRepository.save(message);
+        
+        // Send notification to other participants
+        try {
+            // Notify issue reporter if sender is not the reporter
+            if (issue.getReportedBy() != null && issue.getReportedBy().getId() != null && 
+                issue.getReportedBy().getId() > 0 && !issue.getReportedBy().getId().equals(senderId)) {
+                notificationService.createNotification(
+                    issue.getReportedBy().getId(),
+                    "New Message",
+                    sender.getName() + " sent a message on issue: " + issue.getTitle(),
+                    com.assetdesk.domain.Notification.Type.NEW_MESSAGE,
+                    issue.getId(),
+                    null
+                );
+            }
+            
+            // Notify assigned user if sender is not the assigned user
+            if (issue.getAssignedTo() != null && issue.getAssignedTo().getId() != null && 
+                issue.getAssignedTo().getId() > 0 && !issue.getAssignedTo().getId().equals(senderId)) {
+                notificationService.createNotification(
+                    issue.getAssignedTo().getId(),
+                    "New Message",
+                    sender.getName() + " sent a message on issue: " + issue.getTitle(),
+                    com.assetdesk.domain.Notification.Type.NEW_MESSAGE,
+                    issue.getId(),
+                    null
+                );
+            }
+        } catch (Exception e) {
+            System.out.println("Failed to send message notification: " + e.getMessage());
+        }
+        
         return MessageResponseDTO.fromEntity(savedMessage);
     }
     
@@ -87,8 +121,9 @@ public class MessageServiceImpl implements MessageService {
         
         Message message = new Message();
         message.setIssue(issue);
-        message.setSender(userRepository.findById(senderId)
-            .orElseThrow(() -> new ResourceNotFoundException("User", "id", senderId)));
+        var sender = userRepository.findById(senderId)
+            .orElseThrow(() -> new ResourceNotFoundException("User", "id", senderId));
+        message.setSender(sender);
         message.setMessageText(messageText != null ? messageText : "");
         message.setIsSystemMessage(false);
         
@@ -107,6 +142,40 @@ public class MessageServiceImpl implements MessageService {
         }
         
         Message savedMessage = messageRepository.save(message);
+        
+        // Send notification to other participants (only for non-system messages)
+        if (!message.getIsSystemMessage()) {
+            try {
+                // Notify issue reporter if sender is not the reporter
+                if (issue.getReportedBy() != null && issue.getReportedBy().getId() != null && 
+                    issue.getReportedBy().getId() > 0 && !issue.getReportedBy().getId().equals(senderId)) {
+                    notificationService.createNotification(
+                        issue.getReportedBy().getId(),
+                        "New Message",
+                        sender.getName() + " sent a message on issue: " + issue.getTitle(),
+                        com.assetdesk.domain.Notification.Type.NEW_MESSAGE,
+                        issue.getId(),
+                        null
+                    );
+                }
+                
+                // Notify assigned user if sender is not the assigned user
+                if (issue.getAssignedTo() != null && issue.getAssignedTo().getId() != null && 
+                    issue.getAssignedTo().getId() > 0 && !issue.getAssignedTo().getId().equals(senderId)) {
+                    notificationService.createNotification(
+                        issue.getAssignedTo().getId(),
+                        "New Message",
+                        sender.getName() + " sent a message on issue: " + issue.getTitle(),
+                        com.assetdesk.domain.Notification.Type.NEW_MESSAGE,
+                        issue.getId(),
+                        null
+                    );
+                }
+            } catch (Exception e) {
+                System.out.println("Failed to send message notification: " + e.getMessage());
+            }
+        }
+        
         return MessageResponseDTO.fromEntity(savedMessage);
     }
     

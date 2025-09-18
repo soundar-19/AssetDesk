@@ -371,16 +371,16 @@ public class AssetServiceImpl implements AssetService {
         for (Object[] result : results) {
             AssetGroupResponseDTO group = new AssetGroupResponseDTO(
                 (String) result[0],  // name
-                "",                  // model
-                "",                  // category
-                "",                  // type
+                (String) result[6],  // model
+                result[7] != null ? result[7].toString() : "", // category
+                result[8] != null ? result[8].toString() : "", // type
                 (Long) result[1],    // total
                 (Long) result[2],    // available
                 (Long) result[3],    // allocated
                 (Long) result[4],    // maintenance
                 (Long) result[5],    // retired
                 java.math.BigDecimal.ZERO, // averageCost
-                ""                   // vendor
+                (String) result[9]   // vendor
             );
             groups.add(group);
         }

@@ -83,12 +83,30 @@ import { DataTableComponent, TableColumn, TableAction } from '../../shared/compo
       background: var(--gray-50);
       border-color: var(--gray-400);
     }
+
+    /* Action button styles for consistent sizing */
+    :host ::ng-deep .action-btn {
+      min-width: 120px;
+      padding: 0.5rem 0.75rem !important;
+      text-align: center;
+      white-space: nowrap;
+      font-size: 0.75rem;
+      font-weight: 500;
+    }
+
+    :host ::ng-deep .action-btn:disabled {
+      opacity: 0.6;
+      cursor: not-allowed;
+      background-color: var(--gray-100) !important;
+      color: var(--gray-500) !important;
+    }
   `]
 })
 export class UserAssetsPageComponent implements OnInit {
   assets: Asset[] = [];
   user: User | null = null;
   pagination: any = null;
+  returnRequestedAssets = new Set<number>();
   
   columns: TableColumn[] = [
     { key: 'assetTag', label: 'Asset Tag', sortable: true },
@@ -96,14 +114,23 @@ export class UserAssetsPageComponent implements OnInit {
     { key: 'category', label: 'Category', badge: true },
     { key: 'type', label: 'Type' },
     { key: 'status', label: 'Status', badge: true },
-    { key: 'allocatedDate', label: 'Allocated Date', render: (item) => item.allocatedDate ? new Date(item.allocatedDate).toLocaleDateString() : 'N/A' }
+    { key: 'allocatedDate', label: 'Allocated Date', render: (item) => {
+      // Check for allocation date in various possible fields
+      const allocDate = item.allocatedDate || item.allocationDate || item.allocation?.allocatedDate || item.currentAllocation?.allocatedDate;
+      if (allocDate) {
+        return new Date(allocDate).toLocaleDateString();
+      }
+      // If no allocation date but asset is allocated, show status
+      return item.status === 'ALLOCATED' ? 'Currently Allocated' : 'Not Allocated';
+    } }
   ];
 
   actions: TableAction[] = [
     {
-      label: 'Request Return',
+      label: (asset) => this.returnRequestedAssets.has(asset.id) ? 'Return Requested' : 'Request Return',
       action: (asset) => this.requestReturn(asset),
-      condition: (asset) => asset.status === 'ALLOCATED'
+      condition: (asset) => asset.status === 'ALLOCATED',
+      disabled: (asset) => this.returnRequestedAssets.has(asset.id)
     }
   ];
 
@@ -142,11 +169,28 @@ export class UserAssetsPageComponent implements OnInit {
           totalPages: response.totalPages || 0,
           totalElements: response.totalElements || 0
         };
+        // Load allocation data for each asset
+        this.loadAllocationDates(userId);
       },
       error: () => {
         this.assets = [];
         this.pagination = null;
       }
+    });
+  }
+
+  loadAllocationDates(userId: number) {
+    this.assets.forEach(asset => {
+      this.allocationService.getCurrentAllocationByAsset(asset.id).subscribe({
+        next: (allocation) => {
+          if (allocation && allocation.userId === userId) {
+            (asset as any).allocatedDate = allocation.allocatedDate;
+          }
+        },
+        error: () => {
+          // Ignore errors for assets without allocations
+        }
+      });
     });
   }
 
@@ -162,6 +206,11 @@ export class UserAssetsPageComponent implements OnInit {
   }
 
   async requestReturn(asset: Asset) {
+    if (this.returnRequestedAssets.has(asset.id)) {
+      this.toastService.info('Return request already sent for this asset');
+      return;
+    }
+
     const remarks = await this.inputModalService.promptText(
       'Request Asset Return',
       `Request return of ${asset.name} from ${this.user?.name}`,
@@ -174,6 +223,7 @@ export class UserAssetsPageComponent implements OnInit {
       this.allocationService.requestReturn(asset.id, remarks || '').subscribe({
         next: () => {
           this.toastService.success(`Return request sent for ${asset.name}`);
+          this.returnRequestedAssets.add(asset.id);
           this.loadUserAssets(+this.route.snapshot.paramMap.get('id')!);
         },
         error: () => this.toastService.error('Failed to send return request')

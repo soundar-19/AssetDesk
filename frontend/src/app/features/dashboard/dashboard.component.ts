@@ -174,22 +174,11 @@ export class DashboardComponent implements OnInit {
   }
 
   getRequestTrend(): string {
-    if (this.dashboardStats.monthlyRequestTrends) {
-      const values = Object.values(this.dashboardStats.monthlyRequestTrends);
-      if (values.length >= 2) {
-        const current = values[values.length - 1];
-        const previous = values[values.length - 2];
-        if (previous === 0 && current === 0) {
-          return 'No change';
-        }
-        if (previous === 0) {
-          return current > 0 ? `+${current} new requests` : 'No change';
-        }
-        const change = ((current - previous) / previous * 100);
-        return `${change >= 0 ? '+' : ''}${change.toFixed(1)}% this month`;
-      }
+    const pending = this.dashboardStats.pendingRequests || 0;
+    if (pending > 0) {
+      return `${pending} pending`;
     }
-    return 'No data';
+    return 'All processed';
   }
 
   getRequestsByStatusArray() {
@@ -198,8 +187,7 @@ export class DashboardComponent implements OnInit {
   }
 
   getTotalRequests(): number {
-    if (!this.dashboardStats.requestsByStatus) return 0;
-    return Object.values(this.dashboardStats.requestsByStatus).reduce((sum, count) => sum + count, 0);
+    return this.dashboardStats.myRequests || 0;
   }
 
   getAssetCategoriesArray(): ChartData[] {

@@ -3,6 +3,7 @@ import { CommonModule } from '@angular/common';
 import { Router } from '@angular/router';
 import { AssetService } from '../../../core/services/asset.service';
 import { RoleService } from '../../../core/services/role.service';
+import { CurrencyFormatPipe } from '../../../shared/pipes/currency-format.pipe';
 
 interface AssetGroup {
   name: string;
@@ -21,7 +22,7 @@ interface AssetGroup {
 @Component({
   selector: 'app-asset-groups-list',
   standalone: true,
-  imports: [CommonModule],
+  imports: [CommonModule, CurrencyFormatPipe],
   template: `
     <div class="page-container">
       <div class="page-header">
@@ -44,7 +45,7 @@ interface AssetGroup {
             <div class="group-header">
               <div class="group-info">
                 <h3 class="group-name">{{ group.name }}</h3>
-                <span class="badge badge-info">Asset Group</span>
+                <span class="badge" [ngClass]="getCategoryBadgeClass(group.category)" *ngIf="group.category">{{ group.category }}</span>
               </div>
               <div class="group-total">
                 <span class="total-count">{{ group.total }}</span>
@@ -71,8 +72,11 @@ interface AssetGroup {
               </div>
             </div>
 
-            <div class="group-actions" (click)="$event.stopPropagation()">
+            <div class="group-meta" *ngIf="group.averageCost">
+              <span class="avg-cost">Avg: {{ group.averageCost | currencyFormat }}</span>
+            </div>
 
+            <div class="group-actions" (click)="$event.stopPropagation()">
               <button 
                 *ngIf="group.available > 0 && roleService.canManageAssets()" 
                 class="btn btn-primary btn-sm" 
@@ -184,6 +188,17 @@ interface AssetGroup {
       letter-spacing: 0.05em;
     }
 
+    .group-meta {
+      margin-bottom: var(--space-3);
+      text-align: center;
+    }
+
+    .avg-cost {
+      font-size: 0.875rem;
+      color: var(--gray-600);
+      font-weight: 500;
+    }
+
     .group-actions {
       display: flex;
       gap: var(--space-2);
@@ -203,6 +218,26 @@ interface AssetGroup {
 
     .asset-group-card.clickable {
       cursor: pointer;
+    }
+
+    .badge-primary {
+      background-color: var(--primary-600);
+      color: white;
+    }
+
+    .badge-success {
+      background-color: var(--success-600);
+      color: white;
+    }
+
+    .badge-warning {
+      background-color: var(--warning-600);
+      color: white;
+    }
+
+    .badge-secondary {
+      background-color: var(--gray-500);
+      color: white;
     }
 
     @media (max-width: 768px) {
@@ -246,7 +281,14 @@ export class AssetGroupsListComponent implements OnInit {
   }
 
   filterByCategory(event: any) {
-    this.filteredGroups = this.assetGroups;
+    const selectedCategory = event.target.value;
+    if (selectedCategory) {
+      this.filteredGroups = this.assetGroups.filter(group => 
+        group.category?.toUpperCase() === selectedCategory.toUpperCase()
+      );
+    } else {
+      this.filteredGroups = this.assetGroups;
+    }
   }
 
   viewGroupDetails(group: AssetGroup) {
@@ -259,5 +301,18 @@ export class AssetGroupsListComponent implements OnInit {
         group: group.name
       }
     });
+  }
+
+  getCategoryBadgeClass(category: string): string {
+    switch (category?.toUpperCase()) {
+      case 'HARDWARE':
+        return 'badge-primary';
+      case 'SOFTWARE':
+        return 'badge-success';
+      case 'ACCESSORIES':
+        return 'badge-warning';
+      default:
+        return 'badge-secondary';
+    }
   }
 }

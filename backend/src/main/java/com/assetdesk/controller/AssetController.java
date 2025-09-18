@@ -20,8 +20,6 @@ import jakarta.validation.Valid;
 import org.springframework.data.domain.PageRequest;
 import java.util.List;
 import java.util.Map;
-import java.time.LocalDate;
-import java.math.BigDecimal;
 
 @RestController
 @RequestMapping("/api/assets")

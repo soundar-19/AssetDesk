@@ -1,0 +1,39 @@
+.standardized-layout {
+  padding: var(--space-6) var(--space-6) var(--space-6) var(--space-6);
+  max-width: var(--container-xl);
+  margin: 0 auto;
+  min-height: 100vh;
+  box-sizing: border-box;
+}
+
+.user-form {
+  /* Layout handled by standardized-layout class */
+}
+
+/* Hide scrollbars but keep scroll functionality */
+::-webkit-scrollbar {
+  display: none;
+}
+
+* {
+  -ms-overflow-style: none;
+  scrollbar-width: none;
+}
+
+@media (max-width: 1024px) {
+  .standardized-layout {
+    padding: var(--space-4) var(--space-4) var(--space-4) var(--space-4);
+  }
+}
+
+@media (max-width: 768px) {
+  .standardized-layout {
+    padding: var(--space-3) var(--space-3) var(--space-3) var(--space-3);
+  }
+}
+
+@media (max-width: 480px) {
+  .standardized-layout {
+    padding: var(--space-2) var(--space-2) var(--space-2) var(--space-2);
+  }
+}

@@ -41,29 +41,28 @@ public class DataInitializer implements CommandLineRunner {
 
     private void initializeUsers() {
         if (userRepository.count() == 0) {
-            // Active users
-            userRepository.save(createUser("SYSTEM", "System Administrator", "system@assetdesk.com", "system123", "+91-98765-43210", User.Role.ADMIN, "Information Technology", "System Administrator", LocalDate.now(), User.Status.ACTIVE));
-            userRepository.save(createUser("EMP001", "Soundar Raja", "sr@assetdesk.com", "password123", "+91-98765-43211", User.Role.ADMIN, "Information Technology", "Software Engineer", LocalDate.now().minusMonths(6), User.Status.ACTIVE));
-            userRepository.save(createUser("EMP002", "Lokeshwaran", "lokeshwaran@assetdesk.com", "password123", "+91-98765-43212", User.Role.EMPLOYEE, "Information Technology", "Developer", LocalDate.now().minusMonths(4), User.Status.ACTIVE));
-            userRepository.save(createUser("EMP003", "Hari Ram", "hari.ram@assetdesk.com", "password123", "+91-98765-43213", User.Role.EMPLOYEE, "Human Resources", "HR Specialist", LocalDate.now().minusMonths(3), User.Status.ACTIVE));
-            userRepository.save(createUser("EMP004", "Adrin", "adrin@assetdesk.com", "password123", "+91-98765-43214", User.Role.EMPLOYEE, "Finance", "Financial Analyst", LocalDate.now().minusMonths(5), User.Status.ACTIVE));
-            userRepository.save(createUser("EMP006", "Jeff", "jeff@assetdesk.com", "password123", "+91-98765-43216", User.Role.EMPLOYEE, "Marketing", "Marketing Manager", LocalDate.now().minusMonths(12), User.Status.ACTIVE));
-            userRepository.save(createUser("EMP007", "Pradeep", "pradeep@assetdesk.com", "password123", "+91-98765-43217", User.Role.EMPLOYEE, "Operations", "Operations Specialist", LocalDate.now().minusMonths(7), User.Status.ACTIVE));
-            userRepository.save(createUser("EMP008", "Swetha", "swetha@assetdesk.com", "password123", "+91-98765-43218", User.Role.EMPLOYEE, "Quality Assurance", "QA Engineer", LocalDate.now().minusMonths(9), User.Status.ACTIVE));
-            userRepository.save(createUser("EMP009", "SriGayathri", "srigayathri@assetdesk.com", "password123", "+91-98765-43219", User.Role.EMPLOYEE, "Design", "UI/UX Designer", LocalDate.now().minusMonths(2), User.Status.ACTIVE));
-            userRepository.save(createUser("EMP010", "Aakash", "aakash@assetdesk.com", "password123", "+91-98765-43220", User.Role.IT_SUPPORT, "Information Technology", "Senior IT Specialist", LocalDate.now().minusMonths(10), User.Status.ACTIVE));
-            userRepository.save(createUser("EMP011", "Aadhitya", "aadhitya@assetdesk.com", "password123", "+91-98765-43221", User.Role.EMPLOYEE, "Research", "Research Analyst", LocalDate.now().minusMonths(1), User.Status.ACTIVE));
+            userRepository.save(createUser("SYSTEM", "System Administrator", "system@assetdesk.com", "system123", "+919876543210", User.Role.ADMIN, "Information Technology", "System Administrator", LocalDate.now(), User.Status.ACTIVE));
+            userRepository.save(createUser("EMP001", "Soundar Raja", "sr@assetdesk.com", "password123", "+919876543211", User.Role.EMPLOYEE, "Information Technology", "Software Engineer", LocalDate.now().minusMonths(6), User.Status.ACTIVE));
+            userRepository.save(createUser("EMP002", "Lokeshwaran", "lokeshwaran@assetdesk.com", "password123", "+919876543212", User.Role.EMPLOYEE, "R&D", "Developer", LocalDate.now().minusMonths(4), User.Status.ACTIVE));
+            userRepository.save(createUser("EMP003", "Hari Ram", "hari.ram@assetdesk.com", "password123", "+919876543213", User.Role.EMPLOYEE, "Human Resources", "HR Specialist", LocalDate.now().minusMonths(3), User.Status.ACTIVE));
+            userRepository.save(createUser("EMP004", "Adrin", "adrin@assetdesk.com", "password123", "+919876543214", User.Role.EMPLOYEE, "Finance", "Financial Analyst", LocalDate.now().minusMonths(5), User.Status.ACTIVE));
+            userRepository.save(createUser("EMP006", "Jeff", "jeff@assetdesk.com", "password123", "+919876543216", User.Role.EMPLOYEE, "Marketing", "Marketing Manager", LocalDate.now().minusMonths(12), User.Status.ACTIVE));
+            userRepository.save(createUser("EMP007", "Pradeep", "pradeep@assetdesk.com", "password123", "+919876543217", User.Role.EMPLOYEE, "Operations", "Operations Specialist", LocalDate.now().minusMonths(7), User.Status.ACTIVE));
+            userRepository.save(createUser("EMP008", "Swetha", "swetha@assetdesk.com", "password123", "+919876543218", User.Role.EMPLOYEE, "Quality Assurance", "QA Engineer", LocalDate.now().minusMonths(9), User.Status.ACTIVE));
+            userRepository.save(createUser("EMP009", "Sri Gayathri", "srigayathri@assetdesk.com", "password123", "+919876543219", User.Role.EMPLOYEE, "Design", "UI/UX Designer", LocalDate.now().minusMonths(2), User.Status.ACTIVE));
+            userRepository.save(createUser("EMP010", "Suraj", "suraj@assetdesk.com", "password123", "+919876543220", User.Role.IT_SUPPORT, "Information Technology", "Senior IT Specialist", LocalDate.now().minusMonths(10), User.Status.ACTIVE));
+            userRepository.save(createUser("EMP011", "Aadhitya", "aadhitya@assetdesk.com", "password123", "+919876543221", User.Role.EMPLOYEE, "Research", "Research Analyst", LocalDate.now().minusMonths(1), User.Status.ACTIVE));
         }
     }
 
     private void initializeVendors() {
         if (vendorRepository.count() == 0) {
-            vendorRepository.save(createVendor("Dell Technologies", "John Dell", "sales@dell.com", "+91-80-4040-7000", "One Dell Way, Round Rock, TX 78682"));
-            vendorRepository.save(createVendor("HP Inc.", "Sarah HP", "enterprise@hp.com", "+91-80-2552-4000", "1501 Page Mill Road, Palo Alto, CA 94304"));
-            vendorRepository.save(createVendor("Lenovo Group", "Mike Lenovo", "business@lenovo.com", "+91-124-462-8000", "1009 Think Place, Morrisville, NC 27560"));
-            vendorRepository.save(createVendor("Microsoft Corporation", "Bill Gates", "enterprise@microsoft.com", "+91-80-4040-4000", "One Microsoft Way, Redmond, WA 98052"));
-            vendorRepository.save(createVendor("Apple Inc.", "Tim Cook", "business@apple.com", "+91-80-4040-3000", "One Apple Park Way, Cupertino, CA 95014"));
-            vendorRepository.save(createVendor("Canon Inc.", "Canon Support", "support@canon.com", "+91-124-462-9000", "One Canon Park, Melville, NY 11747"));
+            vendorRepository.save(createVendor("Dell Technologies", "John Dell", "sales@dell.com", "+918040407000", "One Dell Way, Round Rock, TX 78682"));
+            vendorRepository.save(createVendor("HP Inc.", "Sarah HP", "enterprise@hp.com", "+918025524000", "1501 Page Mill Road, Palo Alto, CA 94304"));
+            vendorRepository.save(createVendor("Lenovo Group", "Mike Lenovo", "business@lenovo.com", "+911244628000", "1009 Think Place, Morrisville, NC 27560"));
+            vendorRepository.save(createVendor("Microsoft Corporation", "Bill Gates", "enterprise@microsoft.com", "+918040404000", "One Microsoft Way, Redmond, WA 98052"));
+            vendorRepository.save(createVendor("Apple Inc.", "Tim Cook", "business@apple.com", "+918040403000", "One Apple Park Way, Cupertino, CA 95014"));
+            vendorRepository.save(createVendor("Canon Inc.", "Canon Support", "support@canon.com", "+911244629000", "One Canon Park, Melville, NY 11747"));
         }
     }
 
@@ -76,39 +75,45 @@ public class DataInitializer implements CommandLineRunner {
             Vendor apple = vendorRepository.findByName("Apple Inc.").orElse(null);
             Vendor canon = vendorRepository.findByName("Canon Inc.").orElse(null);
 
-            // Laptops - 15 units
             for (int i = 1; i <= 15; i++) {
                 Asset.Status status = i <= 8 ? Asset.Status.ALLOCATED : Asset.Status.AVAILABLE;
+                LocalDate warrantyDate;
                 if (i <= 5) {
-                    assetRepository.save(createAsset(String.format("LAP%03d", i), "Dell Latitude 7420", Asset.Category.HARDWARE, Asset.AssetType.LAPTOP, "Latitude 7420", "DL7420" + String.format("%03d", i), LocalDate.now().minusMonths(6), LocalDate.now().plusYears(3), dell, new BigDecimal("1299.99"), status, false, null, null));
+                    warrantyDate = i <= 2 ? LocalDate.of(2025, 9, 10) : (i == 3 ? LocalDate.of(2025, 9, 17) : LocalDate.of(2025, 9, 25));
+                    assetRepository.save(createAsset(String.format("LAP%03d", i), "Dell Latitude 7420", Asset.Category.HARDWARE, Asset.AssetType.LAPTOP, "Latitude 7420", "DL7420" + String.format("%03d", i), LocalDate.now().minusMonths(6), warrantyDate, dell, new BigDecimal("1299.99"), status, false, null, null));
                 } else if (i <= 10) {
-                    assetRepository.save(createAsset(String.format("LAP%03d", i), "HP EliteBook 840", Asset.Category.HARDWARE, Asset.AssetType.LAPTOP, "EliteBook 840", "HP840" + String.format("%03d", i), LocalDate.now().minusMonths(4), LocalDate.now().plusYears(3), hp, new BigDecimal("1199.99"), status, false, null, null));
+                    warrantyDate = i == 6 ? LocalDate.of(2025, 9, 15) : LocalDate.now().plusYears(3);
+                    assetRepository.save(createAsset(String.format("LAP%03d", i), "HP EliteBook 840", Asset.Category.HARDWARE, Asset.AssetType.LAPTOP, "EliteBook 840", "HP840" + String.format("%03d", i), LocalDate.now().minusMonths(4), warrantyDate, hp, new BigDecimal("1199.99"), status, false, null, null));
                 } else {
-                    assetRepository.save(createAsset(String.format("LAP%03d", i), "Lenovo ThinkPad X1", Asset.Category.HARDWARE, Asset.AssetType.LAPTOP, "ThinkPad X1", "TP1" + String.format("%03d", i), LocalDate.now().minusMonths(8), LocalDate.now().plusYears(2), lenovo, new BigDecimal("1599.99"), status, false, null, null));
+                    warrantyDate = i == 11 ? LocalDate.of(2025, 9, 20) : LocalDate.now().plusYears(2);
+                    assetRepository.save(createAsset(String.format("LAP%03d", i), "Lenovo ThinkPad X1", Asset.Category.HARDWARE, Asset.AssetType.LAPTOP, "ThinkPad X1", "TP1" + String.format("%03d", i), LocalDate.now().minusMonths(8), warrantyDate, lenovo, new BigDecimal("1599.99"), status, false, null, null));
                 }
             }
 
-            // Desktops - 12 units
             for (int i = 1; i <= 12; i++) {
                 Asset.Status status = i <= 6 ? Asset.Status.ALLOCATED : Asset.Status.AVAILABLE;
+                LocalDate warrantyDate;
                 if (i <= 6) {
-                    assetRepository.save(createAsset(String.format("DSK%03d", i), "Dell OptiPlex 7090", Asset.Category.HARDWARE, Asset.AssetType.DESKTOP, "OptiPlex 7090", "OP7090" + String.format("%03d", i), LocalDate.now().minusMonths(10), LocalDate.now().plusYears(3), dell, new BigDecimal("899.99"), status, false, null, null));
+                    warrantyDate = i == 1 ? LocalDate.of(2025, 9, 12) : (i == 2 ? LocalDate.of(2025, 9, 18) : LocalDate.now().plusYears(3));
+                    assetRepository.save(createAsset(String.format("DSK%03d", i), "Dell OptiPlex 7090", Asset.Category.HARDWARE, Asset.AssetType.DESKTOP, "OptiPlex 7090", "OP7090" + String.format("%03d", i), LocalDate.now().minusMonths(10), warrantyDate, dell, new BigDecimal("899.99"), status, false, null, null));
                 } else {
-                    assetRepository.save(createAsset(String.format("DSK%03d", i), "HP EliteDesk 800", Asset.Category.HARDWARE, Asset.AssetType.DESKTOP, "EliteDesk 800", "ED800" + String.format("%03d", i), LocalDate.now().minusMonths(7), LocalDate.now().plusYears(3), hp, new BigDecimal("799.99"), status, false, null, null));
+                    warrantyDate = i == 7 ? LocalDate.of(2025, 9, 16) : LocalDate.now().plusYears(3);
+                    assetRepository.save(createAsset(String.format("DSK%03d", i), "HP EliteDesk 800", Asset.Category.HARDWARE, Asset.AssetType.DESKTOP, "EliteDesk 800", "ED800" + String.format("%03d", i), LocalDate.now().minusMonths(7), warrantyDate, hp, new BigDecimal("799.99"), status, false, null, null));
                 }
             }
 
-            // Monitors - 20 units
             for (int i = 1; i <= 20; i++) {
                 Asset.Status status = i <= 12 ? Asset.Status.ALLOCATED : Asset.Status.AVAILABLE;
+                LocalDate warrantyDate;
                 if (i <= 10) {
-                    assetRepository.save(createAsset(String.format("MON%03d", i), "Dell UltraSharp 27", Asset.Category.HARDWARE, Asset.AssetType.MONITOR, "UltraSharp U2722DE", "US27" + String.format("%03d", i), LocalDate.now().minusMonths(5), LocalDate.now().plusYears(3), dell, new BigDecimal("449.99"), status, false, null, null));
+                    warrantyDate = (i == 3 ? LocalDate.of(2025, 9, 14) : (i == 4 ? LocalDate.of(2025, 9, 19) : LocalDate.now().plusYears(3)));
+                    assetRepository.save(createAsset(String.format("MON%03d", i), "Dell UltraSharp 27", Asset.Category.HARDWARE, Asset.AssetType.MONITOR, "UltraSharp U2722DE", "US27" + String.format("%03d", i), LocalDate.now().minusMonths(5), warrantyDate, dell, new BigDecimal("449.99"), status, false, null, null));
                 } else {
-                    assetRepository.save(createAsset(String.format("MON%03d", i), "HP E24 G5", Asset.Category.HARDWARE, Asset.AssetType.MONITOR, "E24 G5", "E24G5" + String.format("%03d", i), LocalDate.now().minusMonths(3), LocalDate.now().plusYears(3), hp, new BigDecimal("199.99"), status, false, null, null));
+                    warrantyDate = i == 11 ? LocalDate.of(2025, 9, 13) : LocalDate.now().plusYears(3);
+                    assetRepository.save(createAsset(String.format("MON%03d", i), "HP E24 G5", Asset.Category.HARDWARE, Asset.AssetType.MONITOR, "E24 G5", "E24G5" + String.format("%03d", i), LocalDate.now().minusMonths(3), warrantyDate, hp, new BigDecimal("199.99"), status, false, null, null));
                 }
             }
 
-            // Printers - 10 units with all statuses
             for (int i = 1; i <= 10; i++) {
                 Asset.Status status;
                 if (i <= 3) status = Asset.Status.AVAILABLE;
@@ -124,7 +129,6 @@ public class DataInitializer implements CommandLineRunner {
                 }
             }
 
-            // Software Licenses - 25 units
             for (int i = 1; i <= 25; i++) {
                 Asset.Status status = i <= 15 ? Asset.Status.ALLOCATED : Asset.Status.AVAILABLE;
                 if (i <= 10) {
@@ -142,7 +146,6 @@ public class DataInitializer implements CommandLineRunner {
                 }
             }
 
-            // Accessories - 35 units with diverse statuses
             for (int i = 1; i <= 35; i++) {
                 Asset.Status status;
                 if (i <= 18) status = Asset.Status.ALLOCATED;
@@ -217,7 +220,6 @@ public class DataInitializer implements CommandLineRunner {
 
     private void initializeAssetAllocations() {
         if (assetAllocationRepository.count() == 0) {
-            // Get all users for allocation
             User soundar = userRepository.findByEmployeeId("EMP001").orElse(null);
             User lokesh = userRepository.findByEmployeeId("EMP002").orElse(null);
             User dimple = userRepository.findByEmployeeId("EMP003").orElse(null);
@@ -231,7 +233,6 @@ public class DataInitializer implements CommandLineRunner {
             
             User[] users = {soundar, lokesh, dimple, rin, jeff, radeep, swaytha, srigayatree, aacash, auditya};
             
-            // Allocate laptops (8 allocated)
             for (int i = 1; i <= 8; i++) {
                 Asset laptop = assetRepository.findByAssetTag(String.format("LAP%03d", i)).orElse(null);
                 if (laptop != null && i <= users.length) {
@@ -239,7 +240,6 @@ public class DataInitializer implements CommandLineRunner {
                 }
             }
             
-            // Allocate desktops (6 allocated)
             for (int i = 1; i <= 6; i++) {
                 Asset desktop = assetRepository.findByAssetTag(String.format("DSK%03d", i)).orElse(null);
                 if (desktop != null && i <= users.length) {
@@ -247,7 +247,6 @@ public class DataInitializer implements CommandLineRunner {
                 }
             }
             
-            // Allocate monitors (12 allocated)
             for (int i = 1; i <= 12; i++) {
                 Asset monitor = assetRepository.findByAssetTag(String.format("MON%03d", i)).orElse(null);
                 if (monitor != null) {
@@ -256,7 +255,6 @@ public class DataInitializer implements CommandLineRunner {
                 }
             }
             
-            // Allocate software licenses (15 allocated)
             for (int i = 1; i <= 15; i++) {
                 Asset software = assetRepository.findByAssetTag(String.format("SW%03d", i)).orElse(null);
                 if (software != null) {
@@ -265,7 +263,6 @@ public class DataInitializer implements CommandLineRunner {
                 }
             }
             
-            // Allocate accessories (18 allocated)
             for (int i = 1; i <= 18; i++) {
                 Asset accessory = assetRepository.findByAssetTag(String.format("ACC%03d", i)).orElse(null);
                 if (accessory != null) {
@@ -274,7 +271,6 @@ public class DataInitializer implements CommandLineRunner {
                 }
             }
             
-            // Allocate printers (2 allocated - shared resources)
             Asset printer4 = assetRepository.findByAssetTag("PRT004").orElse(null);
             Asset printer5 = assetRepository.findByAssetTag("PRT005").orElse(null);
             if (printer4 != null) {
@@ -287,7 +283,10 @@ public class DataInitializer implements CommandLineRunner {
     }
 
     private void initializeAssetRequests() {
-        if (assetRequestRepository.count() == 0) {
+        System.out.println("Initializing asset requests...");
+        long existingCount = assetRequestRepository.count();
+        System.out.println("Existing asset requests count: " + existingCount);
+        if (existingCount == 0) {
             User pradeep = userRepository.findByEmployeeId("EMP007").orElse(null);
             User swetha = userRepository.findByEmployeeId("EMP008").orElse(null);
             User dimple = userRepository.findByEmployeeId("EMP003").orElse(null);
@@ -299,7 +298,6 @@ public class DataInitializer implements CommandLineRunner {
             User admin = userRepository.findByEmployeeId("EMP001").orElse(null);
             User itSupport = userRepository.findByEmployeeId("EMP010").orElse(null);
             
-            // PENDING requests (8 requests)
             assetRequestRepository.save(createAssetRequest(swetha, AssetRequest.RequestType.ADDITIONAL, "HARDWARE", "MONITOR", "External Monitor", "Dell UltraSharp 27", 450.0, "Need dual monitor setup for QA testing across multiple browsers", AssetRequest.Priority.MEDIUM, AssetRequest.Status.PENDING, null));
             assetRequestRepository.save(createAssetRequest(dimple, AssetRequest.RequestType.NEW_ASSET, "ACCESSORIES", "HEADSET", "Wireless Headset", "Logitech H800", 120.0, "For video conferences and HR interviews", AssetRequest.Priority.LOW, AssetRequest.Status.PENDING, null));
             assetRequestRepository.save(createAssetRequest(auditya, AssetRequest.RequestType.UPGRADE, "HARDWARE", "LAPTOP", "High Performance Laptop", "MacBook Pro 16", 2500.0, "Current laptop insufficient for data analysis and machine learning tasks", AssetRequest.Priority.URGENT, AssetRequest.Status.PENDING, null));
@@ -309,7 +307,6 @@ public class DataInitializer implements CommandLineRunner {
             assetRequestRepository.save(createAssetRequest(jeff, AssetRequest.RequestType.NEW_ASSET, "HARDWARE", "PRINTER", "Color Printer", "Canon PIXMA Pro", 800.0, "Need color printing for marketing materials and presentations", AssetRequest.Priority.MEDIUM, AssetRequest.Status.PENDING, null));
             assetRequestRepository.save(createAssetRequest(pradeep, AssetRequest.RequestType.ADDITIONAL, "ACCESSORIES", "WEBCAM", "4K Webcam", "Logitech Brio", 200.0, "For high-quality video conferences with clients", AssetRequest.Priority.LOW, AssetRequest.Status.PENDING, null));
             
-            // APPROVED requests (5 requests)
             assetRequestRepository.save(createAssetRequest(pradeep, AssetRequest.RequestType.NEW_ASSET, "HARDWARE", "LAPTOP", "Development Laptop", "ThinkPad X1 Carbon", 1500.0, "Need for software development and operations work", AssetRequest.Priority.HIGH, AssetRequest.Status.APPROVED, admin));
             assetRequestRepository.save(createAssetRequest(rin, AssetRequest.RequestType.REPLACEMENT, "HARDWARE", "DESKTOP", "Workstation Replacement", "HP Z4 G4", 1800.0, "Current desktop experiencing frequent crashes and performance issues", AssetRequest.Priority.HIGH, AssetRequest.Status.APPROVED, admin));
             assetRequestRepository.save(createAssetRequest(swetha, AssetRequest.RequestType.ADDITIONAL, "ACCESSORIES", "KEYBOARD", "Mechanical Keyboard", "Dell KB522", 60.0, "Need ergonomic keyboard for extended testing sessions", AssetRequest.Priority.MEDIUM, AssetRequest.Status.APPROVED, itSupport));
@@ -345,6 +342,10 @@ public class DataInitializer implements CommandLineRunner {
             assetRequestRepository.save(createAssetRequest(rin, AssetRequest.RequestType.NEW_ASSET, "ACCESSORIES", "WEBCAM", "4K Webcam", "Logitech Brio", 200.0, "For video streaming and recording", AssetRequest.Priority.LOW, AssetRequest.Status.CANCELLED, null));
             assetRequestRepository.save(createAssetRequest(auditya, AssetRequest.RequestType.ADDITIONAL, "HARDWARE", "PRINTER", "Personal Printer", "HP LaserJet", 300.0, "For printing research documents", AssetRequest.Priority.LOW, AssetRequest.Status.CANCELLED, null));
             assetRequestRepository.save(createAssetRequest(jeff, AssetRequest.RequestType.UPGRADE, "ACCESSORIES", "ADAPTER", "USB Hub", "Anker 7-in-1", 50.0, "For connecting multiple devices", AssetRequest.Priority.LOW, AssetRequest.Status.CANCELLED, null));
+            
+            System.out.println("Asset requests initialization completed. Total count: " + assetRequestRepository.count());
+        } else {
+            System.out.println("Asset requests already exist, skipping initialization.");
         }
     }
 

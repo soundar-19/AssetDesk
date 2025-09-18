@@ -31,6 +31,7 @@ public class IssueServiceImpl implements IssueService {
     private final UserRepository userRepository;
     private final NotificationService notificationService;
     private final ServiceRecordRepository serviceRecordRepository;
+    private final com.assetdesk.repository.MessageRepository messageRepository;
     
     @Override
     public IssueResponseDTO createIssue(IssueRequestDTO issueRequestDTO, Long reportedById) {
@@ -183,16 +184,26 @@ public class IssueServiceImpl implements IssueService {
         System.out.println("DTO assigned to name: " + dto.getAssignedToName());
         System.out.println("DTO assigned to ID: " + dto.getAssignedToId());
         
+        // Add system message for status change
+        try {
+            addSystemMessage(issueId, "Issue assigned to " + assignedUser.getName() + " and status changed to In Progress");
+        } catch (Exception e) {
+            System.out.println("Failed to add system message: " + e.getMessage());
+        }
+        
         // Create notification for assignment
         try {
-            notificationService.createNotification(
-                assignedToId,
-                "Issue Assigned",
-                "Issue '" + updatedIssue.getTitle() + "' has been assigned to you",
-                com.assetdesk.domain.Notification.Type.INFO,
-                updatedIssue.getId(),
-                updatedIssue.getAsset().getId()
-            );
+            // Also notify the reporter
+            if (updatedIssue.getReportedBy() != null && !updatedIssue.getReportedBy().getId().equals(assignedToId)) {
+                notificationService.createNotification(
+                    updatedIssue.getReportedBy().getId(),
+                    "Issue In Progress",
+                    "Your issue '" + updatedIssue.getTitle() + "' is now being worked on by " + assignedUser.getName(),
+                    com.assetdesk.domain.Notification.Type.INFO,
+                    updatedIssue.getId(),
+                    updatedIssue.getAsset().getId()
+                );
+            }
         } catch (Exception e) {
             System.out.println("Failed to create assignment notification: " + e.getMessage());
         }
@@ -287,6 +298,20 @@ public class IssueServiceImpl implements IssueService {
         
         Issue resolvedIssue = issueRepository.save(issue);
         
+        // Add system message for resolution
+        try {
+            String systemMessage = "Issue resolved";
+            if (resolutionNotes != null && !resolutionNotes.trim().isEmpty()) {
+                systemMessage += ": " + resolutionNotes;
+            }
+            if (cost != null && cost > 0) {
+                systemMessage += " (Cost: $" + String.format("%.2f", cost) + ")";
+            }
+            addSystemMessage(issueId, systemMessage);
+        } catch (Exception e) {
+            System.out.println("Failed to add system message: " + e.getMessage());
+        }
+        
         // Create service record for issue resolution
         try {
             ServiceRecord serviceRecord = new ServiceRecord();
@@ -349,6 +374,29 @@ public class IssueServiceImpl implements IssueService {
         
         issue.setStatus(Issue.Status.CLOSED);
         Issue closedIssue = issueRepository.save(issue);
+        
+        // Add system message for closure
+        try {
+            addSystemMessage(issueId, "Issue has been closed by " + user.getName());
+        } catch (Exception e) {
+            System.out.println("Failed to add system message: " + e.getMessage());
+        }
+        
+        // Create notification for closure
+        try {
+            if (closedIssue.getAssignedTo() != null && !closedIssue.getAssignedTo().getId().equals(userId)) {
+                notificationService.createNotification(
+                    closedIssue.getAssignedTo().getId(),
+                    "Issue Closed",
+                    "Issue '" + closedIssue.getTitle() + "' has been closed",
+                    com.assetdesk.domain.Notification.Type.INFO,
+                    closedIssue.getId(),
+                    closedIssue.getAsset().getId()
+                );
+            }
+        } catch (Exception e) {
+            System.out.println("Failed to create closure notification: " + e.getMessage());
+        }
         
         return IssueResponseDTO.fromEntity(closedIssue);
     }
@@ -433,5 +481,21 @@ public class IssueServiceImpl implements IssueService {
             .and(hasAsset(assetId));
             
         return issueRepository.findAll(spec, pageable).map(IssueResponseDTO::fromEntity);
+    }
+    
+    private void addSystemMessage(Long issueId, String messageText) {
+        try {
+            com.assetdesk.domain.Message message = new com.assetdesk.domain.Message();
+            message.setIssue(issueRepository.findById(issueId)
+                .orElseThrow(() -> new ResourceNotFoundException("Issue", "id", issueId)));
+            message.setMessageText(messageText);
+            message.setIsSystemMessage(true);
+            // Set system user as sender (assuming user ID 1 is system)
+            message.setSender(userRepository.findById(1L)
+                .orElse(null));
+            messageRepository.save(message);
+        } catch (Exception e) {
+            System.out.println("Failed to add system message: " + e.getMessage());
+        }
     }
 }

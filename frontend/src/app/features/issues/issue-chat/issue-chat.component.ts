@@ -19,9 +19,9 @@ import { ToastService } from '../../../shared/components/toast/toast.service';
       <div class="messages-container" #messagesContainer>
         <div class="messages-list">
           <div *ngFor="let message of messages" class="message-wrapper" 
-               [class.own-message]="message.senderId == currentUserId"
-               [class.system-message]="message.messageType === 'SYSTEM_MESSAGE'">
-            <div class="message-bubble" *ngIf="message.messageType !== 'SYSTEM_MESSAGE'">
+               [class.own-message]="message.senderId == currentUserId && !message.isSystemMessage"
+               [class.system-message]="message.isSystemMessage">
+            <div class="message-bubble" *ngIf="!message.isSystemMessage">
               <div class="message-header">
                 <span class="sender-name">{{ message.senderName }}</span>
                 <span class="message-time">{{ message.timestamp | date:'MMM d, h:mm a' }}</span>
@@ -64,8 +64,7 @@ import { ToastService } from '../../../shared/components/toast/toast.service';
             </div>
             
             <!-- System Message -->
-            <div class="system-message-bubble" *ngIf="message.messageType === 'SYSTEM_MESSAGE'">
-              <div class="system-icon">🤖</div>
+            <div class="system-message-bubble" *ngIf="message.isSystemMessage">
               <div class="system-content">
                 <span class="system-text">{{ message.messageText }}</span>
                 <span class="system-time">{{ message.timestamp | date:'MMM d, h:mm a' }}</span>
@@ -515,39 +514,57 @@ import { ToastService } from '../../../shared/components/toast/toast.service';
 
     .message-wrapper.system-message {
       justify-content: center;
-      margin: var(--space-4) 0;
+      margin: var(--space-6) 0;
     }
 
     .system-message-bubble {
       display: flex;
       align-items: center;
+      justify-content: center;
       gap: var(--space-2);
-      padding: var(--space-2) var(--space-4);
-      background: var(--gray-100);
-      border-radius: var(--radius-xl);
-      border: 1px solid var(--gray-200);
-      max-width: 80%;
+      padding: var(--space-3) var(--space-6);
+      background: linear-gradient(135deg, #f1f5f9, #e2e8f0);
+      border-radius: var(--radius-full);
+      border: 1px solid var(--gray-300);
+      max-width: 70%;
+      box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
+      position: relative;
+    }
+
+    .system-message-bubble::before {
+      content: '';
+      position: absolute;
+      left: -8px;
+      right: -8px;
+      top: 50%;
+      height: 1px;
+      background: linear-gradient(to right, transparent, var(--gray-300), transparent);
+      z-index: -1;
     }
 
     .system-icon {
-      font-size: 1rem;
+      font-size: 1.1rem;
+      filter: grayscale(0.3);
     }
 
     .system-content {
       display: flex;
-      flex-direction: column;
-      gap: var(--space-1);
+      align-items: center;
+      gap: var(--space-2);
     }
 
     .system-text {
-      color: var(--gray-700);
-      font-size: 0.875rem;
+      color: var(--gray-600);
+      font-size: 0.8rem;
       font-weight: 500;
+      text-align: center;
+      font-style: italic;
     }
 
     .system-time {
-      color: var(--gray-500);
-      font-size: 0.75rem;
+      color: var(--gray-400);
+      font-size: 0.7rem;
+      font-weight: 400;
     }
   `]
 })

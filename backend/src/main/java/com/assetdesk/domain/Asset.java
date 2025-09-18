@@ -40,7 +40,6 @@ public class Asset {
     
     private BigDecimal cost;
     
-    // Useful life of the asset in years, used for straight-line depreciation
     private Integer usefulLifeYears;
     
     @Enumerated(EnumType.STRING)
@@ -49,14 +48,14 @@ public class Asset {
     private String imageUrl;
     
     // Asset sharing configuration
-    private Boolean isShareable = false; // true for software licenses, false for hardware
-    
+    private Boolean isShareable = false; 
+
     // Software license specific fields
-    private Integer totalLicenses; // Total number of licenses available
-    private Integer usedLicenses;   // Number of licenses currently in use
-    private LocalDate licenseExpiryDate; // When the license expires
-    private String licenseKey;      // License key or activation code
-    private String version;         // Software version
+    private Integer totalLicenses; 
+    private Integer usedLicenses;   
+    private LocalDate licenseExpiryDate; 
+    private String licenseKey;      
+    private String version;     
     
     public enum Category {
         HARDWARE, SOFTWARE, ACCESSORIES;

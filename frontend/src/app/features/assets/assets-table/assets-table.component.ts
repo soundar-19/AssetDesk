@@ -9,6 +9,7 @@ import { SearchFilterComponent, FilterOption, SearchFilters } from '../../../sha
 import { ToastService } from '../../../shared/components/toast/toast.service';
 import { ConfirmDialogService } from '../../../shared/components/confirm-dialog/confirm-dialog.service';
 
+
 @Component({
   selector: 'app-assets-table',
   standalone: true,
@@ -135,7 +136,7 @@ export class AssetsTableComponent implements OnInit {
     { key: 'type', label: 'Type', sortable: true },
     { key: 'model', label: 'Model', sortable: true },
     { key: 'status', label: 'Status', sortable: true },
-    { key: 'cost', label: 'Cost', pipe: 'currency' }
+    { key: 'cost', label: 'Cost', pipe: 'currencyFormat' }
   ];
 
   filterOptions: FilterOption[] = [

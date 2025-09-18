@@ -104,7 +104,7 @@ import { ReportGeneratorComponent } from './report-generator.component';
               <div class="quick-report-icon">⭐</div>
               <div class="quick-report-content">
                 <div class="quick-report-title">High-Value Assets</div>
-                <div class="quick-report-description">Assets above $1,000 in value</div>
+                <div class="quick-report-description">Assets above ₹1,000 in value</div>
               </div>
             </button>
             
